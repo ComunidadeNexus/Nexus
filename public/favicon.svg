@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="nexusGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00FFFF"/>
+      <stop offset="100%" style="stop-color:#A855F7"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#0a0c14"/>
+  <g transform="translate(96, 96)">
+    <path d="M160 0 L320 160 L160 320 L0 160 Z" fill="url(#nexusGrad)" opacity="0.9"/>
+    <path d="M160 40 L280 160 L160 280 L40 160 Z" fill="#0a0c14"/>
+    <circle cx="160" cy="160" r="50" fill="url(#nexusGrad)"/>
+    <path d="M160 110 L200 160 L160 210 L120 160 Z" fill="#0a0c14"/>
+  </g>
+</svg>
