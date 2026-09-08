@@ -60,7 +60,12 @@ export const useGlobalChat = () => {
     }
   };
 
-  const sendMessage = async (content: string, mediaUrl?: string, mediaType?: string, replyToId?: string) => {
+  const sendMessage = async (
+    content: string,
+    mediaUrl?: string,
+    mediaType?: string,
+    replyToId?: string,
+  ) => {
     if (!user) return { error: "Not authenticated" };
 
     try {
@@ -77,7 +82,7 @@ export const useGlobalChat = () => {
         .single();
 
       if (error) throw error;
-      
+
       return { data, error: null };
     } catch (err: any) {
       console.error("Error sending message:", err);
@@ -96,7 +101,7 @@ export const useGlobalChat = () => {
         .eq("user_id", user.id);
 
       if (error) throw error;
-      
+
       return { error: null };
     } catch (err: any) {
       console.error("Error deleting message:", err);
@@ -119,7 +124,7 @@ export const useGlobalChat = () => {
         },
         async (payload) => {
           const newMessage = payload.new as ChatMessage;
-          
+
           // Avoid duplicates
           setMessages((prev) => {
             if (prev.some((m) => m.id === newMessage.id)) {
@@ -134,14 +139,14 @@ export const useGlobalChat = () => {
             .select("user_id, name, avatar_url")
             .eq("user_id", newMessage.user_id)
             .single();
-          
+
           if (data) {
             setUsers((prev) => ({
               ...prev,
               [data.user_id]: { name: data.name, avatar_url: data.avatar_url },
             }));
           }
-        }
+        },
       )
       .on(
         "postgres_changes",
@@ -152,15 +157,15 @@ export const useGlobalChat = () => {
         },
         (payload) => {
           const updatedMessage = payload.new as ChatMessage;
-          
+
           if (updatedMessage.is_deleted) {
             setMessages((prev) => prev.filter((m) => m.id !== updatedMessage.id));
           } else {
             setMessages((prev) =>
-              prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m))
+              prev.map((m) => (m.id === updatedMessage.id ? updatedMessage : m)),
             );
           }
-        }
+        },
       )
       .subscribe();
 

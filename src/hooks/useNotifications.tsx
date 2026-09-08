@@ -54,7 +54,9 @@ export const useNotifications = () => {
           .in("user_id", actorIds);
 
         if (profiles) {
-          actorMap = new Map(profiles.map((p) => [p.user_id, { name: p.name, avatar_url: p.avatar_url }]));
+          actorMap = new Map(
+            profiles.map((p) => [p.user_id, { name: p.name, avatar_url: p.avatar_url }]),
+          );
         }
       }
 
@@ -85,7 +87,7 @@ export const useNotifications = () => {
       if (error) throw error;
 
       setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+        prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n)),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {
@@ -130,7 +132,7 @@ export const useNotifications = () => {
         },
         async (payload) => {
           const newNotification = payload.new as Notification;
-          
+
           // Fetch actor profile if exists
           if (newNotification.actor_id) {
             const { data: actor } = await supabase
@@ -144,7 +146,14 @@ export const useNotifications = () => {
 
           setNotifications((prev) => [newNotification, ...prev]);
           setUnreadCount((prev) => prev + 1);
-        }
+
+          // Disparar toast visível para o usuário imediatamente
+          import("sonner").then(({ toast }) => {
+            toast(newNotification.title, {
+              description: newNotification.message || "Você tem uma nova notificação!",
+            });
+          });
+        },
       )
       .subscribe();
 

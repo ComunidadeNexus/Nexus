@@ -20,7 +20,7 @@ const SUBSCRIPTION_PRICES: Record<string, Record<string, string>> = {
 };
 
 const logStep = (step: string, details?: unknown) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[CREATE-SUBSCRIPTION-CHECKOUT] ${step}${detailsStr}`);
 };
 
@@ -31,7 +31,7 @@ serve(async (req) => {
 
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
   );
 
   try {
@@ -41,7 +41,7 @@ serve(async (req) => {
     if (!tier || !interval) {
       throw new Error("Tier and interval are required");
     }
-    
+
     const priceId = SUBSCRIPTION_PRICES[tier]?.[interval];
     if (!priceId) {
       throw new Error(`Invalid tier or interval: ${tier}/${interval}`);
@@ -54,7 +54,7 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    
+
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });

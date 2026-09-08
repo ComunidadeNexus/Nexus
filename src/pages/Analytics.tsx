@@ -1,39 +1,37 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Heart, 
-  MessageCircle, 
-  FileText, 
-  Users, 
+import {
+  BarChart3,
+  TrendingUp,
+  Heart,
+  MessageCircle,
+  FileText,
+  Users,
   Eye,
   Crown,
   ArrowUpRight,
   ArrowDownRight,
   Calendar,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   AreaChart,
   Area,
   BarChart,
-  Bar
+  Bar,
 } from "recharts";
-import Navbar from "@/components/Navbar";
-import BottomNavigation from "@/components/BottomNavigation";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,27 +40,22 @@ import { ptBR } from "date-fns/locale";
 
 const Analytics = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
-  const { analytics, loading, period, setPeriod } = useAnalytics();
-  const { subscribed, tier, isLoading: subLoading } = useSubscription();
 
-  // Redirect if not Enterprise
-  useEffect(() => {
-    if (!subLoading && (!subscribed || tier !== "enterprise")) {
-      // Allow access but show upgrade prompt
-    }
-  }, [subscribed, tier, subLoading, navigate]);
+  const isGlobalAdmin = location.pathname.startsWith("/admin");
+  const { analytics, loading, period, setPeriod } = useAnalytics(isGlobalAdmin);
 
-  const StatCard = ({ 
-    title, 
-    value, 
-    icon: Icon, 
-    trend, 
+  const StatCard = ({
+    title,
+    value,
+    icon: Icon,
+    trend,
     trendValue,
-    description 
-  }: { 
-    title: string; 
-    value: string | number; 
+    description,
+  }: {
+    title: string;
+    value: string | number;
     icon: React.ElementType;
     trend?: "up" | "down" | "neutral";
     trendValue?: string;
@@ -88,9 +81,7 @@ const Analytics = () => {
                     {trendValue}
                   </span>
                 )}
-                {description && (
-                  <span className="text-muted-foreground">{description}</span>
-                )}
+                {description && <span className="text-muted-foreground">{description}</span>}
               </div>
             )}
           </div>
@@ -110,67 +101,8 @@ const Analytics = () => {
     );
   }
 
-  // Show upgrade prompt for non-enterprise users
-  if (!subLoading && (!subscribed || tier !== "enterprise")) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Navbar />
-        <main className="container mx-auto px-4 py-8 pb-24 md:pb-8">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
-              <Crown className="w-10 h-10 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-foreground">Analytics Enterprise</h1>
-            <p className="text-muted-foreground text-lg">
-              O dashboard de analytics está disponível exclusivamente para usuários Enterprise.
-              Atualize seu plano para ter acesso a métricas detalhadas de engajamento.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg"
-                className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:opacity-90"
-                onClick={() => navigate("/assinatura")}
-              >
-                <Sparkles className="w-5 h-5 mr-2" />
-                Upgrade para Enterprise
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                onClick={() => navigate("/comunidade")}
-              >
-                Voltar à Comunidade
-              </Button>
-            </div>
-
-            {/* Preview of what they'd get */}
-            <Card className="glass-card mt-8 opacity-60">
-              <CardHeader>
-                <CardTitle className="text-left">Preview do Dashboard</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="space-y-2">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-8 w-16" />
-                    </div>
-                  ))}
-                </div>
-                <Skeleton className="h-48 w-full mt-6" />
-              </CardContent>
-            </Card>
-          </div>
-        </main>
-        <BottomNavigation />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       <main className="container mx-auto px-4 py-8 pb-24 md:pb-8">
         <div className="space-y-6">
           {/* Header */}
@@ -180,21 +112,15 @@ const Analytics = () => {
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground">
                   Dashboard de Analytics
                 </h1>
-                <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white">
-                  Enterprise
-                </Badge>
               </div>
-              <p className="text-muted-foreground mt-1">
-                Acompanhe o desempenho do seu conteúdo
-              </p>
+              <p className="text-muted-foreground mt-1">Acompanhe o desempenho do seu conteúdo</p>
             </div>
 
             {/* Period Selector */}
             <Tabs value={period} onValueChange={(v) => setPeriod(v as "7d" | "30d" | "90d")}>
               <TabsList>
                 <TabsTrigger value="7d" className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  7 dias
+                  <Calendar className="w-4 h-4" />7 dias
                 </TabsTrigger>
                 <TabsTrigger value="30d">30 dias</TabsTrigger>
                 <TabsTrigger value="90d">90 dias</TabsTrigger>
@@ -204,7 +130,7 @@ const Analytics = () => {
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map(i => (
+              {[1, 2, 3, 4].map((i) => (
                 <Card key={i} className="glass-card">
                   <CardContent className="pt-6">
                     <Skeleton className="h-4 w-24 mb-2" />
@@ -256,9 +182,7 @@ const Analytics = () => {
                       <BarChart3 className="w-5 h-5 text-primary" />
                       Engajamento ao Longo do Tempo
                     </CardTitle>
-                    <CardDescription>
-                      Curtidas e comentários por dia
-                    </CardDescription>
+                    <CardDescription>Curtidas e comentários por dia</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="h-64">
@@ -266,43 +190,48 @@ const Analytics = () => {
                         <AreaChart data={analytics?.dailyStats || []}>
                           <defs>
                             <linearGradient id="colorLikes" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                             </linearGradient>
                             <linearGradient id="colorComments" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="hsl(var(--secondary))" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="hsl(var(--secondary))" stopOpacity={0}/>
+                              <stop
+                                offset="5%"
+                                stopColor="hsl(var(--secondary))"
+                                stopOpacity={0.3}
+                              />
+                              <stop
+                                offset="95%"
+                                stopColor="hsl(var(--secondary))"
+                                stopOpacity={0}
+                              />
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                          <XAxis 
-                            dataKey="date" 
+                          <XAxis
+                            dataKey="date"
                             tick={{ fontSize: 12 }}
                             className="text-muted-foreground"
                           />
-                          <YAxis 
-                            tick={{ fontSize: 12 }}
-                            className="text-muted-foreground"
-                          />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: 'hsl(var(--card))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '8px'
+                          <YAxis tick={{ fontSize: 12 }} className="text-muted-foreground" />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "hsl(var(--card))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "8px",
                             }}
                           />
-                          <Area 
-                            type="monotone" 
-                            dataKey="likes" 
-                            stroke="hsl(var(--primary))" 
+                          <Area
+                            type="monotone"
+                            dataKey="likes"
+                            stroke="hsl(var(--primary))"
                             fillOpacity={1}
                             fill="url(#colorLikes)"
                             name="Curtidas"
                           />
-                          <Area 
-                            type="monotone" 
-                            dataKey="comments" 
-                            stroke="hsl(var(--secondary))" 
+                          <Area
+                            type="monotone"
+                            dataKey="comments"
+                            stroke="hsl(var(--secondary))"
                             fillOpacity={1}
                             fill="url(#colorComments)"
                             name="Comentários"
@@ -320,33 +249,28 @@ const Analytics = () => {
                       <FileText className="w-5 h-5 text-primary" />
                       Posts Criados
                     </CardTitle>
-                    <CardDescription>
-                      Quantidade de posts por dia
-                    </CardDescription>
+                    <CardDescription>Quantidade de posts por dia</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="h-64">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={analytics?.dailyStats || []}>
                           <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                          <XAxis 
-                            dataKey="date" 
+                          <XAxis
+                            dataKey="date"
                             tick={{ fontSize: 12 }}
                             className="text-muted-foreground"
                           />
-                          <YAxis 
-                            tick={{ fontSize: 12 }}
-                            className="text-muted-foreground"
-                          />
-                          <Tooltip 
-                            contentStyle={{ 
-                              backgroundColor: 'hsl(var(--card))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '8px'
+                          <YAxis tick={{ fontSize: 12 }} className="text-muted-foreground" />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "hsl(var(--card))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "8px",
                             }}
                           />
-                          <Bar 
-                            dataKey="posts" 
+                          <Bar
+                            dataKey="posts"
                             fill="hsl(var(--primary))"
                             radius={[4, 4, 0, 0]}
                             name="Posts"
@@ -365,15 +289,13 @@ const Analytics = () => {
                     <TrendingUp className="w-5 h-5 text-primary" />
                     Posts com Melhor Desempenho
                   </CardTitle>
-                  <CardDescription>
-                    Seus posts com maior engajamento
-                  </CardDescription>
+                  <CardDescription>Seus posts com maior engajamento</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {analytics?.topPosts && analytics.topPosts.length > 0 ? (
                     <div className="space-y-4">
                       {analytics.topPosts.map((post, index) => (
-                        <div 
+                        <div
                           key={post.id}
                           className="flex items-start gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
                           onClick={() => navigate(`/comunidade?post=${post.id}`)}
@@ -382,13 +304,11 @@ const Analytics = () => {
                             {index + 1}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-foreground line-clamp-2">
-                              {post.content}
-                            </p>
+                            <p className="text-foreground line-clamp-2">{post.content}</p>
                             <p className="text-sm text-muted-foreground mt-1">
-                              {formatDistanceToNow(new Date(post.created_at), { 
-                                addSuffix: true, 
-                                locale: ptBR 
+                              {formatDistanceToNow(new Date(post.created_at), {
+                                addSuffix: true,
+                                locale: ptBR,
                               })}
                             </p>
                           </div>
@@ -418,7 +338,7 @@ const Analytics = () => {
               {/* Additional Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatCard
-                  title="Seguidores"
+                  title={isGlobalAdmin ? "Usuários Totais" : "Seguidores"}
                   value={analytics?.followerGrowth || 0}
                   icon={Users}
                 />
@@ -438,8 +358,6 @@ const Analytics = () => {
           )}
         </div>
       </main>
-
-      <BottomNavigation />
     </div>
   );
 };

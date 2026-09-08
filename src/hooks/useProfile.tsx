@@ -7,6 +7,7 @@ interface Profile {
   user_id: string;
   name: string | null;
   avatar_url: string | null;
+  banner_url?: string | null;
   bio: string | null;
   xp_points: number;
   level: number;
@@ -78,7 +79,8 @@ export const useProfile = (userId?: string) => {
       // Fetch badges
       const { data: badgesData, error: badgesError } = await supabase
         .from("user_badges")
-        .select(`
+        .select(
+          `
           id,
           badge_id,
           earned_at,
@@ -90,11 +92,12 @@ export const useProfile = (userId?: string) => {
             color,
             xp_reward
           )
-        `)
+        `,
+        )
         .eq("user_id", targetUserId);
 
       if (badgesError) throw badgesError;
-      
+
       const formattedBadges = (badgesData || []).map((ub: any) => ({
         id: ub.id,
         badge_id: ub.badge_id,
@@ -118,8 +121,11 @@ export const useProfile = (userId?: string) => {
           .from("reactions")
           .select("post_id")
           .eq("reaction_type", "like")
-          .in("post_id", 
-            (await supabase.from("posts").select("id").eq("user_id", targetUserId)).data?.map(p => p.id) || []
+          .in(
+            "post_id",
+            (await supabase.from("posts").select("id").eq("user_id", targetUserId)).data?.map(
+              (p) => p.id,
+            ) || [],
           ),
       ]);
 
@@ -136,18 +142,17 @@ export const useProfile = (userId?: string) => {
     }
   };
 
-  const updateProfile = async (updates: Partial<Pick<Profile, "name" | "avatar_url" | "bio">>) => {
+  const updateProfile = async (
+    updates: Partial<Pick<Profile, "name" | "avatar_url" | "banner_url" | "bio">>,
+  ) => {
     if (!targetUserId || !isOwnProfile) return { error: "Unauthorized" };
 
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update(updates)
-        .eq("user_id", targetUserId);
+      const { error } = await supabase.from("profiles").update(updates).eq("user_id", targetUserId);
 
       if (error) throw error;
-      
-      setProfile((prev) => prev ? { ...prev, ...updates } : null);
+
+      setProfile((prev) => (prev ? { ...prev, ...updates } : null));
       return { error: null };
     } catch (err: any) {
       console.error("Error updating profile:", err);
@@ -162,7 +167,7 @@ export const useProfile = (userId?: string) => {
   // Calculate level progress
   const getLevelProgress = () => {
     if (!profile) return { current: 0, required: 100, percentage: 0 };
-    
+
     const xpPerLevel = 250;
     const currentLevelXP = (profile.level - 1) * xpPerLevel;
     const nextLevelXP = profile.level * xpPerLevel;

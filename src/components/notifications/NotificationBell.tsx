@@ -41,10 +41,7 @@ const NotificationBell = () => {
         <div className="flex items-center justify-between px-4 py-2">
           <h3 className="font-semibold">Notificações</h3>
           {unreadCount > 0 && (
-            <button
-              onClick={markAllAsRead}
-              className="text-xs text-primary hover:underline"
-            >
+            <button onClick={markAllAsRead} className="text-xs text-primary hover:underline">
               Marcar todas como lidas
             </button>
           )}
@@ -62,7 +59,7 @@ const NotificationBell = () => {
                 key={notification.id}
                 className={cn(
                   "p-0 focus:bg-accent cursor-pointer",
-                  !notification.is_read && "bg-primary/5"
+                  !notification.is_read && "bg-primary/5",
                 )}
                 onClick={() => handleNotificationClick(notification)}
               >

@@ -35,61 +35,65 @@ const FileUpload = ({
     return "file";
   };
 
-  const handleFileSelect = useCallback(async (file: File) => {
-    if (!user) {
-      toast.error("Você precisa estar logado para fazer upload");
-      return;
-    }
+  const handleFileSelect = useCallback(
+    async (file: File) => {
+      if (!user) {
+        toast.error("Você precisa estar logado para fazer upload");
+        return;
+      }
 
-    // Validate file size
-    const maxBytes = maxSize * 1024 * 1024;
-    if (file.size > maxBytes) {
-      toast.error(`Arquivo muito grande. Máximo: ${maxSize}MB`);
-      return;
-    }
+      // Validate file size
+      const maxBytes = maxSize * 1024 * 1024;
+      if (file.size > maxBytes) {
+        toast.error(`Arquivo muito grande. Máximo: ${maxSize}MB`);
+        return;
+      }
 
-    setIsUploading(true);
+      setIsUploading(true);
 
-    try {
-      const fileType = getFileType(file.type);
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      try {
+        const fileType = getFileType(file.type);
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
-      const { data, error } = await supabase.storage
-        .from(bucket)
-        .upload(fileName, file, {
+        const { data, error } = await supabase.storage.from(bucket).upload(fileName, file, {
           cacheControl: "3600",
           upsert: false,
         });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(data.path);
+        // Get public URL
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from(bucket).getPublicUrl(data.path);
 
-      // Set preview
-      if (preview) {
-        setPreviewUrl(publicUrl);
-        setPreviewType(fileType);
+        // Set preview
+        if (preview) {
+          setPreviewUrl(publicUrl);
+          setPreviewType(fileType);
+        }
+
+        onUpload(publicUrl, fileType);
+        toast.success("Upload concluído!");
+      } catch (error: any) {
+        console.error("Upload error:", error);
+        toast.error("Erro no upload: " + error.message);
+      } finally {
+        setIsUploading(false);
       }
+    },
+    [user, bucket, maxSize, preview, onUpload],
+  );
 
-      onUpload(publicUrl, fileType);
-      toast.success("Upload concluído!");
-    } catch (error: any) {
-      console.error("Upload error:", error);
-      toast.error("Erro no upload: " + error.message);
-    } finally {
-      setIsUploading(false);
-    }
-  }, [user, bucket, maxSize, preview, onUpload]);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) handleFileSelect(file);
-  }, [handleFileSelect]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file) handleFileSelect(file);
+    },
+    [handleFileSelect],
+  );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -108,18 +112,10 @@ const FileUpload = ({
       {preview && previewUrl && (
         <div className="relative rounded-lg overflow-hidden bg-muted">
           {previewType === "image" && (
-            <img
-              src={previewUrl}
-              alt="Preview"
-              className="w-full max-h-64 object-contain"
-            />
+            <img src={previewUrl} alt="Preview" className="w-full max-h-64 object-contain" />
           )}
           {previewType === "video" && (
-            <video
-              src={previewUrl}
-              controls
-              className="w-full max-h-64"
-            />
+            <video src={previewUrl} controls className="w-full max-h-64" />
           )}
           {previewType === "file" && (
             <div className="p-4 flex items-center gap-3">
@@ -144,7 +140,7 @@ const FileUpload = ({
           className={cn(
             "border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer",
             "hover:border-primary/50 transition-colors",
-            isUploading && "pointer-events-none opacity-50"
+            isUploading && "pointer-events-none opacity-50",
           )}
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
@@ -171,12 +167,8 @@ const FileUpload = ({
                 <File className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium">
-                  Clique ou arraste um arquivo
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Máximo {maxSize}MB
-                </p>
+                <p className="text-sm font-medium">Clique ou arraste um arquivo</p>
+                <p className="text-xs text-muted-foreground">Máximo {maxSize}MB</p>
               </div>
             </div>
           )}

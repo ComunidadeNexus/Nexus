@@ -1,8 +1,8 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @layer base {
   :root {
@@ -37,11 +37,15 @@
     --radius: 0.75rem;
 
     /* Custom tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(186 100% 50%) 0%, hsl(280 100% 65%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(280 100% 65%) 0%, hsl(330 100% 60%) 100%);
+    --gradient-primary: linear-gradient(135deg, #00c6ff 0%, #ff007f 100%);
+    --gradient-secondary: linear-gradient(135deg, #ff007f 0%, #3300ff 100%);
     --gradient-dark: linear-gradient(180deg, hsl(222 47% 8%) 0%, hsl(222 47% 4%) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
-    
+    --gradient-glass: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+
     --shadow-glow-primary: 0 0 40px rgba(0, 255, 255, 0.3);
     --shadow-glow-secondary: 0 0 40px rgba(168, 85, 247, 0.3);
     --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -93,11 +97,15 @@
     --ring: 186 100% 40%;
 
     /* Custom tokens for light mode */
-    --gradient-primary: linear-gradient(135deg, hsl(186 100% 40%) 0%, hsl(280 85% 55%) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(280 85% 55%) 0%, hsl(330 85% 55%) 100%);
+    --gradient-primary: linear-gradient(135deg, #00b4db 0%, #ff007f 100%);
+    --gradient-secondary: linear-gradient(135deg, #ff007f 0%, #3300ff 100%);
     --gradient-dark: linear-gradient(180deg, hsl(210 40% 98%) 0%, hsl(210 40% 94%) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
-    
+    --gradient-glass: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(255, 255, 255, 0.7) 100%
+    );
+
     --shadow-glow-primary: 0 0 30px rgba(0, 180, 200, 0.2);
     --shadow-glow-secondary: 0 0 30px rgba(140, 70, 200, 0.2);
     --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -127,11 +135,16 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', sans-serif;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Space Grotesk", sans-serif;
   }
 }
 
@@ -160,11 +173,15 @@
   }
 
   .gradient-border::before {
-    content: '';
+    content: "";
     @apply absolute inset-0 rounded-2xl p-[1px];
     background: var(--gradient-primary);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
   }
@@ -220,17 +237,35 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 1; box-shadow: var(--shadow-glow-primary); }
-  50% { opacity: 0.8; box-shadow: 0 0 60px rgba(0, 255, 255, 0.5); }
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: var(--shadow-glow-primary);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 60px rgba(0, 255, 255, 0.5);
+  }
 }
 
 @keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }

@@ -1,5 +1,3 @@
-import Navbar from "@/components/Navbar";
-import BottomNavigation from "@/components/BottomNavigation";
 import { useNotifications } from "@/hooks/useNotifications";
 import NotificationItem from "@/components/notifications/NotificationItem";
 import { Button } from "@/components/ui/button";
@@ -20,8 +18,6 @@ const Notifications = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Navbar />
-      
       <main className="container mx-auto px-4 pt-20 pb-12 max-w-2xl">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -65,8 +61,6 @@ const Notifications = () => {
           </div>
         )}
       </main>
-
-      <BottomNavigation />
     </div>
   );
 };

@@ -34,7 +34,7 @@ export const useSubscription = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke("check-subscription");
-      
+
       if (error) throw error;
 
       setStatus({

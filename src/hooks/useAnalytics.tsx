@@ -33,7 +33,7 @@ interface AnalyticsData {
   profileViews: number;
 }
 
-export const useAnalytics = () => {
+export const useAnalytics = (isGlobalAdmin: boolean = false) => {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,17 +56,22 @@ export const useAnalytics = () => {
       const weekStart = startOfWeek(now, { weekStartsOn: 1 });
       const monthStart = startOfMonth(now);
 
-      // Fetch all user posts
-      const { data: posts, error: postsError } = await supabase
+      // Fetch posts (global or user)
+      let postsQuery = supabase
         .from("posts")
         .select("id, content, likes_count, comments_count, created_at, upvotes, downvotes")
-        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
+
+      if (!isGlobalAdmin) {
+        postsQuery = postsQuery.eq("user_id", user.id);
+      }
+
+      const { data: posts, error: postsError } = await postsQuery;
 
       if (postsError) throw postsError;
 
       // Fetch reactions on user's posts
-      const postIds = posts?.map(p => p.id) || [];
+      const postIds = posts?.map((p) => p.id) || [];
       const { data: reactions } = await supabase
         .from("reactions")
         .select("created_at, post_id")
@@ -80,49 +85,60 @@ export const useAnalytics = () => {
         .in("post_id", postIds)
         .gte("created_at", startDate.toISOString());
 
-      // Fetch profile data
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("followers_count, following_count")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // Fetch profile data or total users
+      let followerGrowth = 0;
+      if (isGlobalAdmin) {
+        const { count } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true });
+        followerGrowth = count || 0;
+      } else {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("followers_count, following_count")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        followerGrowth = profile?.followers_count || 0;
+      }
 
       // Calculate totals
       const totalPosts = posts?.length || 0;
       const totalLikes = posts?.reduce((sum, p) => sum + (p.likes_count || 0), 0) || 0;
       const totalComments = posts?.reduce((sum, p) => sum + (p.comments_count || 0), 0) || 0;
-      const totalViews = posts?.reduce((sum, p) => sum + (p.upvotes || 0) + (p.downvotes || 0), 0) || 0;
+      const totalViews =
+        posts?.reduce((sum, p) => sum + (p.upvotes || 0) + (p.downvotes || 0), 0) || 0;
 
       // Posts this week/month
-      const postsThisWeek = posts?.filter(p => new Date(p.created_at) >= weekStart).length || 0;
-      const postsThisMonth = posts?.filter(p => new Date(p.created_at) >= monthStart).length || 0;
+      const postsThisWeek = posts?.filter((p) => new Date(p.created_at) >= weekStart).length || 0;
+      const postsThisMonth = posts?.filter((p) => new Date(p.created_at) >= monthStart).length || 0;
 
       // Reactions this week
-      const likesThisWeek = reactions?.filter(r => new Date(r.created_at) >= weekStart).length || 0;
-      const commentsThisWeek = comments?.filter(c => new Date(c.created_at) >= weekStart).length || 0;
+      const likesThisWeek =
+        reactions?.filter((r) => new Date(r.created_at) >= weekStart).length || 0;
+      const commentsThisWeek =
+        comments?.filter((c) => new Date(c.created_at) >= weekStart).length || 0;
 
       // Top posts by engagement
       const topPosts = (posts || [])
-        .map(p => ({
+        .map((p) => ({
           ...p,
-          engagement: (p.likes_count || 0) + (p.comments_count || 0)
+          engagement: (p.likes_count || 0) + (p.comments_count || 0),
         }))
         .sort((a, b) => b.engagement - a.engagement)
         .slice(0, 5);
 
       // Daily stats for chart
       const days = eachDayOfInterval({ start: startDate, end: now });
-      const dailyStats: DailyStats[] = days.map(day => {
+      const dailyStats: DailyStats[] = days.map((day) => {
         const dayStr = format(day, "yyyy-MM-dd");
-        const dayPosts = posts?.filter(p => 
-          format(new Date(p.created_at), "yyyy-MM-dd") === dayStr
-        ).length || 0;
-        const dayLikes = reactions?.filter(r => 
-          format(new Date(r.created_at), "yyyy-MM-dd") === dayStr
-        ).length || 0;
-        const dayComments = comments?.filter(c => 
-          format(new Date(c.created_at), "yyyy-MM-dd") === dayStr
-        ).length || 0;
+        const dayPosts =
+          posts?.filter((p) => format(new Date(p.created_at), "yyyy-MM-dd") === dayStr).length || 0;
+        const dayLikes =
+          reactions?.filter((r) => format(new Date(r.created_at), "yyyy-MM-dd") === dayStr)
+            .length || 0;
+        const dayComments =
+          comments?.filter((c) => format(new Date(c.created_at), "yyyy-MM-dd") === dayStr).length ||
+          0;
 
         return {
           date: format(day, "dd/MM", { locale: ptBR }),
@@ -133,9 +149,7 @@ export const useAnalytics = () => {
       });
 
       // Average engagement rate
-      const avgEngagementRate = totalPosts > 0 
-        ? ((totalLikes + totalComments) / totalPosts) 
-        : 0;
+      const avgEngagementRate = totalPosts > 0 ? (totalLikes + totalComments) / totalPosts : 0;
 
       setAnalytics({
         totalPosts,
@@ -149,7 +163,7 @@ export const useAnalytics = () => {
         commentsThisWeek,
         topPosts,
         dailyStats,
-        followerGrowth: profile?.followers_count || 0,
+        followerGrowth,
         profileViews: 0, // Would need separate tracking
       });
     } catch (error) {

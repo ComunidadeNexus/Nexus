@@ -2,12 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import AppLayout from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Comunidade from "./pages/Comunidade";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import Marketplace from "./pages/Marketplace";
@@ -18,10 +18,39 @@ import NewListing from "./pages/NewListing";
 import GlobalChat from "./pages/GlobalChat";
 import HashtagExplore from "./pages/HashtagExplore";
 import Subscription from "./pages/Subscription";
+import PremiumArea from "./pages/PremiumArea";
 import Install from "./pages/Install";
 import Analytics from "./pages/Analytics";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Configuracoes from "./pages/Configuracoes";
+import Busca from "./pages/Busca";
 import NotFound from "./pages/NotFound";
+import Feed from "./pages/Feed";
+import Noticias from "./pages/Noticias";
+import NexusAcademy from "./pages/NexusAcademy";
+import NexusGames from "./pages/NexusGames";
+import AoVivo from "./pages/AoVivo";
+import Regras from "./pages/Regras";
+import Sobre from "./pages/Sobre";
+
+// Admin Imports
+import AdminLayout from "./components/layout/AdminLayout";
+import AdminDashboard from "./components/admin/AdminDashboard";
+import AdminMembros from "./components/admin/AdminMembros";
+import AdminConteudo from "./components/admin/AdminConteudo";
+import AdminCategorias from "./components/admin/AdminCategorias";
+import AdminNucleos from "./components/admin/AdminNucleos";
+import AdminMarketplace from "./components/admin/AdminMarketplace";
+import AdminGamificacao from "./components/admin/AdminGamificacao";
+import AdminCoins from "./components/admin/AdminCoins";
+import AdminJogos from "./components/admin/AdminJogos";
+import AdminChat from "./components/admin/AdminChat";
+import AdminNotificacoes from "./components/admin/AdminNotificacoes";
+import AdminAssinaturas from "./components/admin/AdminAssinaturas";
+import AdminFeedback from "./components/admin/AdminFeedback";
+import AdminDenuncias from "./components/admin/AdminDenuncias";
+import AdminLogs from "./components/admin/AdminLogs";
+import AdminConfig from "./components/admin/AdminConfig";
 
 const queryClient = new QueryClient();
 
@@ -34,23 +63,68 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
+              {/* Rotas Públicas */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/comunidade" element={<ProtectedRoute><Comunidade /></ProtectedRoute>} />
-              <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/perfil/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/mensagens" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-              <Route path="/mensagens/:conversationId" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-              <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
-              <Route path="/marketplace/novo" element={<ProtectedRoute><NewListing /></ProtectedRoute>} />
-              <Route path="/nucleos" element={<ProtectedRoute><Nucleos /></ProtectedRoute>} />
-              <Route path="/nucleo/:slug" element={<ProtectedRoute><NucleoDetail /></ProtectedRoute>} />
-              <Route path="/notificacoes" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-              <Route path="/chat" element={<ProtectedRoute><GlobalChat /></ProtectedRoute>} />
-              <Route path="/hashtag/:tag" element={<ProtectedRoute><HashtagExplore /></ProtectedRoute>} />
               <Route path="/assinatura" element={<Subscription />} />
               <Route path="/instalar" element={<Install />} />
-              <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+              <Route path="/regras" element={<Regras />} />
+              <Route path="/sobre" element={<Sobre />} />
+
+              {/* Rotas Logadas com Novo Layout Reddit */}
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <AppLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/comunidade" element={<Feed />} />
+                <Route path="/popular" element={<Feed />} />
+                <Route path="/feed" element={<Navigate to="/comunidade" replace />} />
+                <Route path="/perfil" element={<Profile />} />
+                <Route path="/perfil/:userId" element={<Profile />} />
+                <Route path="/configuracoes" element={<Configuracoes />} />
+                <Route path="/busca" element={<Busca />} />
+                <Route path="/mensagens" element={<Messages />} />
+                <Route path="/mensagens/:conversationId" element={<Messages />} />
+                <Route path="/marketplace" element={<Marketplace />} />
+                <Route path="/marketplace/novo" element={<NewListing />} />
+                <Route path="/nucleos" element={<Nucleos />} />
+                <Route path="/nucleo/:slug" element={<NucleoDetail />} />
+                <Route path="/notificacoes" element={<Notifications />} />
+                <Route path="/noticias" element={<Noticias />} />
+                <Route path="/chat" element={<GlobalChat />} />
+                <Route path="/hashtag/:tag" element={<HashtagExplore />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/academy" element={<NexusAcademy />} />
+                <Route path="/games" element={<NexusGames />} />
+                <Route path="/ao-vivo" element={<AoVivo />} />
+                <Route path="/premium" element={<PremiumArea />} />
+              </Route>
+
+              {/* Rotas Administrativas */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="membros" element={<AdminMembros />} />
+                <Route path="conteudo" element={<AdminConteudo />} />
+                <Route path="chat" element={<AdminChat />} />
+                <Route path="categorias" element={<AdminCategorias />} />
+                <Route path="nucleos" element={<AdminNucleos />} />
+                <Route path="marketplace" element={<AdminMarketplace />} />
+                <Route path="gamificacao" element={<AdminGamificacao />} />
+                <Route path="coins" element={<AdminCoins />} />
+                <Route path="jogos" element={<AdminJogos />} />
+                <Route path="notificacoes" element={<AdminNotificacoes />} />
+                <Route path="assinaturas" element={<AdminAssinaturas />} />
+                <Route path="feedback" element={<AdminFeedback />} />
+                <Route path="analytics" element={<Analytics />} />
+                <Route path="denuncias" element={<AdminDenuncias />} />
+                <Route path="logs" element={<AdminLogs />} />
+                <Route path="configuracoes" element={<AdminConfig />} />
+              </Route>
+
+              {/* Erro 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

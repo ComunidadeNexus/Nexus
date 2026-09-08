@@ -35,7 +35,7 @@ const CoinPackageCard = ({
         "relative glass-card rounded-xl p-5 border transition-all duration-200 hover:scale-[1.02]",
         isPopular
           ? "border-primary/50 bg-primary/5 ring-2 ring-primary/20"
-          : "border-white/10 hover:border-white/20"
+          : "border-white/10 hover:border-white/20",
       )}
     >
       {isPopular && (
@@ -64,24 +64,17 @@ const CoinPackageCard = ({
         )}
 
         {/* Description */}
-        {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
 
         {/* Price per coin */}
-        <p className="text-xs text-muted-foreground">
-          R$ {pricePerCoin} por coin
-        </p>
+        <p className="text-xs text-muted-foreground">R$ {pricePerCoin} por coin</p>
 
         {/* Price & Purchase Button */}
         <div className="pt-2">
           <Button
             onClick={onPurchase}
             disabled={isLoading}
-            className={cn(
-              "w-full",
-              isPopular ? "bg-primary hover:bg-primary/90" : ""
-            )}
+            className={cn("w-full", isPopular ? "bg-primary hover:bg-primary/90" : "")}
             variant={isPopular ? "default" : "outline"}
           >
             {currency === "BRL" ? "R$" : "$"} {price.toFixed(2)}

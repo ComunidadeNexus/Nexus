@@ -111,7 +111,12 @@ export const useWallet = () => {
     }
   }, []);
 
-  const spendCoins = async (amount: number, description: string, referenceId?: string, referenceType?: string) => {
+  const spendCoins = async (
+    amount: number,
+    description: string,
+    referenceId?: string,
+    referenceType?: string,
+  ) => {
     if (!user) return { success: false, error: "Não autenticado" };
     if (!wallet || wallet.balance < amount) return { success: false, error: "Saldo insuficiente" };
 
@@ -142,7 +147,7 @@ export const useWallet = () => {
 
   const addCoins = async (amount: number, type: "reward", description: string) => {
     if (!user) return { success: false, error: "Não autenticado" };
-    
+
     // Only 'reward' type is allowed from client - 'purchase' requires server-side payment validation
     if (type !== "reward") {
       return { success: false, error: "Tipo de transação inválido" };

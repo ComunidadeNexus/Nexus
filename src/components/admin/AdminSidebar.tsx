@@ -2,10 +2,29 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  LayoutDashboard, Users, FileText, Tag, Hexagon,
-  ShoppingBag, Trophy, Coins, Bell, CreditCard,
-  BarChart3, Shield, LogOut, ChevronLeft, ChevronRight,
-  Menu, X
+  LayoutDashboard,
+  Users,
+  FileText,
+  Tag,
+  Hexagon,
+  ShoppingBag,
+  Trophy,
+  Coins,
+  Bell,
+  CreditCard,
+  BarChart3,
+  Shield,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  X,
+  Lightbulb,
+  MessageSquare,
+  ShieldAlert,
+  Activity,
+  Settings,
+  Gamepad2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -16,14 +35,20 @@ const navItems = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { path: "/admin/membros", label: "Membros", icon: Users },
   { path: "/admin/conteudo", label: "Moderação", icon: FileText },
+  { path: "/admin/chat", label: "Chat Global", icon: MessageSquare },
   { path: "/admin/categorias", label: "Categorias", icon: Tag },
   { path: "/admin/nucleos", label: "Núcleos", icon: Hexagon },
   { path: "/admin/marketplace", label: "Marketplace", icon: ShoppingBag },
+  { path: "/admin/denuncias", label: "Denúncias", icon: ShieldAlert },
   { path: "/admin/gamificacao", label: "Gamificação", icon: Trophy },
+  { path: "/admin/jogos", label: "Jogos & Downloads", icon: Gamepad2 },
   { path: "/admin/coins", label: "Nexus Coins", icon: Coins },
   { path: "/admin/notificacoes", label: "Notificações", icon: Bell },
   { path: "/admin/assinaturas", label: "Assinaturas", icon: CreditCard },
+  { path: "/admin/feedback", label: "Feedback & Dicas", icon: Lightbulb },
   { path: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { path: "/admin/logs", label: "Logs de Auditoria", icon: Activity },
+  { path: "/admin/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 interface AdminSidebarProps {
@@ -33,13 +58,18 @@ interface AdminSidebarProps {
   setMobileOpen: (v: boolean) => void;
 }
 
-const AdminSidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: AdminSidebarProps) => {
+const AdminSidebar = ({
+  collapsed,
+  setCollapsed,
+  mobileOpen,
+  setMobileOpen,
+}: AdminSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
 
-  const isActive = (item: typeof navItems[0]) => {
+  const isActive = (item: (typeof navItems)[0]) => {
     if (item.exact) return location.pathname === item.path;
     return location.pathname.startsWith(item.path);
   };
@@ -52,10 +82,12 @@ const AdminSidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: Ad
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className={cn(
-        "flex items-center justify-between p-4 border-b border-white/10",
-        collapsed && !isMobile && "justify-center"
-      )}>
+      <div
+        className={cn(
+          "flex items-center justify-between p-4 border-b border-white/10",
+          collapsed && !isMobile && "justify-center",
+        )}
+      >
         {(!collapsed || isMobile) && (
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center">
@@ -73,7 +105,12 @@ const AdminSidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: Ad
           </div>
         )}
         {isMobile && (
-          <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} className="h-8 w-8">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileOpen(false)}
+            className="h-8 w-8"
+          >
             <X className="w-4 h-4" />
           </Button>
         )}
@@ -104,10 +141,15 @@ const AdminSidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: Ad
                 active
                   ? "bg-gradient-to-r from-violet-500/20 to-purple-600/10 text-violet-400 border border-violet-500/30"
                   : "text-muted-foreground hover:text-foreground hover:bg-white/5",
-                collapsed && !isMobile && "justify-center px-2"
+                collapsed && !isMobile && "justify-center px-2",
               )}
             >
-              <Icon className={cn("w-5 h-5 shrink-0", active ? "text-violet-400" : "text-muted-foreground group-hover:text-foreground")} />
+              <Icon
+                className={cn(
+                  "w-5 h-5 shrink-0",
+                  active ? "text-violet-400" : "text-muted-foreground group-hover:text-foreground",
+                )}
+              />
               {(!collapsed || isMobile) && <span>{item.label}</span>}
               {(!collapsed || isMobile) && active && (
                 <div className="ml-auto w-1.5 h-1.5 rounded-full bg-violet-400" />
@@ -135,10 +177,13 @@ const AdminSidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: Ad
           </div>
         )}
         <button
-          onClick={() => { signOut(); navigate("/"); }}
+          onClick={() => {
+            signOut();
+            navigate("/");
+          }}
           className={cn(
             "w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all",
-            collapsed && !isMobile && "justify-center"
+            collapsed && !isMobile && "justify-center",
           )}
         >
           <LogOut className="w-4 h-4 shrink-0" />
@@ -158,10 +203,12 @@ const AdminSidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: Ad
             onClick={() => setMobileOpen(false)}
           />
         )}
-        <aside className={cn(
-          "fixed left-0 top-0 h-full w-64 z-50 transition-transform duration-300 bg-background/95 backdrop-blur border-r border-white/10",
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        )}>
+        <aside
+          className={cn(
+            "fixed left-0 top-0 h-full w-64 z-50 transition-transform duration-300 bg-background/95 backdrop-blur border-r border-white/10",
+            mobileOpen ? "translate-x-0" : "-translate-x-full",
+          )}
+        >
           <SidebarContent />
         </aside>
       </>
@@ -169,10 +216,12 @@ const AdminSidebar = ({ collapsed, setCollapsed, mobileOpen, setMobileOpen }: Ad
   }
 
   return (
-    <aside className={cn(
-      "fixed left-0 top-0 h-full z-40 transition-all duration-300 bg-background/95 backdrop-blur border-r border-white/10",
-      collapsed ? "w-16" : "w-64"
-    )}>
+    <aside
+      className={cn(
+        "fixed left-0 top-0 h-full z-40 transition-all duration-300 bg-background/95 backdrop-blur border-r border-white/10",
+        collapsed ? "w-16" : "w-64",
+      )}
+    >
       <SidebarContent />
     </aside>
   );

@@ -1,0 +1,12 @@
+.env
+.env.*
+.agents
+.vercel
+full_schema.sql
+script.cjs
+seed_categories.mjs
+skills-lock.json
+test-api.js
+test-db.js
+test-twitch.js
+test.cjs

@@ -98,20 +98,17 @@ const TransactionHistory = ({ transactions }: TransactionHistoryProps) => {
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-sm">
-                  {getTransactionLabel(tx.type)}
-                </span>
+                <span className="font-medium text-sm">{getTransactionLabel(tx.type)}</span>
               </div>
               {tx.description && (
-                <p className="text-xs text-muted-foreground truncate">
-                  {tx.description}
-                </p>
+                <p className="text-xs text-muted-foreground truncate">{tx.description}</p>
               )}
             </div>
 
             <div className="text-right">
               <div className={cn("font-bold", color)}>
-                {isPositive ? "+" : "-"}{tx.amount.toLocaleString()}
+                {isPositive ? "+" : "-"}
+                {tx.amount.toLocaleString()}
               </div>
               <div className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(tx.created_at), {

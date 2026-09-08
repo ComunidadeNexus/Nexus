@@ -18,17 +18,17 @@ const NucleoCard = ({ nucleo, isMember, onJoin, onLeave }: NucleoCardProps) => {
   const navigate = useNavigate();
 
   return (
-    <Card 
+    <Card
       className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group"
       onClick={() => navigate(`/nucleo/${nucleo.slug}`)}
     >
       {/* Banner */}
-      <div 
+      <div
         className="h-20 relative"
-        style={{ 
-          background: nucleo.banner_url 
-            ? `url(${nucleo.banner_url}) center/cover` 
-            : `linear-gradient(135deg, ${nucleo.color}40, ${nucleo.color}80)`
+        style={{
+          background: nucleo.banner_url
+            ? `url(${nucleo.banner_url}) center/cover`
+            : `linear-gradient(135deg, ${nucleo.color}40, ${nucleo.color}80)`,
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
@@ -38,7 +38,7 @@ const NucleoCard = ({ nucleo, isMember, onJoin, onLeave }: NucleoCardProps) => {
         <div className="flex items-start gap-3">
           <Avatar className="h-14 w-14 border-4 border-background shadow-lg">
             <AvatarImage src={nucleo.avatar_url || undefined} />
-            <AvatarFallback 
+            <AvatarFallback
               style={{ backgroundColor: nucleo.color }}
               className="text-white font-bold text-lg"
             >
@@ -48,15 +48,9 @@ const NucleoCard = ({ nucleo, isMember, onJoin, onLeave }: NucleoCardProps) => {
 
           <div className="flex-1 min-w-0 pt-4">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-foreground truncate">
-                {nucleo.name}
-              </h3>
-              {nucleo.is_verified && (
-                <CheckCircle className="w-4 h-4 text-primary shrink-0" />
-              )}
-              {nucleo.is_private && (
-                <Lock className="w-3 h-3 text-muted-foreground shrink-0" />
-              )}
+              <h3 className="font-semibold text-foreground truncate">{nucleo.name}</h3>
+              {nucleo.is_verified && <CheckCircle className="w-4 h-4 text-primary shrink-0" />}
+              {nucleo.is_private && <Lock className="w-3 h-3 text-muted-foreground shrink-0" />}
             </div>
 
             <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
@@ -74,17 +68,17 @@ const NucleoCard = ({ nucleo, isMember, onJoin, onLeave }: NucleoCardProps) => {
 
         <div className="mt-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
           {isMember ? (
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               className="flex-1"
               onClick={() => onLeave(nucleo.id)}
             >
               Sair
             </Button>
           ) : (
-            <Button 
-              size="sm" 
+            <Button
+              size="sm"
               className="flex-1"
               onClick={() => onJoin(nucleo.id)}
               style={{ backgroundColor: nucleo.color }}
@@ -92,11 +86,7 @@ const NucleoCard = ({ nucleo, isMember, onJoin, onLeave }: NucleoCardProps) => {
               Entrar
             </Button>
           )}
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigate(`/nucleo/${nucleo.slug}`)}
-          >
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/nucleo/${nucleo.slug}`)}>
             Ver
           </Button>
         </div>

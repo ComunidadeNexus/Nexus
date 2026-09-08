@@ -31,7 +31,7 @@ const WalletModal = ({ trigger }: WalletModalProps) => {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get("payment");
-    
+
     if (paymentStatus === "success") {
       toast({
         title: "Pagamento realizado! 🎉",
@@ -58,7 +58,7 @@ const WalletModal = ({ trigger }: WalletModalProps) => {
     name: string;
   }) => {
     setPurchasingId(packageData.id);
-    
+
     try {
       const { data, error } = await supabase.functions.invoke("create-coin-checkout", {
         body: { packageId: packageData.id },
@@ -114,11 +114,7 @@ const WalletModal = ({ trigger }: WalletModalProps) => {
             {/* Balance Card */}
             <div className="glass-card rounded-xl p-6 text-center">
               <p className="text-sm text-muted-foreground mb-2">Saldo Atual</p>
-              <CoinBalance
-                balance={wallet?.balance ?? 0}
-                size="lg"
-                className="justify-center"
-              />
+              <CoinBalance balance={wallet?.balance ?? 0} size="lg" className="justify-center" />
               <div className="flex justify-center gap-6 mt-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Total ganho: </span>

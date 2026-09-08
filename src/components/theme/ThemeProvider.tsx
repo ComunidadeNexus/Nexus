@@ -38,9 +38,7 @@ export function ThemeProvider({
     let effectiveTheme: "dark" | "light";
 
     if (theme === "system") {
-      effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
+      effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     } else {
       effectiveTheme = theme;
     }

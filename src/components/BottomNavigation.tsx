@@ -4,12 +4,7 @@ import { Home, Search, Camera, Plus, Bell, MessageCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import CreateStoryModal from "@/components/stories/CreateStoryModal";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -85,8 +80,8 @@ const BottomNavigation = () => {
                   isCenter
                     ? "relative"
                     : isActive
-                    ? "text-foreground"
-                    : "text-muted-foreground hover:text-foreground active:scale-95"
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground active:scale-95",
                 )}
               >
                 {isCenter ? (
@@ -97,7 +92,7 @@ const BottomNavigation = () => {
                   <item.icon
                     className={cn(
                       "w-6 h-6 transition-transform duration-200",
-                      isActive && "fill-current"
+                      isActive && "fill-current",
                     )}
                   />
                 )}
@@ -126,9 +121,7 @@ const BottomNavigation = () => {
                 Cancelar
               </Button>
               <Button onClick={handleCreatePost} disabled={isSubmitting || !postContent.trim()}>
-                {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : null}
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Publicar
               </Button>
             </div>

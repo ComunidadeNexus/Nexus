@@ -50,6 +50,33 @@ export interface AdminStats {
   adminUsers: number;
 }
 
+export interface AdminReport {
+  id: string;
+  reporter_id: string;
+  reported_user_id: string | null;
+  reported_post_id: string | null;
+  reported_comment_id: string | null;
+  reason: string;
+  status: string;
+  created_at: string;
+}
+
+export interface AdminAuditLog {
+  id: string;
+  admin_id: string;
+  action: string;
+  target_id: string | null;
+  details: any;
+  created_at: string;
+}
+
+export interface SystemSetting {
+  id: string;
+  key: string;
+  value: any;
+  updated_at: string;
+}
+
 export const useAdminData = () => {
   const { toast } = useToast();
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -58,6 +85,9 @@ export const useAdminData = () => {
   const [loadingStats, setLoadingStats] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingPosts, setLoadingPosts] = useState(false);
+  const [reports, setReports] = useState<AdminReport[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
+  const [settings, setSettings] = useState<SystemSetting[]>([]);
 
   // ─── STATS ──────────────────────────────────────────────────────────────
   const fetchStats = useCallback(async () => {
@@ -77,10 +107,16 @@ export const useAdminData = () => {
         supabase.from("posts").select("*", { count: "exact", head: true }),
         supabase.from("nucleos").select("*", { count: "exact", head: true }),
         supabase.from("marketplace_listings").select("*", { count: "exact", head: true }),
-        supabase.from("subscriptions").select("*", { count: "exact", head: true }).eq("status", "active"),
+        supabase
+          .from("subscriptions")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "active"),
         supabase.from("coin_transactions").select("*", { count: "exact", head: true }),
         supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_banned", true),
-        supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_verified", true),
+        supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("is_verified", true),
       ]);
 
       const { count: premiumUsers } = await supabase
@@ -132,14 +168,16 @@ export const useAdminData = () => {
       if (error) throw error;
 
       // Fetch roles for all users
-      const userIds = profilesData?.map(p => p.user_id) || [];
+      const userIds = profilesData?.map((p) => p.user_id) || [];
       const { data: rolesData } = await supabase
         .from("user_roles")
         .select("user_id, role")
         .in("user_id", userIds);
 
       const rolesMap: Record<string, string> = {};
-      rolesData?.forEach(r => { rolesMap[r.user_id] = r.role; });
+      rolesData?.forEach((r) => {
+        rolesMap[r.user_id] = r.role;
+      });
 
       // Fetch wallets
       const { data: walletsData } = await supabase
@@ -148,16 +186,18 @@ export const useAdminData = () => {
         .in("user_id", userIds);
 
       const walletsMap: Record<string, number> = {};
-      walletsData?.forEach(w => { walletsMap[w.user_id] = w.balance; });
+      walletsData?.forEach((w) => {
+        walletsMap[w.user_id] = w.balance;
+      });
 
-      let mapped = (profilesData || []).map(p => ({
+      let mapped = (profilesData || []).map((p) => ({
         ...p,
         role: rolesMap[p.user_id] || "user",
         wallet_balance: walletsMap[p.user_id] || 0,
       }));
 
       if (filterRole) {
-        mapped = mapped.filter(u => u.role === filterRole);
+        mapped = mapped.filter((u) => u.role === filterRole);
       }
 
       setUsers(mapped);
@@ -200,10 +240,14 @@ export const useAdminData = () => {
         .from("user_roles")
         .select("id")
         .eq("user_id", userId)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       if (existing) {
-        await supabase.from("user_roles").update({ role: role as any }).eq("user_id", userId);
+        await supabase
+          .from("user_roles")
+          .update({ role: role as any })
+          .eq("user_id", userId);
       } else {
         await supabase.from("user_roles").insert({ user_id: userId, role: role as any });
       }
@@ -217,6 +261,7 @@ export const useAdminData = () => {
   const toggleBanUser = async (userId: string, isBanned: boolean) => {
     try {
       await supabase.from("profiles").update({ is_banned: !isBanned }).eq("user_id", userId);
+      await logAdminAction(!isBanned ? "BAN_USER" : "UNBAN_USER", userId);
       toast({ title: !isBanned ? "Usuário banido" : "Usuário desbanido" });
       fetchUsers();
       fetchStats();
@@ -244,10 +289,13 @@ export const useAdminData = () => {
         .single();
 
       if (profile) {
-        await supabase.from("profiles").update({
-          xp_points: (profile.xp_points || 0) + amount,
-          karma: (profile.karma || 0) + Math.floor(amount / 10),
-        }).eq("user_id", userId);
+        await supabase
+          .from("profiles")
+          .update({
+            xp_points: (profile.xp_points || 0) + amount,
+            karma: (profile.karma || 0) + Math.floor(amount / 10),
+          })
+          .eq("user_id", userId);
         toast({ title: `+${amount} XP concedidos!` });
         fetchUsers();
       }
@@ -280,6 +328,7 @@ export const useAdminData = () => {
   const deletePost = async (postId: string) => {
     try {
       await supabase.from("posts").delete().eq("id", postId);
+      await logAdminAction("DELETE_POST", postId);
       toast({ title: "Post deletado permanentemente" });
       fetchPosts();
       fetchStats();
@@ -310,10 +359,13 @@ export const useAdminData = () => {
 
       if (targetRole === "all") {
         const { data } = await supabase.from("profiles").select("user_id");
-        userIds = data?.map(p => p.user_id) || [];
+        userIds = data?.map((p) => p.user_id) || [];
       } else {
-        const { data } = await supabase.from("user_roles").select("user_id").eq("role", targetRole as any);
-        userIds = data?.map(r => r.user_id) || [];
+        const { data } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", targetRole as any);
+        userIds = data?.map((r) => r.user_id) || [];
       }
 
       for (const uid of userIds) {
@@ -331,12 +383,114 @@ export const useAdminData = () => {
     }
   };
 
+  const fetchReports = async () => {
+    try {
+      const { data } = await supabase
+        .from("reports")
+        .select("*")
+        .order("created_at", { ascending: false });
+      setReports(data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const updateReportStatus = async (reportId: string, status: string) => {
+    try {
+      await supabase.from("reports").update({ status }).eq("id", reportId);
+      toast({ title: "Status da denúncia atualizado" });
+      fetchReports();
+    } catch (err) {
+      toast({ title: "Erro ao atualizar", variant: "destructive" });
+    }
+  };
+
+  const fetchAuditLogs = async () => {
+    try {
+      const { data } = await supabase
+        .from("audit_logs")
+        .select("*")
+        .order("created_at", { ascending: false });
+      setAuditLogs(data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const logAdminAction = async (action: string, targetId?: string, details?: any) => {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session?.user.id) return;
+      await supabase.from("audit_logs").insert({
+        admin_id: session.session.user.id,
+        action,
+        target_id: targetId,
+        details,
+      });
+      fetchAuditLogs();
+    } catch (err) {
+      console.error("Erro ao gerar log de auditoria", err);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const { data } = await supabase.from("system_settings").select("*");
+      setSettings(data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const updateSetting = async (key: string, value: any) => {
+    try {
+      const { data: existing } = await supabase
+        .from("system_settings")
+        .select("id")
+        .eq("key", key)
+        .maybeSingle();
+      if (existing) {
+        await supabase
+          .from("system_settings")
+          .update({ value, updated_at: new Date().toISOString() })
+          .eq("key", key);
+      } else {
+        await supabase.from("system_settings").insert({ key, value });
+      }
+      toast({ title: "Configuração atualizada" });
+      fetchSettings();
+    } catch (err) {
+      toast({ title: "Erro ao atualizar configuração", variant: "destructive" });
+    }
+  };
+
   return {
-    stats, loadingStats, fetchStats,
-    users, loadingUsers, fetchUsers,
-    posts, loadingPosts, fetchPosts,
-    updateUserRole, toggleBanUser, toggleVerifyUser, grantXP,
-    toggleHidePost, togglePinPost, deletePost,
-    creditCoins, sendMassNotification,
+    stats,
+    loadingStats,
+    fetchStats,
+    users,
+    loadingUsers,
+    fetchUsers,
+    posts,
+    loadingPosts,
+    fetchPosts,
+    updateUserRole,
+    toggleBanUser,
+    toggleVerifyUser,
+    grantXP,
+    toggleHidePost,
+    togglePinPost,
+    deletePost,
+    creditCoins,
+    sendMassNotification,
+    reports,
+    fetchReports,
+    updateReportStatus,
+    auditLogs,
+    fetchAuditLogs,
+    logAdminAction,
+    settings,
+    fetchSettings,
+    updateSetting,
   };
 };

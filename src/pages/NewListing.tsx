@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import Navbar from "@/components/Navbar";
-import BottomNavigation from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,21 +41,15 @@ const listingSchema = z.object({
 type ListingFormData = z.infer<typeof listingSchema>;
 
 const categories = [
-  { value: "eletronicos", label: "Eletrônicos" },
-  { value: "veiculos", label: "Veículos" },
-  { value: "imoveis", label: "Imóveis" },
-  { value: "moda", label: "Moda e Acessórios" },
-  { value: "casa", label: "Casa e Jardim" },
-  { value: "esportes", label: "Esportes e Lazer" },
-  { value: "servicos", label: "Serviços" },
-  { value: "outros", label: "Outros" },
+  { value: "produto", label: "Produto Físico" },
+  { value: "servico", label: "Serviço" },
+  { value: "digital", label: "Produto Digital" },
 ];
 
 const conditions = [
   { value: "novo", label: "Novo" },
-  { value: "seminovo", label: "Seminovo" },
   { value: "usado", label: "Usado" },
-  { value: "para_pecas", label: "Para Peças" },
+  { value: "recondicionado", label: "Recondicionado" },
 ];
 
 const NewListing = () => {
@@ -101,9 +93,7 @@ const NewListing = () => {
 
         if (uploadError) throw uploadError;
 
-        const { data: urlData } = supabase.storage
-          .from("marketplace")
-          .getPublicUrl(fileName);
+        const { data: urlData } = supabase.storage.from("marketplace").getPublicUrl(fileName);
 
         setImages((prev) => [...prev, urlData.publicUrl]);
       }
@@ -133,18 +123,20 @@ const NewListing = () => {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from("marketplace_listings").insert([{
-        title: data.title,
-        description: data.description,
-        price: data.price,
-        category: data.category,
-        condition: data.condition || null,
-        location: data.location || null,
-        is_negotiable: data.is_negotiable,
-        user_id: user.id,
-        images: images,
-        status: "active",
-      }]);
+      const { error } = await supabase.from("marketplace_listings").insert([
+        {
+          title: data.title,
+          description: data.description,
+          price: data.price,
+          category: data.category,
+          condition: data.condition || null,
+          location: data.location || null,
+          is_negotiable: data.is_negotiable,
+          user_id: user.id,
+          images: images,
+          status: "active",
+        },
+      ]);
 
       if (error) throw error;
 
@@ -160,8 +152,6 @@ const NewListing = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Navbar />
-
       <main className="container mx-auto px-4 pt-20 pb-12 max-w-2xl">
         <button
           onClick={() => navigate(-1)}
@@ -176,15 +166,10 @@ const NewListing = () => {
 
           {/* Image Upload */}
           <div className="mb-6">
-            <label className="block text-sm font-medium mb-2">
-              Fotos do produto (máx. 5)
-            </label>
+            <label className="block text-sm font-medium mb-2">Fotos do produto (máx. 5)</label>
             <div className="flex flex-wrap gap-3">
               {images.map((url, index) => (
-                <div
-                  key={index}
-                  className="relative w-24 h-24 rounded-lg overflow-hidden group"
-                >
+                <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden group">
                   <img
                     src={url}
                     alt={`Imagem ${index + 1}`}
@@ -206,9 +191,7 @@ const NewListing = () => {
                   ) : (
                     <>
                       <ImagePlus className="w-6 h-6 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground mt-1">
-                        Adicionar
-                      </span>
+                      <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
                     </>
                   )}
                   <input
@@ -347,15 +330,10 @@ const NewListing = () => {
                   <FormItem className="flex items-center justify-between rounded-lg border border-border p-4">
                     <div className="space-y-0.5">
                       <FormLabel className="text-base">Aceita negociação</FormLabel>
-                      <FormDescription>
-                        Indique se o preço é negociável
-                      </FormDescription>
+                      <FormDescription>Indique se o preço é negociável</FormDescription>
                     </div>
                     <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
                   </FormItem>
                 )}
@@ -370,15 +348,8 @@ const NewListing = () => {
                 >
                   Cancelar
                 </Button>
-                <Button
-                  type="submit"
-                  variant="gradient"
-                  className="flex-1"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : null}
+                <Button type="submit" variant="gradient" className="flex-1" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   Publicar Anúncio
                 </Button>
               </div>
@@ -386,8 +357,6 @@ const NewListing = () => {
           </Form>
         </div>
       </main>
-
-      <BottomNavigation />
     </div>
   );
 };

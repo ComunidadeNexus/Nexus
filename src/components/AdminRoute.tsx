@@ -39,8 +39,8 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
           </div>
           <h1 className="text-2xl font-bold text-foreground">Acesso Negado</h1>
           <p className="text-muted-foreground">
-            Você não tem permissão para acessar o painel administrativo. 
-            Apenas usuários com role <span className="text-primary font-mono">admin</span> podem entrar.
+            Você não tem permissão para acessar o painel administrativo. Apenas usuários com role{" "}
+            <span className="text-primary font-mono">admin</span> podem entrar.
           </p>
           <button
             onClick={() => navigate("/")}

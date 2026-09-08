@@ -36,17 +36,21 @@ const AdminStatCard = ({
               {trend === "up" && <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />}
               {trend === "down" && <ArrowDownRight className="w-3.5 h-3.5 text-red-500" />}
               {trend === "neutral" && <Minus className="w-3.5 h-3.5 text-muted-foreground" />}
-              <span className={cn(
-                trend === "up" && "text-emerald-500",
-                trend === "down" && "text-red-500",
-                trend === "neutral" && "text-muted-foreground",
-              )}>
+              <span
+                className={cn(
+                  trend === "up" && "text-emerald-500",
+                  trend === "down" && "text-red-500",
+                  trend === "neutral" && "text-muted-foreground",
+                )}
+              >
                 {trendLabel}
               </span>
             </div>
           )}
         </div>
-        <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", bgClass)}>
+        <div
+          className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", bgClass)}
+        >
           <Icon className={cn("w-6 h-6", colorClass)} />
         </div>
       </div>

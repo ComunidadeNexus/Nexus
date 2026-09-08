@@ -23,9 +23,7 @@ const NucleoMembers = ({ members, maxDisplay = 10 }: NucleoMembersProps) => {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">
-          Membros ({members.length})
-        </CardTitle>
+        <CardTitle className="text-lg">Membros ({members.length})</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
@@ -41,23 +39,15 @@ const NucleoMembers = ({ members, maxDisplay = 10 }: NucleoMembersProps) => {
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={profile?.avatar_url || undefined} />
-                  <AvatarFallback>
-                    {profile?.name?.charAt(0)?.toUpperCase() || "U"}
-                  </AvatarFallback>
+                  <AvatarFallback>{profile?.name?.charAt(0)?.toUpperCase() || "U"}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">
-                    {profile?.name || "Usuário"}
-                  </p>
+                  <p className="font-medium text-sm truncate">{profile?.name || "Usuário"}</p>
                   {profile?.username && (
-                    <p className="text-xs text-muted-foreground">
-                      @{profile.username}
-                    </p>
+                    <p className="text-xs text-muted-foreground">@{profile.username}</p>
                   )}
                 </div>
-                <RoleIcon
-                  className={`w-4 h-4 ${roleConfig[member.role].color}`}
-                />
+                <RoleIcon className={`w-4 h-4 ${roleConfig[member.role].color}`} />
               </div>
             );
           })}

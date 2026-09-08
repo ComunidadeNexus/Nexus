@@ -1,17 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import Navbar from "@/components/Navbar";
-import BottomNavigation from "@/components/BottomNavigation";
 import { useGlobalChat } from "@/hooks/useGlobalChat";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Loader2, ImagePlus, X } from "lucide-react";
+import { Send, Loader2, ImagePlus, X, Smile, SmilePlus } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import EmojiPicker from "emoji-picker-react";
+import GifPicker from "@/components/feed/GifPicker";
+import { renderMessageContent } from "@/utils/textParser";
 
 const GlobalChat = () => {
   const { user } = useAuth();
@@ -20,6 +21,8 @@ const GlobalChat = () => {
   const [isSending, setIsSending] = useState(false);
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -45,6 +48,21 @@ const GlobalChat = () => {
     }
   };
 
+  const handleEmojiSelect = (emojiData: any) => {
+    setNewMessage((prev) => prev + emojiData.emoji);
+  };
+
+  const handleGifSelect = (gifUrl: string) => {
+    const messageWithGif = newMessage ? `${newMessage} [GIF:${gifUrl}]` : `[GIF:${gifUrl}]`;
+    sendMessage(messageWithGif, mediaUrl || undefined, mediaUrl ? "image" : undefined)
+      .then(() => {
+        setNewMessage("");
+        setMediaUrl(null);
+        setShowGifPicker(false);
+      })
+      .catch(() => toast.error("Erro ao enviar mensagem"));
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -60,9 +78,7 @@ const GlobalChat = () => {
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from("chat-media")
-        .getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(fileName);
 
       setMediaUrl(urlData.publicUrl);
     } catch (error) {
@@ -79,8 +95,6 @@ const GlobalChat = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0 flex flex-col">
-      <Navbar />
-
       <main className="flex-1 container mx-auto px-4 pt-20 pb-4 max-w-3xl flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -91,9 +105,7 @@ const GlobalChat = () => {
           </div>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-sm text-muted-foreground">
-              {messages.length} mensagens
-            </span>
+            <span className="text-sm text-muted-foreground">{messages.length} mensagens</span>
           </div>
         </div>
 
@@ -113,37 +125,23 @@ const GlobalChat = () => {
               messages.map((message) => {
                 const profile = getProfile(message.user_id);
                 const isOwn = message.user_id === user?.id;
-                const initials = profile?.name
-                  ?.split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2) || "U";
+                const initials =
+                  profile?.name
+                    ?.split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2) || "U";
 
                 return (
-                  <div
-                    key={message.id}
-                    className={cn(
-                      "flex gap-3",
-                      isOwn && "flex-row-reverse"
-                    )}
-                  >
+                  <div key={message.id} className={cn("flex gap-3", isOwn && "flex-row-reverse")}>
                     <Avatar className="w-8 h-8 flex-shrink-0">
                       <AvatarImage src={profile?.avatar_url || undefined} />
-                      <AvatarFallback className="text-xs bg-primary/20">
-                        {initials}
-                      </AvatarFallback>
+                      <AvatarFallback className="text-xs bg-primary/20">{initials}</AvatarFallback>
                     </Avatar>
-                    <div
-                      className={cn(
-                        "max-w-[70%] space-y-1",
-                        isOwn && "items-end"
-                      )}
-                    >
+                    <div className={cn("max-w-[70%] space-y-1", isOwn && "items-end")}>
                       <div className={cn("flex items-center gap-2", isOwn && "flex-row-reverse")}>
-                        <span className="text-sm font-medium">
-                          {profile?.name || "Usuário"}
-                        </span>
+                        <span className="text-sm font-medium">{profile?.name || "Usuário"}</span>
                         <span className="text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(message.created_at), {
                             addSuffix: true,
@@ -156,7 +154,7 @@ const GlobalChat = () => {
                           "rounded-2xl px-4 py-2",
                           isOwn
                             ? "bg-primary text-primary-foreground rounded-br-sm"
-                            : "bg-muted rounded-bl-sm"
+                            : "bg-muted rounded-bl-sm",
                         )}
                       >
                         {message.media_url && (
@@ -167,7 +165,7 @@ const GlobalChat = () => {
                           />
                         )}
                         {message.content && (
-                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                          <div className="text-sm">{renderMessageContent(message.content)}</div>
                         )}
                       </div>
                     </div>
@@ -182,11 +180,7 @@ const GlobalChat = () => {
           {mediaUrl && (
             <div className="px-4 py-2 border-t border-border">
               <div className="relative inline-block">
-                <img
-                  src={mediaUrl}
-                  alt="Preview"
-                  className="h-20 rounded-lg object-cover"
-                />
+                <img src={mediaUrl} alt="Preview" className="h-20 rounded-lg object-cover" />
                 <button
                   onClick={() => setMediaUrl(null)}
                   className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center"
@@ -208,13 +202,7 @@ const GlobalChat = () => {
                   className="hidden"
                   disabled={isUploading}
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disabled={isUploading}
-                  asChild
-                >
+                <Button type="button" variant="ghost" size="icon" disabled={isUploading} asChild>
                   <span>
                     {isUploading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -224,18 +212,54 @@ const GlobalChat = () => {
                   </span>
                 </Button>
               </label>
-              <Input
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Digite sua mensagem..."
-                className="flex-1"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-              />
+
+              <div className="flex-1 relative flex items-center">
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Digite sua mensagem..."
+                  className="w-full pr-20"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                />
+                <div className="absolute right-2 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEmojiPicker(!showEmojiPicker);
+                      setShowGifPicker(false);
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-full transition-colors"
+                  >
+                    <Smile className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowGifPicker(!showGifPicker);
+                      setShowEmojiPicker(false);
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-full transition-colors"
+                  >
+                    <SmilePlus className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Popovers */}
+                {showGifPicker && (
+                  <GifPicker onSelect={handleGifSelect} onClose={() => setShowGifPicker(false)} />
+                )}
+                {showEmojiPicker && (
+                  <div className="absolute bottom-full mb-2 right-0 z-50">
+                    <EmojiPicker onEmojiClick={handleEmojiSelect} width={300} height={400} />
+                  </div>
+                )}
+              </div>
+
               <Button
                 onClick={handleSend}
                 disabled={isSending || (!newMessage.trim() && !mediaUrl)}
@@ -251,8 +275,6 @@ const GlobalChat = () => {
           </div>
         </div>
       </main>
-
-      <BottomNavigation />
     </div>
   );
 };

@@ -5,10 +5,21 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const TARGET_OPTIONS = [
-  { value: "all", label: "Todos os usuários", icon: Users, desc: "Envia para todos os membros cadastrados" },
+  {
+    value: "all",
+    label: "Todos os usuários",
+    icon: Users,
+    desc: "Envia para todos os membros cadastrados",
+  },
   { value: "premium", label: "Usuários Premium", icon: Crown, desc: "Somente assinantes premium" },
   { value: "moderator", label: "Moderadores", icon: Shield, desc: "Usuários com role moderador" },
   { value: "admin", label: "Administradores", icon: Shield, desc: "Somente admins" },
@@ -33,7 +44,7 @@ const AdminNotificacoes = () => {
     setMessage("");
   };
 
-  const selectedTarget = TARGET_OPTIONS.find(t => t.value === target);
+  const selectedTarget = TARGET_OPTIONS.find((t) => t.value === target);
 
   return (
     <div className="space-y-6">
@@ -53,7 +64,7 @@ const AdminNotificacoes = () => {
           <div className="space-y-3">
             <Label className="text-sm font-medium">Destinatários</Label>
             <div className="grid grid-cols-2 gap-3">
-              {TARGET_OPTIONS.map(opt => {
+              {TARGET_OPTIONS.map((opt) => {
                 const Icon = opt.icon;
                 const isSelected = target === opt.value;
                 return (
@@ -67,8 +78,12 @@ const AdminNotificacoes = () => {
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <Icon className={`w-4 h-4 ${isSelected ? "text-violet-400" : "text-muted-foreground"}`} />
-                      <span className={`text-sm font-medium ${isSelected ? "text-violet-400" : "text-foreground"}`}>
+                      <Icon
+                        className={`w-4 h-4 ${isSelected ? "text-violet-400" : "text-muted-foreground"}`}
+                      />
+                      <span
+                        className={`text-sm font-medium ${isSelected ? "text-violet-400" : "text-foreground"}`}
+                      >
                         {opt.label}
                       </span>
                     </div>
@@ -84,7 +99,7 @@ const AdminNotificacoes = () => {
             <Label>Título da Notificação *</Label>
             <Input
               value={title}
-              onChange={e => setTitle(e.target.value)}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Novidade importante na plataforma!"
               className="bg-white/5 border-white/10"
               maxLength={100}
@@ -97,7 +112,7 @@ const AdminNotificacoes = () => {
             <Label>Mensagem</Label>
             <Textarea
               value={message}
-              onChange={e => setMessage(e.target.value)}
+              onChange={(e) => setMessage(e.target.value)}
               placeholder="Detalhes da notificação (opcional)..."
               className="bg-white/5 border-white/10 resize-none h-28"
               maxLength={500}
@@ -137,7 +152,9 @@ const AdminNotificacoes = () => {
             ) : sent ? (
               <>✓ Notificação Enviada!</>
             ) : (
-              <><Send className="w-4 h-4 mr-2" /> Enviar Notificação</>
+              <>
+                <Send className="w-4 h-4 mr-2" /> Enviar Notificação
+              </>
             )}
           </Button>
         </div>
@@ -145,7 +162,8 @@ const AdminNotificacoes = () => {
         {/* Info Card */}
         <div className="mt-4 p-4 rounded-xl bg-amber-500/5 border border-amber-500/20">
           <p className="text-xs text-amber-400/80">
-            ⚠️ <strong>Atenção:</strong> Notificações em massa são enviadas imediatamente para todos os destinatários selecionados e não podem ser desfeitas. Use com moderação.
+            ⚠️ <strong>Atenção:</strong> Notificações em massa são enviadas imediatamente para todos
+            os destinatários selecionados e não podem ser desfeitas. Use com moderação.
           </p>
         </div>
       </div>

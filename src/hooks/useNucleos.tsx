@@ -93,11 +93,7 @@ export const useNucleos = () => {
 
   const getNucleo = async (slug: string): Promise<Nucleo | null> => {
     try {
-      const { data, error } = await supabase
-        .from("nucleos")
-        .select("*")
-        .eq("slug", slug)
-        .single();
+      const { data, error } = await supabase.from("nucleos").select("*").eq("slug", slug).single();
 
       if (error) throw error;
       return data;
@@ -121,17 +117,15 @@ export const useNucleos = () => {
       if (!membersData || membersData.length === 0) return [];
 
       // Fetch profiles separately
-      const userIds = membersData.map(m => m.user_id);
+      const userIds = membersData.map((m) => m.user_id);
       const { data: profilesData } = await supabase
         .from("profiles")
         .select("user_id, name, username, avatar_url")
         .in("user_id", userIds);
 
-      const profilesMap = new Map(
-        profilesData?.map(p => [p.user_id, p]) || []
-      );
+      const profilesMap = new Map(profilesData?.map((p) => [p.user_id, p]) || []);
 
-      return membersData.map(member => ({
+      return membersData.map((member) => ({
         ...member,
         profile: profilesMap.get(member.user_id) || undefined,
       })) as NucleoMember[];
@@ -163,6 +157,7 @@ export const useNucleos = () => {
     description?: string;
     color?: string;
     is_private?: boolean;
+    avatar_url?: string;
   }): Promise<Nucleo | null> => {
     if (!user) return null;
 
@@ -263,7 +258,7 @@ export const useNucleos = () => {
   const addRule = async (
     nucleoId: string,
     title: string,
-    description: string
+    description: string,
   ): Promise<boolean> => {
     try {
       const { error } = await supabase.from("nucleo_rules").insert({
@@ -283,6 +278,74 @@ export const useNucleos = () => {
     } catch (error: any) {
       toast({
         title: "Erro ao adicionar regra",
+        description: error.message || "Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const updateNucleo = async (
+    nucleoId: string,
+    data: {
+      name?: string;
+      description?: string;
+      avatar_url?: string;
+      is_private?: boolean;
+    },
+  ): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from("nucleos")
+        .update(data)
+        .eq("id", nucleoId)
+        .eq("owner_id", user.id); // Apenas o dono pode atualizar
+
+      if (error) throw error;
+
+      toast({
+        title: "Comunidade atualizada!",
+        description: "As alterações foram salvas com sucesso.",
+      });
+
+      fetchNucleos();
+      fetchMyNucleos();
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar",
+        description: error.message || "Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  const deleteNucleo = async (nucleoId: string): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      const { error } = await supabase
+        .from("nucleos")
+        .delete()
+        .eq("id", nucleoId)
+        .eq("owner_id", user.id); // Apenas o dono pode deletar
+
+      if (error) throw error;
+
+      toast({
+        title: "Comunidade excluída",
+        description: "A comunidade foi apagada permanentemente.",
+      });
+
+      fetchNucleos();
+      fetchMyNucleos();
+      return true;
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir",
         description: error.message || "Tente novamente mais tarde.",
         variant: "destructive",
       });
@@ -310,6 +373,8 @@ export const useNucleos = () => {
     getNucleoMembers,
     getNucleoRules,
     createNucleo,
+    updateNucleo,
+    deleteNucleo,
     joinNucleo,
     leaveNucleo,
     isMember,

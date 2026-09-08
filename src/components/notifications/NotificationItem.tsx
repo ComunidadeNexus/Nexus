@@ -43,12 +43,13 @@ const NotificationItem = ({ notification, showFull = false }: NotificationItemPr
     }
   };
 
-  const initials = notification.actor?.name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) || "U";
+  const initials =
+    notification.actor?.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "U";
 
   return (
     <div
@@ -56,15 +57,13 @@ const NotificationItem = ({ notification, showFull = false }: NotificationItemPr
       className={cn(
         "flex items-start gap-3 p-3 transition-colors cursor-pointer",
         !notification.is_read && "bg-primary/5",
-        showFull && "hover:bg-accent rounded-lg"
+        showFull && "hover:bg-accent rounded-lg",
       )}
     >
       <div className="relative">
         <Avatar className="w-10 h-10">
           <AvatarImage src={notification.actor?.avatar_url || undefined} />
-          <AvatarFallback className="bg-primary/20 text-sm">
-            {initials}
-          </AvatarFallback>
+          <AvatarFallback className="bg-primary/20 text-sm">{initials}</AvatarFallback>
         </Avatar>
         <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-background rounded-full flex items-center justify-center">
           {getNotificationIcon(notification.type)}
@@ -75,9 +74,7 @@ const NotificationItem = ({ notification, showFull = false }: NotificationItemPr
           {notification.title}
         </p>
         {notification.message && (
-          <p className="text-sm text-muted-foreground truncate">
-            {notification.message}
-          </p>
+          <p className="text-sm text-muted-foreground truncate">{notification.message}</p>
         )}
         <p className="text-xs text-muted-foreground mt-1">{timeAgo}</p>
       </div>

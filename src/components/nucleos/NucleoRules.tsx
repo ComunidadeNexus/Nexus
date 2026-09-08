@@ -60,9 +60,7 @@ const NucleoRules = ({ rules, canManage, onAddRule, onRefresh }: NucleoRulesProp
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Adicionar Regra</DialogTitle>
-                <DialogDescription>
-                  Adicione uma nova regra para o núcleo.
-                </DialogDescription>
+                <DialogDescription>Adicione uma nova regra para o núcleo.</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
@@ -83,11 +81,7 @@ const NucleoRules = ({ rules, canManage, onAddRule, onRefresh }: NucleoRulesProp
                   />
                 </div>
                 <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsOpen(false)}
-                  >
+                  <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
                     Cancelar
                   </Button>
                   <Button type="submit" disabled={isLoading}>
@@ -114,9 +108,7 @@ const NucleoRules = ({ rules, canManage, onAddRule, onRefresh }: NucleoRulesProp
                 </span>
                 <div>
                   <h4 className="font-medium text-sm">{rule.title}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {rule.description}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{rule.description}</p>
                 </div>
               </li>
             ))}

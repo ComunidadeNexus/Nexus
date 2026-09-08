@@ -1,9 +1,16 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Share, MoreVertical, Plus, Smartphone, Monitor, CheckCircle2, ArrowDown } from "lucide-react";
-import Navbar from "@/components/Navbar";
-import BottomNavigation from "@/components/BottomNavigation";
+import {
+  Download,
+  Share,
+  MoreVertical,
+  Plus,
+  Smartphone,
+  Monitor,
+  CheckCircle2,
+  ArrowDown,
+} from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -58,8 +65,6 @@ const Install = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       <main className="container mx-auto px-4 py-8 pb-24 md:pb-8">
         <div className="max-w-2xl mx-auto space-y-8">
           {/* Header */}
@@ -67,9 +72,7 @@ const Install = () => {
             <div className="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg">
               <Smartphone className="w-12 h-12 text-primary-foreground" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold gradient-text">
-              Instale o Nexus
-            </h1>
+            <h1 className="text-3xl md:text-4xl font-bold gradient-text">Instale o Nexus</h1>
             <p className="text-muted-foreground text-lg">
               Tenha acesso rápido ao Nexus direto da sua tela inicial
             </p>
@@ -181,7 +184,9 @@ const Install = () => {
                       2
                     </div>
                     <div className="space-y-2">
-                      <p className="font-medium text-foreground">Role e toque em "Adicionar à Tela de Início"</p>
+                      <p className="font-medium text-foreground">
+                        Role e toque em "Adicionar à Tela de Início"
+                      </p>
                       <div className="flex items-center gap-2 text-muted-foreground text-sm">
                         <div className="p-2 rounded-lg bg-muted">
                           <Plus className="w-5 h-5" />
@@ -213,77 +218,81 @@ const Install = () => {
           )}
 
           {/* Android Instructions */}
-          {(platform === "android" || platform === "unknown") && !isInstalled && !deferredPrompt && (
-            <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                    🤖
-                  </div>
-                  Instalar no Android
-                </CardTitle>
-                <CardDescription>
-                  Siga os passos abaixo para adicionar o Nexus à sua tela inicial
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  {/* Step 1 */}
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                      1
+          {(platform === "android" || platform === "unknown") &&
+            !isInstalled &&
+            !deferredPrompt && (
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                      🤖
                     </div>
-                    <div className="space-y-2">
-                      <p className="font-medium text-foreground">Toque no menu do navegador</p>
-                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <div className="p-2 rounded-lg bg-muted">
-                          <MoreVertical className="w-5 h-5" />
+                    Instalar no Android
+                  </CardTitle>
+                  <CardDescription>
+                    Siga os passos abaixo para adicionar o Nexus à sua tela inicial
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    {/* Step 1 */}
+                    <div className="flex gap-4">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                        1
+                      </div>
+                      <div className="space-y-2">
+                        <p className="font-medium text-foreground">Toque no menu do navegador</p>
+                        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                          <div className="p-2 rounded-lg bg-muted">
+                            <MoreVertical className="w-5 h-5" />
+                          </div>
+                          <span>Os três pontos no canto superior</span>
                         </div>
-                        <span>Os três pontos no canto superior</span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-center">
+                      <ArrowDown className="w-5 h-5 text-muted-foreground" />
+                    </div>
+
+                    {/* Step 2 */}
+                    <div className="flex gap-4">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                        2
+                      </div>
+                      <div className="space-y-2">
+                        <p className="font-medium text-foreground">
+                          Toque em "Instalar app" ou "Adicionar à tela inicial"
+                        </p>
+                        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                          <div className="p-2 rounded-lg bg-muted">
+                            <Download className="w-5 h-5" />
+                          </div>
+                          <span>A opção pode variar conforme o navegador</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-center">
+                      <ArrowDown className="w-5 h-5 text-muted-foreground" />
+                    </div>
+
+                    {/* Step 3 */}
+                    <div className="flex gap-4">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                        3
+                      </div>
+                      <div className="space-y-2">
+                        <p className="font-medium text-foreground">Confirme a instalação</p>
+                        <p className="text-sm text-muted-foreground">
+                          O ícone do Nexus aparecerá na sua tela inicial
+                        </p>
                       </div>
                     </div>
                   </div>
-
-                  <div className="flex justify-center">
-                    <ArrowDown className="w-5 h-5 text-muted-foreground" />
-                  </div>
-
-                  {/* Step 2 */}
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                      2
-                    </div>
-                    <div className="space-y-2">
-                      <p className="font-medium text-foreground">Toque em "Instalar app" ou "Adicionar à tela inicial"</p>
-                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                        <div className="p-2 rounded-lg bg-muted">
-                          <Download className="w-5 h-5" />
-                        </div>
-                        <span>A opção pode variar conforme o navegador</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-center">
-                    <ArrowDown className="w-5 h-5 text-muted-foreground" />
-                  </div>
-
-                  {/* Step 3 */}
-                  <div className="flex gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                      3
-                    </div>
-                    <div className="space-y-2">
-                      <p className="font-medium text-foreground">Confirme a instalação</p>
-                      <p className="text-sm text-muted-foreground">
-                        O ícone do Nexus aparecerá na sua tela inicial
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                </CardContent>
+              </Card>
+            )}
 
           {/* Desktop Instructions */}
           {platform === "desktop" && !isInstalled && !deferredPrompt && (
@@ -306,7 +315,8 @@ const Install = () => {
                     <div className="space-y-2">
                       <p className="font-medium text-foreground">Clique no ícone de instalação</p>
                       <p className="text-sm text-muted-foreground">
-                        Procure pelo ícone de instalação na barra de endereço do navegador (geralmente no canto direito)
+                        Procure pelo ícone de instalação na barra de endereço do navegador
+                        (geralmente no canto direito)
                       </p>
                     </div>
                   </div>
@@ -332,8 +342,6 @@ const Install = () => {
           )}
         </div>
       </main>
-
-      <BottomNavigation />
     </div>
   );
 };

@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Loader2, ArrowLeft } from "lucide-react";
-import Navbar from "@/components/Navbar";
-import BottomNavigation from "@/components/BottomNavigation";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NucleoHeader from "@/components/nucleos/NucleoHeader";
 import NucleoRules from "@/components/nucleos/NucleoRules";
 import NucleoMembers from "@/components/nucleos/NucleoMembers";
-import PostCard from "@/components/community/PostCard";
+import PostCard from "@/components/feed/PostCard";
 import CreatePostModal from "@/components/community/CreatePostModal";
 import { useNucleos, Nucleo, NucleoMember, NucleoRule } from "@/hooks/useNucleos";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,14 +44,8 @@ const NucleoDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const {
-    getNucleo,
-    getNucleoMembers,
-    getNucleoRules,
-    joinNucleo,
-    leaveNucleo,
-    addRule,
-  } = useNucleos();
+  const { getNucleo, getNucleoMembers, getNucleoRules, joinNucleo, leaveNucleo, addRule } =
+    useNucleos();
 
   const [nucleo, setNucleo] = useState<Nucleo | null>(null);
   const [members, setMembers] = useState<NucleoMember[]>([]);
@@ -92,11 +84,13 @@ const NucleoDetail = () => {
       // Fetch posts for this nucleo
       const { data: postsData } = await supabase
         .from("posts")
-        .select(`
+        .select(
+          `
           *,
           profiles!posts_user_id_fkey(name, username, avatar_url, is_verified),
           categories(name, slug, color, icon)
-        `)
+        `,
+        )
         .eq("nucleo_id", nucleoData.id)
         .eq("is_hidden", false)
         .order("is_pinned", { ascending: false })
@@ -138,11 +132,13 @@ const NucleoDetail = () => {
     if (!nucleo) return;
     const { data: postsData } = await supabase
       .from("posts")
-      .select(`
+      .select(
+        `
         *,
         profiles!posts_user_id_fkey(name, username, avatar_url, is_verified),
         categories(name, slug, color, icon)
-      `)
+      `,
+      )
       .eq("nucleo_id", nucleo.id)
       .eq("is_hidden", false)
       .order("is_pinned", { ascending: false })
@@ -154,7 +150,6 @@ const NucleoDetail = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
         <div className="flex items-center justify-center py-24">
           <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </div>
@@ -168,16 +163,10 @@ const NucleoDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-
       <main className="pb-24">
         {/* Back button */}
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/nucleos")}
-          >
+          <Button variant="ghost" size="sm" onClick={() => navigate("/nucleos")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
           </Button>
@@ -205,19 +194,37 @@ const NucleoDetail = () => {
                   </TabsList>
 
                   {isMember && (
-                    <CreatePostModal
-                      onPostCreated={refreshPosts}
-                      nucleoId={nucleo.id}
-                    />
+                    <CreatePostModal onPostCreated={refreshPosts} nucleoId={nucleo.id} />
                   )}
                 </div>
 
                 <TabsContent value="posts" className="space-y-4">
-                  {posts.length === 0 ? (
-                    <div className="text-center py-12 bg-muted/30 rounded-lg">
-                      <p className="text-muted-foreground">
-                        Nenhum post neste núcleo ainda.
+                  {nucleo.is_private && !isMember ? (
+                    <div className="text-center py-16 bg-muted/20 border border-dashed border-gray-700/50 rounded-2xl flex flex-col items-center justify-center">
+                      <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center mb-4 border border-white/5 shadow-xl">
+                        <svg
+                          className="w-8 h-8 text-muted-foreground"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground mb-2">Conteúdo Privado</h3>
+                      <p className="text-muted-foreground max-w-sm">
+                        Este núcleo é privado. Você precisa se tornar um membro para ver as
+                        postagens.
                       </p>
+                    </div>
+                  ) : posts.length === 0 ? (
+                    <div className="text-center py-12 bg-muted/30 rounded-lg">
+                      <p className="text-muted-foreground">Nenhum post neste núcleo ainda.</p>
                       {isMember && (
                         <p className="text-sm text-muted-foreground mt-2">
                           Seja o primeiro a postar!
@@ -228,33 +235,19 @@ const NucleoDetail = () => {
                     posts.map((post) => (
                       <PostCard
                         key={post.id}
-                        post={{
-                          id: post.id,
-                          content: post.content,
-                          created_at: post.created_at,
-                          likes_count: post.likes_count,
-                          comments_count: post.comments_count,
-                          is_pinned: post.is_pinned,
-                          is_premium_only: false,
-                          media_url: post.media_url,
-                          media_type: post.media_type,
-                          user_id: post.user_id,
-                          category_id: post.category_id,
-                          upvotes: post.upvotes,
-                          downvotes: post.downvotes,
-                        }}
-                        author={{
-                          name: post.profiles?.name || "Usuário",
-                          avatar_url: post.profiles?.avatar_url || null,
-                          is_verified: post.profiles?.is_verified || false,
-                          user_id: post.user_id,
-                        }}
-                        category={post.categories ? {
-                          name: post.categories.name,
-                          icon: post.categories.icon,
-                          color: post.categories.color,
-                        } : null}
-                        onUpdate={refreshPosts}
+                        postId={post.id}
+                        nucleus={nucleo?.name || "geral"}
+                        author={post.profiles?.name || post.profiles?.username || "Usuário"}
+                        authorId={post.user_id}
+                        authorAvatar={post.profiles?.avatar_url}
+                        timeAgo={new Date(post.created_at).toLocaleDateString()}
+                        title={""}
+                        content={post.content || ""}
+                        votes={post.upvotes - post.downvotes}
+                        comments={post.comments_count || 0}
+                        mediaUrl={post.media_url || undefined}
+                        mediaType={post.media_type || undefined}
+                        userVote={null}
                       />
                     ))
                   )}
@@ -286,8 +279,6 @@ const NucleoDetail = () => {
           </div>
         </div>
       </main>
-
-      <BottomNavigation />
     </div>
   );
 };

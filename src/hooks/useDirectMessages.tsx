@@ -51,7 +51,7 @@ export const useDirectMessages = () => {
       if (participationsError) throw participationsError;
 
       const conversationIds = (participationsData || []).map((p) => p.conversation_id);
-      
+
       if (conversationIds.length === 0) {
         setConversations([]);
         setIsLoading(false);
@@ -82,9 +82,7 @@ export const useDirectMessages = () => {
         .select("user_id, name, avatar_url")
         .in("user_id", allUserIds);
 
-      const profilesMap = new Map(
-        (profilesData || []).map((p) => [p.user_id, p])
-      );
+      const profilesMap = new Map((profilesData || []).map((p) => [p.user_id, p]));
 
       // Fetch last messages for each conversation
       const lastMessagesPromises = conversationIds.map((convId) =>
@@ -94,7 +92,7 @@ export const useDirectMessages = () => {
           .eq("conversation_id", convId)
           .order("created_at", { ascending: false })
           .limit(1)
-          .single()
+          .single(),
       );
 
       const lastMessagesResults = await Promise.all(lastMessagesPromises);
@@ -114,27 +112,29 @@ export const useDirectMessages = () => {
       });
 
       // Build conversations with all data
-      const formattedConversations: Conversation[] = (conversationsData || []).map((conv, index) => {
-        const convParticipants = (allParticipants || [])
-          .filter((p) => p.conversation_id === conv.id && p.user_id !== user.id)
-          .map((p) => {
-            const profile = profilesMap.get(p.user_id);
-            return {
-              user_id: p.user_id,
-              name: profile?.name || null,
-              avatar_url: profile?.avatar_url || null,
-            };
-          });
+      const formattedConversations: Conversation[] = (conversationsData || []).map(
+        (conv, index) => {
+          const convParticipants = (allParticipants || [])
+            .filter((p) => p.conversation_id === conv.id && p.user_id !== user.id)
+            .map((p) => {
+              const profile = profilesMap.get(p.user_id);
+              return {
+                user_id: p.user_id,
+                name: profile?.name || null,
+                avatar_url: profile?.avatar_url || null,
+              };
+            });
 
-        return {
-          id: conv.id,
-          created_at: conv.created_at,
-          updated_at: conv.updated_at,
-          participants: convParticipants,
-          lastMessage: lastMessagesResults[index]?.data || null,
-          unreadCount: unreadCountMap.get(conv.id) || 0,
-        };
-      });
+          return {
+            id: conv.id,
+            created_at: conv.created_at,
+            updated_at: conv.updated_at,
+            participants: convParticipants,
+            lastMessage: lastMessagesResults[index]?.data || null,
+            unreadCount: unreadCountMap.get(conv.id) || 0,
+          };
+        },
+      );
 
       setConversations(formattedConversations);
     } catch (error) {
@@ -149,10 +149,9 @@ export const useDirectMessages = () => {
 
     try {
       // Usar função RPC SECURITY DEFINER que contorna o RLS
-      const { data, error } = await supabase
-        .rpc('create_conversation_with_participants', {
-          p_other_user_id: otherUserId
-        });
+      const { data, error } = await supabase.rpc("create_conversation_with_participants", {
+        p_other_user_id: otherUserId,
+      });
 
       if (error) throw error;
 
@@ -185,7 +184,7 @@ export const useDirectMessages = () => {
         },
         () => {
           fetchConversations();
-        }
+        },
       )
       .subscribe();
 
@@ -277,7 +276,7 @@ export const useConversation = (conversationId: string | null) => {
         .from("conversations")
         .update({ updated_at: new Date().toISOString() })
         .eq("id", conversationId);
-      
+
       return { data, error: null };
     } catch (err: any) {
       console.error("Error sending message:", err);
@@ -303,7 +302,7 @@ export const useConversation = (conversationId: string | null) => {
         },
         async (payload) => {
           const newMessage = payload.new as DirectMessage;
-          
+
           // Fetch user profile if not in cache
           if (!users[newMessage.sender_id]) {
             const { data } = await supabase
@@ -311,7 +310,7 @@ export const useConversation = (conversationId: string | null) => {
               .select("user_id, name, avatar_url")
               .eq("user_id", newMessage.sender_id)
               .single();
-            
+
             if (data) {
               setUsers((prev) => ({
                 ...prev,
@@ -329,7 +328,7 @@ export const useConversation = (conversationId: string | null) => {
               .update({ is_read: true })
               .eq("id", newMessage.id);
           }
-        }
+        },
       )
       .subscribe();
 

@@ -51,9 +51,7 @@ const CreateStoryModal = ({ open, onOpenChange, onSuccess }: CreateStoryModalPro
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from("stories")
-        .getPublicUrl(fileName);
+      const { data: urlData } = supabase.storage.from("stories").getPublicUrl(fileName);
 
       // Create story
       const { error: storyError } = await supabase.from("stories").insert({
@@ -94,9 +92,7 @@ const CreateStoryModal = ({ open, onOpenChange, onSuccess }: CreateStoryModalPro
                 <div className="p-3 rounded-full bg-primary/10">
                   <Camera className="w-8 h-8 text-primary" />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Clique para adicionar foto ou vídeo
-                </p>
+                <p className="text-sm text-muted-foreground">Clique para adicionar foto ou vídeo</p>
               </div>
               <input
                 type="file"
@@ -108,17 +104,9 @@ const CreateStoryModal = ({ open, onOpenChange, onSuccess }: CreateStoryModalPro
           ) : (
             <div className="relative">
               {file?.type.startsWith("image") ? (
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="w-full h-64 object-cover rounded-lg"
-                />
+                <img src={preview} alt="Preview" className="w-full h-64 object-cover rounded-lg" />
               ) : (
-                <video
-                  src={preview}
-                  className="w-full h-64 object-cover rounded-lg"
-                  controls
-                />
+                <video src={preview} className="w-full h-64 object-cover rounded-lg" controls />
               )}
               <Button
                 variant="secondary"
@@ -147,11 +135,7 @@ const CreateStoryModal = ({ open, onOpenChange, onSuccess }: CreateStoryModalPro
           </div>
 
           {/* Submit */}
-          <Button
-            onClick={handleSubmit}
-            disabled={!file || loading}
-            className="w-full"
-          >
+          <Button onClick={handleSubmit} disabled={!file || loading} className="w-full">
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />

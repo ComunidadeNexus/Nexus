@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import BottomNavigation from "@/components/BottomNavigation";
 import { supabase } from "@/integrations/supabase/client";
-import PostCard from "@/components/community/PostCard";
+import PostCard from "@/components/feed/PostCard";
 import { Loader2, Hash } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -73,7 +71,10 @@ const HashtagExplore = () => {
             .select("post_id")
             .eq("user_id", user.id)
             .eq("reaction_type", "like")
-            .in("post_id", postsData.map((p) => p.id));
+            .in(
+              "post_id",
+              postsData.map((p) => p.id),
+            );
 
           const likesMap: Record<string, boolean> = {};
           likesData?.forEach((l) => {
@@ -97,8 +98,6 @@ const HashtagExplore = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Navbar />
-
       <main className="container mx-auto px-4 pt-20 pb-12 max-w-2xl">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
@@ -107,7 +106,8 @@ const HashtagExplore = () => {
           <div>
             <h1 className="text-2xl font-bold">#{tag}</h1>
             <p className="text-sm text-muted-foreground">
-              {posts.length} post{posts.length !== 1 ? "s" : ""} encontrado{posts.length !== 1 ? "s" : ""}
+              {posts.length} post{posts.length !== 1 ? "s" : ""} encontrado
+              {posts.length !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
@@ -120,9 +120,7 @@ const HashtagExplore = () => {
           <div className="glass-card rounded-xl p-12 text-center">
             <Hash className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
             <h3 className="text-lg font-medium mb-2">Nenhum post encontrado</h3>
-            <p className="text-muted-foreground">
-              Não há posts com a hashtag #{tag} ainda.
-            </p>
+            <p className="text-muted-foreground">Não há posts com a hashtag #{tag} ainda.</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -131,24 +129,25 @@ const HashtagExplore = () => {
               return (
                 <PostCard
                   key={post.id}
-                  post={post}
-                  author={{
-                    user_id: post.user_id,
-                    name: author?.name || "Usuário",
-                    username: author?.username || undefined,
-                    avatar_url: author?.avatar_url || undefined,
-                    is_verified: author?.is_verified || false,
-                  }}
-                  isLiked={userLikes[post.id] || false}
-                  onUpdate={handlePostUpdate}
+                  postId={post.id}
+                  nucleus={"geral"}
+                  author={author?.name || author?.username || "Usuário"}
+                  authorId={post.user_id}
+                  authorAvatar={author?.avatar_url}
+                  timeAgo={new Date(post.created_at).toLocaleDateString()}
+                  title={""}
+                  content={post.content || ""}
+                  votes={post.upvotes - post.downvotes}
+                  comments={post.comments_count || 0}
+                  mediaUrl={post.media_url || undefined}
+                  mediaType={post.media_type || undefined}
+                  userVote={userVotes[post.id] || null}
                 />
               );
             })}
           </div>
         )}
       </main>
-
-      <BottomNavigation />
     </div>
   );
 };

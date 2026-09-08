@@ -50,10 +50,7 @@ export const useMarketplace = (filters?: ListingFilters) => {
     try {
       setIsLoading(true);
 
-      let query = supabase
-        .from("marketplace_listings")
-        .select("*")
-        .eq("status", "active");
+      let query = supabase.from("marketplace_listings").select("*").eq("status", "active");
 
       if (filters?.category) {
         query = query.eq("category", filters.category);
@@ -92,8 +89,8 @@ export const useMarketplace = (filters?: ListingFilters) => {
       // Parse images JSON
       const formattedListings: MarketplaceListing[] = (data || []).map((listing) => ({
         ...listing,
-        images: Array.isArray(listing.images) 
-          ? (listing.images as unknown as string[]).map(img => String(img))
+        images: Array.isArray(listing.images)
+          ? (listing.images as unknown as string[]).map((img) => String(img))
           : [],
       }));
 
@@ -135,7 +132,12 @@ export const useMarketplace = (filters?: ListingFilters) => {
     }
   };
 
-  const createListing = async (listing: Omit<MarketplaceListing, "id" | "user_id" | "views_count" | "created_at" | "updated_at">) => {
+  const createListing = async (
+    listing: Omit<
+      MarketplaceListing,
+      "id" | "user_id" | "views_count" | "created_at" | "updated_at"
+    >,
+  ) => {
     if (!user) return { error: "Not authenticated", data: null };
 
     try {
@@ -150,7 +152,7 @@ export const useMarketplace = (filters?: ListingFilters) => {
         .single();
 
       if (error) throw error;
-      
+
       await fetchListings();
       return { data, error: null };
     } catch (err: any) {
@@ -170,7 +172,7 @@ export const useMarketplace = (filters?: ListingFilters) => {
         .eq("user_id", user.id);
 
       if (error) throw error;
-      
+
       await fetchListings();
       return { error: null };
     } catch (err: any) {
@@ -182,6 +184,9 @@ export const useMarketplace = (filters?: ListingFilters) => {
   const deleteListing = async (id: string) => {
     if (!user) return { error: "Not authenticated" };
 
+    // Atualização Otimista: Remove da UI imediatamente
+    setListings((prev) => prev.filter((listing) => listing.id !== id));
+
     try {
       const { error } = await supabase
         .from("marketplace_listings")
@@ -190,7 +195,7 @@ export const useMarketplace = (filters?: ListingFilters) => {
         .eq("user_id", user.id);
 
       if (error) throw error;
-      
+
       await fetchListings();
       return { error: null };
     } catch (err: any) {
@@ -235,7 +240,7 @@ export const useMarketplace = (filters?: ListingFilters) => {
   const incrementViews = async (listingId: string) => {
     try {
       // Increment views directly with update
-      const listing = listings.find(l => l.id === listingId);
+      const listing = listings.find((l) => l.id === listingId);
       if (listing) {
         await supabase
           .from("marketplace_listings")
@@ -249,7 +254,14 @@ export const useMarketplace = (filters?: ListingFilters) => {
 
   useEffect(() => {
     fetchListings();
-  }, [user, filters?.category, filters?.minPrice, filters?.maxPrice, filters?.search, filters?.sortBy]);
+  }, [
+    user,
+    filters?.category,
+    filters?.minPrice,
+    filters?.maxPrice,
+    filters?.search,
+    filters?.sortBy,
+  ]);
 
   return {
     listings,
@@ -287,8 +299,8 @@ export const useMyListings = () => {
 
       const formattedListings: MarketplaceListing[] = (data || []).map((listing) => ({
         ...listing,
-        images: Array.isArray(listing.images) 
-          ? (listing.images as unknown as string[]).map(img => String(img))
+        images: Array.isArray(listing.images)
+          ? (listing.images as unknown as string[]).map((img) => String(img))
           : [],
       }));
 

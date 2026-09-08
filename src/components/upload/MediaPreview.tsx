@@ -20,17 +20,9 @@ const MediaPreview = ({
   return (
     <div className={cn("relative rounded-lg overflow-hidden bg-muted", className)}>
       {type === "image" ? (
-        <img
-          src={url}
-          alt="Media"
-          className="w-full h-full object-cover"
-        />
+        <img src={url} alt="Media" className="w-full h-full object-cover" />
       ) : (
-        <video
-          src={url}
-          controls={showControls}
-          className="w-full h-full object-cover"
-        />
+        <video src={url} controls={showControls} className="w-full h-full object-cover" />
       )}
 
       {onRemove && (
