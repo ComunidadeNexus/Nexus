@@ -124,7 +124,7 @@ const ProfileActivity = ({ userId }: ProfileActivityProps) => {
         <button
           type="button"
           onClick={() => navigate("/configuracoes")}
-          className="min-h-11 px-5 py-2.5 bg-gray-200 dark:bg-white text-gray-900 font-bold rounded-full text-sm hover:bg-gray-300 dark:hover:bg-gray-200 transition-colors"
+          className="inline-flex items-center justify-center h-11 min-h-[44px] px-5 py-0 bg-gray-200 dark:bg-white text-gray-900 font-bold rounded-full text-sm leading-none hover:bg-gray-300 dark:hover:bg-gray-200 transition-colors"
         >
           Atualizar configurações
         </button>
