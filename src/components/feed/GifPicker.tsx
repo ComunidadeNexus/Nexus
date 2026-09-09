@@ -79,7 +79,7 @@ const GifPicker = ({ onSelect, onClose }: GifPickerProps) => {
   );
 
   return (
-    <div className="absolute bottom-full mb-2 left-0 w-[320px] bg-white dark:bg-[#1A282D] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in duration-200">
+    <div className="absolute bottom-full mb-2 left-0 right-auto w-[min(320px,calc(100vw-2rem))] bg-white dark:bg-[#1A282D] border border-gray-200 dark:border-gray-800 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in duration-200">
       {/* Header do Picker */}
       <div className="p-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#203036] flex items-center gap-2">
         <Zap className="w-4 h-4 text-purple-500" />

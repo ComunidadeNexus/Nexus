@@ -51,8 +51,8 @@ const ProfileMainHeader = ({
   return (
     <div className="mb-4 pt-4">
       {/* Profile Info Row */}
-      <div className="flex items-center justify-between gap-4 mb-6 px-2">
-        <div className="flex items-center gap-4">
+      <div className="flex items-start sm:items-center justify-between gap-3 mb-6 px-1 min-w-0">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <div className="relative">
             <Avatar className="w-16 h-16 bg-white dark:bg-[#1A282D] border-2 border-primary/20">
               <AvatarImage
@@ -70,8 +70,8 @@ const ProfileMainHeader = ({
               </div>
             )}
           </div>
-          <div>
-            <h1 className="text-2xl font-bold gradient-text">{displayName}</h1>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold gradient-text truncate">{displayName}</h1>
             <p className="text-sm text-gray-500 font-medium">{handle}</p>
             {profile.bio && (
               <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 max-w-md">
@@ -83,11 +83,11 @@ const ProfileMainHeader = ({
 
         {/* Action Buttons for Other Profiles */}
         {!isOwnProfile && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handleMessageClick}
               disabled={isStartingChat}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-[#2A3B42] hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-full font-bold text-sm transition-colors shadow-sm disabled:opacity-50"
+              className="flex items-center justify-center gap-2 min-h-11 px-4 py-2 bg-gray-100 dark:bg-[#2A3B42] hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-full font-bold text-sm transition-colors shadow-sm disabled:opacity-50"
             >
               {isStartingChat ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -96,7 +96,7 @@ const ProfileMainHeader = ({
               )}
               <span className="hidden sm:inline">Mensagem</span>
             </button>
-            <button className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-[#00C6FF] to-[#FF007F] hover:opacity-90 text-white rounded-full font-bold text-sm transition-opacity shadow-md">
+            <button className="flex items-center gap-2 min-h-11 px-4 sm:px-6 py-2 bg-gradient-to-r from-[#00C6FF] to-[#FF007F] hover:opacity-90 text-white rounded-full font-bold text-sm transition-opacity shadow-md">
               Seguir
             </button>
             <ReportProfileModal reportedUserId={profile.user_id} reportedUserName={displayName} />
@@ -104,10 +104,10 @@ const ProfileMainHeader = ({
         )}
 
         {isOwnProfile && onEditClick && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={onEditClick}
-              className="flex items-center gap-2 px-6 py-2 bg-gray-100 dark:bg-[#2A3B42] hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-full font-bold text-sm transition-colors shadow-sm"
+              className="flex items-center gap-2 min-h-11 px-5 py-2 bg-gray-100 dark:bg-[#2A3B42] hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-full font-bold text-sm transition-colors shadow-sm"
             >
               Editar Perfil
             </button>
@@ -122,14 +122,14 @@ const ProfileMainHeader = ({
         {isOwnProfile && (
           <CreatePostModal
             triggerNode={
-              <button className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+              <button className="flex items-center gap-2 min-h-11 px-5 py-2 rounded-full text-sm font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
                 <Plus className="w-4 h-4" />
                 Postar
               </button>
             }
           />
         )}
-        <button className="p-2 rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-[#2A3B42] text-gray-800 dark:text-gray-200 transition-colors">
+        <button className="min-h-11 min-w-11 p-2 rounded-full border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-[#2A3B42] text-gray-800 dark:text-gray-200 transition-colors">
           <SlidersHorizontal className="w-4 h-4" />
         </button>
       </div>

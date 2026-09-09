@@ -41,16 +41,16 @@ const NewsCard = ({
       )}
 
       {/* Conteúdo (Direita) */}
-      <div className="flex-1 p-4 flex flex-col justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-            <Globe className="w-3.5 h-3.5 text-primary" />
-            <span className="font-semibold text-primary">{source}</span>
-            <span>•</span>
-            <span>{publishedAt}</span>
+      <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-xs text-gray-500 mb-2 min-w-0">
+            <Globe className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="font-semibold text-primary truncate">{source}</span>
+            <span className="shrink-0">•</span>
+            <span className="shrink-0">{publishedAt}</span>
           </div>
 
-          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2 leading-tight group-hover:text-primary transition-colors">
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 mb-2 leading-tight group-hover:text-primary transition-colors break-words">
             {title}
           </h2>
 

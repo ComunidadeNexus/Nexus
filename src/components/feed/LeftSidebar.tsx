@@ -31,9 +31,22 @@ const LeftSidebar = () => {
   const [isCreateNucleoOpen, setIsCreateNucleoOpen] = useState(false);
   const location = useLocation();
   const { categories } = useCategories();
+  const currentCategory = new URLSearchParams(location.search).get("categoria");
+  const isHomePath = location.pathname === "/feed" || location.pathname === "/comunidade";
 
   const getNavItemClass = (path: string) => {
-    const isActive = location.pathname === path || (path === "/feed" && location.pathname === "/");
+    const [pathname, queryString] = path.split("?");
+    const linkCategory = queryString ? new URLSearchParams(queryString).get("categoria") : null;
+
+    let isActive = false;
+    if (linkCategory) {
+      isActive = currentCategory === linkCategory;
+    } else if (pathname === "/feed") {
+      isActive = isHomePath && !currentCategory;
+    } else {
+      isActive =
+        location.pathname === pathname || (pathname === "/feed" && location.pathname === "/");
+    }
     if (isActive) {
       return "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold bg-gradient-to-r from-[#00C6FF] to-[#FF007F] text-white shadow-md cursor-pointer w-full transition-all";
     }
@@ -86,12 +99,10 @@ const LeftSidebar = () => {
                 </div>
                 <span
                   style={{
-                    color: location.search.includes(`categoria=${category.slug}`)
-                      ? undefined
-                      : category.color,
+                    color: currentCategory === category.slug ? undefined : category.color,
                   }}
                   className={
-                    location.search.includes(`categoria=${category.slug}`)
+                    currentCategory === category.slug
                       ? ""
                       : "font-medium brightness-90 saturate-150 dark:brightness-110"
                   }

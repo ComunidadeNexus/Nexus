@@ -1,141 +1,88 @@
-import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Home, Search, Camera, Plus, Bell, MessageCircle } from "lucide-react";
+import { Home, Compass, Plus, MessagesSquare, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import CreateStoryModal from "@/components/stories/CreateStoryModal";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import CreatePostModal from "@/components/community/CreatePostModal";
 
 const BottomNavigation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [showCreatePost, setShowCreatePost] = useState(false);
-  const [showCreateStory, setShowCreateStory] = useState(false);
-  const [postContent, setPostContent] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!user) return null;
 
-  const handleCreatePost = async () => {
-    if (!postContent.trim()) {
-      toast.error("Escreva algo para publicar");
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase.from("posts").insert({
-        content: postContent.trim(),
-        user_id: user.id,
-      });
-
-      if (error) throw error;
-
-      toast.success("Post publicado!");
-      setPostContent("");
-      setShowCreatePost(false);
-      window.location.reload();
-    } catch (error) {
-      toast.error("Erro ao publicar");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const navItems = [
-    { icon: Home, path: "/", label: "Home" },
-    { icon: Search, path: "/comunidade", label: "Buscar" },
-    { icon: Camera, action: () => setShowCreateStory(true), label: "Story" },
-    { icon: Plus, action: () => setShowCreatePost(true), label: "Criar", isCenter: true },
-    { icon: Bell, path: "/nucleos", label: "Notificações" },
-    { icon: MessageCircle, path: "/mensagens", label: "Mensagens" },
+  const items = [
+    {
+      icon: Home,
+      path: "/comunidade",
+      label: "Início",
+      isActive:
+        location.pathname === "/comunidade" ||
+        location.pathname === "/popular" ||
+        location.pathname === "/feed",
+    },
+    {
+      icon: Compass,
+      path: "/nucleos",
+      label: "Explorar",
+      isActive: location.pathname.startsWith("/nucleo"),
+    },
+    { icon: Plus, label: "Criar", isCenter: true, isActive: false },
+    {
+      icon: MessagesSquare,
+      path: "/chat",
+      label: "Chat",
+      isActive: location.pathname === "/chat",
+    },
+    {
+      icon: User,
+      path: "/perfil",
+      label: "Perfil",
+      isActive: location.pathname.startsWith("/perfil"),
+    },
   ];
 
   return (
-    <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border md:hidden safe-area-bottom">
-        <div className="flex items-center justify-around h-14 px-2">
-          {navItems.map((item, index) => {
-            const isActive = item.path && location.pathname === item.path;
-            const isCenter = item.isCenter;
-
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border lg:hidden safe-area-bottom">
+      <div className="flex items-stretch justify-around min-h-14 px-1">
+        {items.map((item) => {
+          if (item.isCenter) {
             return (
-              <button
-                key={index}
-                onClick={() => {
-                  if (item.action) {
-                    item.action();
-                  } else if (item.path) {
-                    navigate(item.path);
+              <div key={item.label} className="flex-1 flex items-center justify-center">
+                <CreatePostModal
+                  triggerNode={
+                    <button
+                      type="button"
+                      aria-label="Criar post"
+                      className="flex items-center justify-center min-h-11 min-w-11 -mt-3"
+                    >
+                      <span className="w-12 h-12 bg-gradient-to-r from-[#00C6FF] to-[#FF007F] rounded-xl flex items-center justify-center shadow-lg">
+                        <Plus className="w-6 h-6 text-white" />
+                      </span>
+                    </button>
                   }
-                }}
-                className={cn(
-                  "flex items-center justify-center flex-1 h-full transition-all duration-200",
-                  isCenter
-                    ? "relative"
-                    : isActive
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground active:scale-95",
-                )}
-              >
-                {isCenter ? (
-                  <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center -mt-2">
-                    <item.icon className="w-6 h-6 text-primary-foreground" />
-                  </div>
-                ) : (
-                  <item.icon
-                    className={cn(
-                      "w-6 h-6 transition-transform duration-200",
-                      isActive && "fill-current",
-                    )}
-                  />
-                )}
-              </button>
+                />
+              </div>
             );
-          })}
-        </div>
-      </nav>
+          }
 
-      {/* Create Post Dialog */}
-      <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Criar Post</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Textarea
-              placeholder="O que você está pensando?"
-              value={postContent}
-              onChange={(e) => setPostContent(e.target.value)}
-              className="min-h-[120px] resize-none"
-              maxLength={2000}
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setShowCreatePost(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleCreatePost} disabled={isSubmitting || !postContent.trim()}>
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Publicar
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Create Story Modal */}
-      <CreateStoryModal
-        open={showCreateStory}
-        onOpenChange={setShowCreateStory}
-        onSuccess={() => {}}
-      />
-    </>
+          return (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => item.path && navigate(item.path)}
+              className={cn(
+                "flex flex-col items-center justify-center flex-1 min-h-14 gap-0.5 transition-colors",
+                item.isActive ? "text-primary" : "text-muted-foreground",
+              )}
+            >
+              <item.icon className={cn("w-6 h-6", item.isActive && "stroke-[2.5]")} />
+              <span className="text-[10px] font-semibold leading-none">{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
   );
 };
 
