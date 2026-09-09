@@ -1,5 +1,5 @@
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { FormEvent, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Search,
   Bell,
@@ -30,7 +30,11 @@ const FeedHeader = () => {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme, setTheme } = useTheme();
+  const [searchQuery, setSearchQuery] = useState(
+    () => new URLSearchParams(window.location.search).get("q") || "",
+  );
 
   const handleLogout = async () => {
     await signOut();
@@ -40,7 +44,17 @@ const FeedHeader = () => {
   const displayName = profile?.name || profile?.username || "Usuário";
   const avatarUrl = profile?.avatar_url;
 
-  const goToSearch = () => navigate("/busca");
+  useEffect(() => {
+    if (location.pathname === "/busca") {
+      setSearchQuery(new URLSearchParams(location.search).get("q") || "");
+    }
+  }, [location.pathname, location.search]);
+
+  const submitSearch = (event: FormEvent) => {
+    event.preventDefault();
+    const q = searchQuery.trim();
+    navigate(q ? `/busca?q=${encodeURIComponent(q)}` : "/busca");
+  };
 
   return (
     <div className="sticky top-0 z-50 w-full max-w-[100vw] h-14 bg-white dark:bg-[#1A282D] border-b border-gray-200 dark:border-gray-800 flex items-center justify-between gap-2 px-2 sm:px-4 overflow-hidden">
@@ -55,22 +69,24 @@ const FeedHeader = () => {
         </Link>
       </div>
 
-      {/* Center: Search Bar (desktop/tablet) */}
-      <div className="hidden sm:block flex-1 max-w-2xl px-4 min-w-0">
-        <button
-          type="button"
-          onClick={goToSearch}
-          className="relative group w-full text-left"
-          aria-label="Pesquisar no Nexus"
-        >
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400 group-hover:text-gray-500 transition-colors" />
+      <form onSubmit={submitSearch} className="flex-1 min-w-0 max-w-2xl px-1 sm:px-4" role="search">
+        <div className="relative group">
+          <div className="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 group-hover:text-gray-500 transition-colors" />
           </div>
-          <span className="block w-full pl-10 pr-3 py-2 border border-transparent rounded-full leading-5 bg-gray-100 dark:bg-[#2A3B42] text-gray-500 sm:text-sm">
-            Pesquisar no Nexus
-          </span>
-        </button>
-      </div>
+          <input
+            type="search"
+            name="q"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Pesquisar no Nexus"
+            autoComplete="off"
+            enterKeyHint="search"
+            aria-label="Pesquisar no Nexus"
+            className="block w-full min-w-0 pl-8 sm:pl-10 pr-3 py-2 h-9 sm:h-10 border border-transparent rounded-full leading-5 bg-gray-100 dark:bg-[#2A3B42] text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:bg-white dark:focus:bg-[#1A282D] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
+          />
+        </div>
+      </form>
 
       {/* Right: Auth & Actions */}
       <div className="flex items-center justify-end gap-0.5 sm:gap-1 shrink-0 min-w-0">
@@ -99,16 +115,6 @@ const FeedHeader = () => {
           </>
         ) : (
           <>
-            <button
-              type="button"
-              onClick={goToSearch}
-              className="sm:hidden min-h-11 min-w-11 p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-[#2A3B42] rounded-full transition-colors"
-              title="Buscar"
-              aria-label="Buscar"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-
             <button
               type="button"
               onClick={() => navigate("/mensagens")}

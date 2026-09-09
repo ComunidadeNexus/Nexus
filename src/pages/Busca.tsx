@@ -90,14 +90,21 @@ const Busca = () => {
   };
 
   useEffect(() => {
+    const q = new URLSearchParams(location.search).get("q") || "";
+    setQuery((prev) => (prev === q ? prev : q));
+  }, [location.search]);
+
+  useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      if (query !== initialQuery) {
-        navigate(`/busca?q=${encodeURIComponent(query)}`, { replace: true });
+      const encoded = query.trim() ? `/busca?q=${encodeURIComponent(query.trim())}` : "/busca";
+      if (`${location.pathname}${location.search}` !== encoded) {
+        navigate(encoded, { replace: true });
       }
       performSearch(query);
-    }, 500);
+    }, 400);
 
     return () => clearTimeout(delayDebounceFn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   return (
@@ -106,6 +113,13 @@ const Busca = () => {
         <SearchBar
           value={query}
           onChange={setQuery}
+          onSubmit={() => {
+            const encoded = query.trim()
+              ? `/busca?q=${encodeURIComponent(query.trim())}`
+              : "/busca";
+            navigate(encoded);
+            performSearch(query);
+          }}
           placeholder="Buscar posts, usuários ou núcleos..."
         />
       </div>

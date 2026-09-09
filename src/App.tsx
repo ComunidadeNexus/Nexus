@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import AppLayout from "@/components/layout/AppLayout";
@@ -84,7 +84,7 @@ const App = () => (
                 >
                   <Route path="/comunidade" element={<Feed />} />
                   <Route path="/popular" element={<Feed />} />
-                  <Route path="/feed" element={<Navigate to="/comunidade" replace />} />
+                  <Route path="/feed" element={<Feed />} />
                   <Route path="/perfil" element={<Profile />} />
                   <Route path="/perfil/:userId" element={<Profile />} />
                   <Route path="/configuracoes" element={<Configuracoes />} />

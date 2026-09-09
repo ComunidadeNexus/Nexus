@@ -73,11 +73,12 @@ const Feed = () => {
             </div>
 
             <h2 className="text-2xl font-bold text-foreground mb-3 text-center z-10">
-              Bem-vindo à Nexus!
+              {categorySlug ? `Nada em “${categorySlug}” ainda` : "Bem-vindo à Nexus!"}
             </h2>
             <p className="text-muted-foreground text-center max-w-md mb-8 z-10">
-              A comunidade ainda está silenciosa. Que tal quebrar o gelo? Crie o primeiro post e
-              comece a subir de nível interagindo com a galera!
+              {categorySlug
+                ? "Nenhum post nesta categoria. Seja o primeiro a publicar sobre este assunto."
+                : "A comunidade ainda está silenciosa. Que tal quebrar o gelo? Crie o primeiro post e comece a subir de nível interagindo com a galera!"}
             </p>
 
             <div className="relative z-10">
