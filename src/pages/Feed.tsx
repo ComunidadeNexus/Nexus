@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import PostCard from "@/components/feed/PostCard";
+import CreatePostModal from "@/components/community/CreatePostModal";
 import { useFeed } from "@/hooks/useFeed";
 
 const Feed = () => {
@@ -79,12 +80,16 @@ const Feed = () => {
               comece a subir de nível interagindo com a galera!
             </p>
 
-            <button
-              className="z-10 px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-full shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:scale-105 transition-transform"
-              onClick={() => document.getElementById("create-post-trigger")?.click()}
-            >
-              Fazer a Primeira Postagem
-            </button>
+            <CreatePostModal
+              triggerNode={
+                <button
+                  type="button"
+                  className="z-10 px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-full shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:scale-105 transition-transform"
+                >
+                  Fazer a Primeira Postagem
+                </button>
+              }
+            />
           </div>
         )}
       </div>
