@@ -22,9 +22,18 @@ const Feed = () => {
     }
   }, [location.pathname]);
 
-  const { posts, isLoading } = useFeed(sortBy, categorySlug);
+  const { posts, isLoading, error } = useFeed(sortBy, categorySlug);
   const feedPosts = posts ?? [];
-  const showLoading = isLoading && feedPosts.length === 0;
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
+
+  useEffect(() => {
+    setLoadTimedOut(false);
+    if (!isLoading) return;
+    const timer = window.setTimeout(() => setLoadTimedOut(true), 10000);
+    return () => window.clearTimeout(timer);
+  }, [isLoading, sortBy, categorySlug]);
+
+  const showLoading = isLoading && !loadTimedOut && !error && feedPosts.length === 0;
 
   return (
     <div className="w-full">
