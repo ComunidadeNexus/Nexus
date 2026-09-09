@@ -12,13 +12,19 @@ const AppLayout = () => {
     location.pathname !== "/comunidade" &&
     location.pathname !== "/popular";
 
+  const flushMobile =
+    location.pathname === "/feed" ||
+    location.pathname === "/comunidade" ||
+    location.pathname === "/popular" ||
+    location.pathname.startsWith("/nucleo/");
+
   const hideFabs = HIDE_FAB_PREFIXES.some(
     (prefix) => location.pathname === prefix || location.pathname.startsWith(`${prefix}/`),
   );
 
   return (
     <>
-      <FeedLayout hideRightSidebar={hideRightSidebar}>
+      <FeedLayout hideRightSidebar={hideRightSidebar} flushMobile={flushMobile}>
         <Outlet />
       </FeedLayout>
       {!hideFabs && <FloatingHelpButtons />}

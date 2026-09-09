@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import PostCard from "@/components/feed/PostCard";
 import CreatePostModal from "@/components/community/CreatePostModal";
 import { useFeed } from "@/hooks/useFeed";
+import { useCategories } from "@/hooks/useCategories";
+import { cn } from "@/lib/utils";
 
 const Feed = () => {
   const location = useLocation();
@@ -14,8 +16,19 @@ const Feed = () => {
   const categorySlug = searchParams.get("categoria");
 
   const { posts, isLoading, error } = useFeed(sortBy, categorySlug);
+  const { categories } = useCategories();
   const feedPosts = posts ?? [];
   const [loadTimedOut, setLoadTimedOut] = useState(false);
+  const isHomeSort = location.pathname !== "/popular" && !categorySlug;
+  const isPopularSort = location.pathname === "/popular";
+
+  const chipClass = (active: boolean) =>
+    cn(
+      "shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
+      active
+        ? "bg-primary/15 text-primary border-primary/30"
+        : "bg-gray-100 dark:bg-[#2A3B42] text-gray-700 dark:text-gray-300 border-transparent",
+    );
 
   useEffect(() => {
     setLoadTimedOut(false);
@@ -28,6 +41,27 @@ const Feed = () => {
 
   return (
     <div className="w-full">
+      {/* Mobile: existing Início / Popular / categorias as a thin chip row */}
+      <div className="md:hidden sticky top-12 z-40 bg-white dark:bg-[#1A282D] border-b border-gray-200 dark:border-gray-800">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar px-3 py-2">
+          <Link to="/comunidade" className={chipClass(isHomeSort)}>
+            Início
+          </Link>
+          <Link to="/popular" className={chipClass(isPopularSort)}>
+            Popular
+          </Link>
+          {categories.map((category) => (
+            <Link
+              key={category.id}
+              to={`/feed?categoria=${category.slug}`}
+              className={chipClass(categorySlug === category.slug)}
+            >
+              {category.name}
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {/* Lista de Posts */}
       <div className="flex flex-col gap-0">
         {showLoading ? (
@@ -54,7 +88,7 @@ const Feed = () => {
             />
           ))
         ) : (
-          <div className="flex flex-col items-center justify-center p-8 sm:p-12 bg-gradient-to-br from-[#1A1D24] to-[#0f1218] rounded-2xl border border-white/5 shadow-2xl mt-4 relative overflow-hidden group">
+          <div className="flex flex-col items-center justify-center p-8 sm:p-12 bg-gradient-to-br from-[#1A1D24] to-[#0f1218] rounded-2xl border border-white/5 shadow-2xl mt-4 max-md:mx-3 relative overflow-hidden group">
             <div className="pointer-events-none absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[80px] rounded-full group-hover:bg-primary/20 transition-all duration-700" />
             <div className="pointer-events-none absolute bottom-0 left-0 w-64 h-64 bg-secondary/10 blur-[80px] rounded-full group-hover:bg-secondary/20 transition-all duration-700" />
 
