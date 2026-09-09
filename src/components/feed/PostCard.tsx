@@ -108,25 +108,25 @@ const PostCard = ({
         <div className="flex-1 p-4">
           {/* Header do Post */}
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 text-xs">
-              <Link to={authorId ? `/perfil/${authorId}` : "#"}>
+            <div className="flex items-center gap-2 text-xs min-w-0">
+              <Link to={authorId ? `/perfil/${authorId}` : "#"} className="shrink-0">
                 <Avatar className="w-8 h-8 hover:opacity-80 transition-opacity">
                   <AvatarImage src={authorAvatar || undefined} />
                   <AvatarFallback>{author[0]?.toUpperCase()}</AvatarFallback>
                 </Avatar>
               </Link>
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1">
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-1 min-w-0">
                   <Link
                     to={authorId ? `/perfil/${authorId}` : "#"}
-                    className="font-bold hover:underline cursor-pointer text-gray-900 dark:text-gray-100"
+                    className="font-bold hover:underline cursor-pointer text-gray-900 dark:text-gray-100 truncate"
                   >
                     {author}
                   </Link>
                   {nucleus && nucleus !== "geral" && (
                     <>
                       <span className="text-gray-400">•</span>
-                      <span className="font-bold hover:underline cursor-pointer hover:text-primary transition-colors">
+                      <span className="font-bold hover:underline cursor-pointer hover:text-primary transition-colors truncate">
                         n/{nucleus}
                       </span>
                     </>
@@ -169,7 +169,7 @@ const PostCard = ({
 
           {/* Título e Texto */}
           <div className="mb-3">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1 leading-tight">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1 leading-tight break-words">
               {title}
             </h2>
             <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line line-clamp-4">
@@ -203,7 +203,7 @@ const PostCard = ({
             <div className="flex items-center gap-2 -ml-2">
               <button
                 onClick={handleLike}
-                className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors text-sm font-semibold ${
+                className={`flex items-center gap-1.5 min-h-11 px-2 py-1.5 rounded-md transition-colors text-sm font-semibold ${
                   userVote === "upvote"
                     ? "text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
                     : "hover:bg-gray-100 dark:hover:bg-[#2A3B42]"
@@ -217,7 +217,7 @@ const PostCard = ({
 
               <button
                 onClick={() => setShowComments(!showComments)}
-                className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-[#2A3B42] rounded-md transition-colors text-sm font-semibold"
+                className="flex items-center gap-1.5 min-h-11 px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-[#2A3B42] rounded-md transition-colors text-sm font-semibold"
               >
                 <MessageSquare className="w-6 h-6" />
                 <span>{comments > 0 ? comments : ""}</span>
@@ -225,7 +225,7 @@ const PostCard = ({
 
               <button
                 onClick={() => setIsShareModalOpen(true)}
-                className="flex items-center gap-1.5 px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-[#2A3B42] rounded-md transition-colors text-sm font-semibold"
+                className="flex items-center gap-1.5 min-h-11 px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-[#2A3B42] rounded-md transition-colors text-sm font-semibold"
               >
                 <Share2 className="w-6 h-6" />
               </button>
@@ -233,7 +233,7 @@ const PostCard = ({
 
             <button
               onClick={handleSave}
-              className={`flex items-center gap-1.5 p-1.5 rounded-md transition-colors text-sm font-semibold ${
+              className={`flex items-center gap-1.5 min-h-11 min-w-11 p-1.5 rounded-md transition-colors text-sm font-semibold ${
                 isSaved
                   ? "text-primary hover:bg-primary/10"
                   : "hover:bg-gray-100 dark:hover:bg-[#2A3B42]"

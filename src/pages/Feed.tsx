@@ -52,9 +52,9 @@ const Feed = () => {
             />
           ))
         ) : (
-          <div className="flex flex-col items-center justify-center p-12 bg-gradient-to-br from-[#1A1D24] to-[#0f1218] rounded-2xl border border-white/5 shadow-2xl mt-4 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[80px] rounded-full group-hover:bg-primary/20 transition-all duration-700" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-secondary/10 blur-[80px] rounded-full group-hover:bg-secondary/20 transition-all duration-700" />
+          <div className="flex flex-col items-center justify-center p-8 sm:p-12 bg-gradient-to-br from-[#1A1D24] to-[#0f1218] rounded-2xl border border-white/5 shadow-2xl mt-4 relative overflow-hidden group">
+            <div className="pointer-events-none absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[80px] rounded-full group-hover:bg-primary/20 transition-all duration-700" />
+            <div className="pointer-events-none absolute bottom-0 left-0 w-64 h-64 bg-secondary/10 blur-[80px] rounded-full group-hover:bg-secondary/20 transition-all duration-700" />
 
             <div className="w-20 h-20 bg-background/80 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/10 mb-6 shadow-xl z-10">
               <svg
@@ -80,16 +80,18 @@ const Feed = () => {
               comece a subir de nível interagindo com a galera!
             </p>
 
-            <CreatePostModal
-              triggerNode={
-                <button
-                  type="button"
-                  className="z-10 px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-full shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:scale-105 transition-transform"
-                >
-                  Fazer a Primeira Postagem
-                </button>
-              }
-            />
+            <div className="relative z-10">
+              <CreatePostModal
+                triggerNode={
+                  <button
+                    type="button"
+                    className="min-h-11 px-8 py-3 bg-gradient-to-r from-primary to-secondary text-white font-medium rounded-full shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:scale-105 transition-transform"
+                  >
+                    Fazer a Primeira Postagem
+                  </button>
+                }
+              />
+            </div>
           </div>
         )}
       </div>

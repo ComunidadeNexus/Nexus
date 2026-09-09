@@ -210,7 +210,7 @@ const CreatePostModal = ({
         </DialogTrigger>
       ) : null}
 
-      <DialogContent className="sm:max-w-[700px] p-0 bg-[#121212] border border-gray-800 text-white rounded-xl shadow-2xl [&>button]:hidden">
+      <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-[700px] max-h-[85dvh] overflow-y-auto p-0 bg-[#121212] border border-gray-800 text-white rounded-xl shadow-2xl [&>button]:hidden">
         {/* Header Customizado (Reddit style) */}
         <div className="flex items-center justify-between p-4 border-b border-gray-800">
           <div className="flex items-center gap-4 w-full">
@@ -230,12 +230,12 @@ const CreatePostModal = ({
 
         <div className="p-4 px-6">
           {/* Seletor de Comunidade */}
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-4 flex flex-wrap gap-2 min-w-0">
             <Select
               value={selectedNucleo || "none"}
               onValueChange={(value) => setSelectedNucleo(value === "none" ? null : value)}
             >
-              <SelectTrigger className="w-[250px] bg-[#1A1A1A] border-gray-800 text-white font-bold h-10 rounded-full">
+              <SelectTrigger className="w-full sm:w-[250px] bg-[#1A1A1A] border-gray-800 text-white font-bold h-11 rounded-full">
                 <SelectValue placeholder="Selecionar comunidade">
                   {currentNucleo ? (
                     <div className="flex items-center gap-2">
@@ -284,7 +284,7 @@ const CreatePostModal = ({
               value={selectedCategory || "none"}
               onValueChange={(value) => setSelectedCategory(value === "none" ? null : value)}
             >
-              <SelectTrigger className="w-[200px] bg-[#1A1A1A] border-gray-800 text-white font-bold h-10 rounded-full">
+              <SelectTrigger className="w-full sm:w-[200px] bg-[#1A1A1A] border-gray-800 text-white font-bold h-11 rounded-full">
                 <SelectValue placeholder="Assunto *" />
               </SelectTrigger>
               <SelectContent className="bg-[#1A1A1A] border-gray-800 text-white">
@@ -306,7 +306,7 @@ const CreatePostModal = ({
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="flex w-full bg-transparent border-b border-gray-800 p-0 h-auto justify-start mb-4 rounded-none">
+            <TabsList className="flex w-full bg-transparent border-b border-gray-800 p-0 h-auto justify-start mb-4 rounded-none overflow-x-auto">
               <TabsTrigger
                 value="text"
                 className={`flex-1 rounded-none border-b-2 py-3 font-bold transition-all ${activeTab === "text" ? "border-[#00C6FF] text-[#00C6FF]" : "border-transparent text-gray-400 hover:bg-white/5"}`}

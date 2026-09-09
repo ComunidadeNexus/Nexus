@@ -94,187 +94,199 @@ const GlobalChat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0 flex flex-col">
-      <main className="flex-1 container mx-auto px-4 pt-20 pb-4 max-w-3xl flex flex-col">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold">Chat Global</h1>
-            <p className="text-sm text-muted-foreground">
-              Converse com toda a comunidade em tempo real
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-sm text-muted-foreground">{messages.length} mensagens</span>
-          </div>
+    <div className="w-full min-w-0 flex flex-col h-[calc(100dvh-8.75rem)] lg:h-[calc(100dvh-6.5rem)]">
+      <div className="flex items-center justify-between gap-2 mb-3 shrink-0 min-w-0">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold truncate">Chat Global</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground truncate">
+            Converse com toda a comunidade em tempo real
+          </p>
         </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+            {messages.length} msgs
+          </span>
+        </div>
+      </div>
 
-        {/* Messages Area */}
-        <div className="flex-1 glass-card rounded-xl overflow-hidden flex flex-col">
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {isLoading && messages.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <p>Nenhuma mensagem ainda.</p>
-                <p className="text-sm">Seja o primeiro a enviar!</p>
-              </div>
-            ) : (
-              messages.map((message) => {
-                const profile = getProfile(message.user_id);
-                const isOwn = message.user_id === user?.id;
-                const initials =
-                  profile?.name
-                    ?.split(" ")
-                    .map((n) => n[0])
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 2) || "U";
+      <div className="flex-1 min-h-0 glass-card rounded-xl overflow-hidden flex flex-col">
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 space-y-4">
+          {isLoading && messages.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <p>Nenhuma mensagem ainda.</p>
+              <p className="text-sm">Seja o primeiro a enviar!</p>
+            </div>
+          ) : (
+            messages.map((message) => {
+              const profile = getProfile(message.user_id);
+              const isOwn = message.user_id === user?.id;
+              const initials =
+                profile?.name
+                  ?.split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()
+                  .slice(0, 2) || "U";
 
-                return (
-                  <div key={message.id} className={cn("flex gap-3", isOwn && "flex-row-reverse")}>
-                    <Avatar className="w-8 h-8 flex-shrink-0">
-                      <AvatarImage src={profile?.avatar_url || undefined} />
-                      <AvatarFallback className="text-xs bg-primary/20">{initials}</AvatarFallback>
-                    </Avatar>
-                    <div className={cn("max-w-[70%] space-y-1", isOwn && "items-end")}>
-                      <div className={cn("flex items-center gap-2", isOwn && "flex-row-reverse")}>
-                        <span className="text-sm font-medium">{profile?.name || "Usuário"}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(message.created_at), {
-                            addSuffix: true,
-                            locale: ptBR,
-                          })}
-                        </span>
-                      </div>
-                      <div
-                        className={cn(
-                          "rounded-2xl px-4 py-2",
-                          isOwn
-                            ? "bg-primary text-primary-foreground rounded-br-sm"
-                            : "bg-muted rounded-bl-sm",
-                        )}
-                      >
-                        {message.media_url && (
-                          <img
-                            src={message.media_url}
-                            alt="Media"
-                            className="max-w-full rounded-lg mb-2"
-                          />
-                        )}
-                        {message.content && (
-                          <div className="text-sm">{renderMessageContent(message.content)}</div>
-                        )}
-                      </div>
+              return (
+                <div key={message.id} className={cn("flex gap-3", isOwn && "flex-row-reverse")}>
+                  <Avatar className="w-8 h-8 flex-shrink-0">
+                    <AvatarImage src={profile?.avatar_url || undefined} />
+                    <AvatarFallback className="text-xs bg-primary/20">{initials}</AvatarFallback>
+                  </Avatar>
+                  <div
+                    className={cn(
+                      "max-w-[min(70%,16rem)] sm:max-w-[70%] min-w-0 space-y-1",
+                      isOwn && "items-end",
+                    )}
+                  >
+                    <div className={cn("flex items-center gap-2", isOwn && "flex-row-reverse")}>
+                      <span className="text-sm font-medium">{profile?.name || "Usuário"}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(message.created_at), {
+                          addSuffix: true,
+                          locale: ptBR,
+                        })}
+                      </span>
+                    </div>
+                    <div
+                      className={cn(
+                        "rounded-2xl px-4 py-2",
+                        isOwn
+                          ? "bg-primary text-primary-foreground rounded-br-sm"
+                          : "bg-muted rounded-bl-sm",
+                      )}
+                    >
+                      {message.media_url && (
+                        <img
+                          src={message.media_url}
+                          alt="Media"
+                          className="max-w-full rounded-lg mb-2"
+                        />
+                      )}
+                      {message.content && (
+                        <div className="text-sm">{renderMessageContent(message.content)}</div>
+                      )}
                     </div>
                   </div>
-                );
-              })
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+                </div>
+              );
+            })
+          )}
+          <div ref={messagesEndRef} />
+        </div>
 
-          {/* Media Preview */}
-          {mediaUrl && (
-            <div className="px-4 py-2 border-t border-border">
-              <div className="relative inline-block">
-                <img src={mediaUrl} alt="Preview" className="h-20 rounded-lg object-cover" />
+        {/* Media Preview */}
+        {mediaUrl && (
+          <div className="px-4 py-2 border-t border-border">
+            <div className="relative inline-block">
+              <img src={mediaUrl} alt="Preview" className="h-20 rounded-lg object-cover" />
+              <button
+                onClick={() => setMediaUrl(null)}
+                className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="p-2 sm:p-4 border-t border-border shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <label className="cursor-pointer shrink-0">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                disabled={isUploading}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={isUploading}
+                asChild
+                className="min-h-11 min-w-11"
+              >
+                <span>
+                  {isUploading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <ImagePlus className="w-5 h-5" />
+                  )}
+                </span>
+              </Button>
+            </label>
+
+            <div className="flex-1 relative flex items-center min-w-0">
+              <Input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Digite sua mensagem..."
+                className="w-full min-w-0 pr-16 sm:pr-20 h-11"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+              />
+              <div className="absolute right-1 flex items-center">
                 <button
-                  onClick={() => setMediaUrl(null)}
-                  className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center"
+                  type="button"
+                  onClick={() => {
+                    setShowEmojiPicker(!showEmojiPicker);
+                    setShowGifPicker(false);
+                  }}
+                  className="min-h-9 min-w-9 p-1.5 text-gray-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-full transition-colors"
+                  aria-label="Emoji"
                 >
-                  <X className="w-4 h-4" />
+                  <Smile className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowGifPicker(!showGifPicker);
+                    setShowEmojiPicker(false);
+                  }}
+                  className="min-h-9 min-w-9 p-1.5 text-gray-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-full transition-colors"
+                  aria-label="GIF"
+                >
+                  <SmilePlus className="w-5 h-5" />
                 </button>
               </div>
-            </div>
-          )}
 
-          {/* Input Area */}
-          <div className="p-4 border-t border-border">
-            <div className="flex items-center gap-2">
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  disabled={isUploading}
-                />
-                <Button type="button" variant="ghost" size="icon" disabled={isUploading} asChild>
-                  <span>
-                    {isUploading ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <ImagePlus className="w-5 h-5" />
-                    )}
-                  </span>
-                </Button>
-              </label>
-
-              <div className="flex-1 relative flex items-center">
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Digite sua mensagem..."
-                  className="w-full pr-20"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend();
-                    }
-                  }}
-                />
-                <div className="absolute right-2 flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowEmojiPicker(!showEmojiPicker);
-                      setShowGifPicker(false);
-                    }}
-                    className="p-1.5 text-gray-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-full transition-colors"
-                  >
-                    <Smile className="w-5 h-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowGifPicker(!showGifPicker);
-                      setShowEmojiPicker(false);
-                    }}
-                    className="p-1.5 text-gray-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-full transition-colors"
-                  >
-                    <SmilePlus className="w-5 h-5" />
-                  </button>
+              {showGifPicker && (
+                <GifPicker onSelect={handleGifSelect} onClose={() => setShowGifPicker(false)} />
+              )}
+              {showEmojiPicker && (
+                <div className="absolute bottom-full mb-2 right-0 z-50 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl">
+                  <EmojiPicker onEmojiClick={handleEmojiSelect} width={280} height={320} />
                 </div>
-
-                {/* Popovers */}
-                {showGifPicker && (
-                  <GifPicker onSelect={handleGifSelect} onClose={() => setShowGifPicker(false)} />
-                )}
-                {showEmojiPicker && (
-                  <div className="absolute bottom-full mb-2 right-0 z-50">
-                    <EmojiPicker onEmojiClick={handleEmojiSelect} width={300} height={400} />
-                  </div>
-                )}
-              </div>
-
-              <Button
-                onClick={handleSend}
-                disabled={isSending || (!newMessage.trim() && !mediaUrl)}
-                size="icon"
-              >
-                {isSending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Send className="w-5 h-5" />
-                )}
-              </Button>
+              )}
             </div>
+
+            <Button
+              onClick={handleSend}
+              disabled={isSending || (!newMessage.trim() && !mediaUrl)}
+              size="icon"
+              className="min-h-11 min-w-11 shrink-0"
+            >
+              {isSending ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+            </Button>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };

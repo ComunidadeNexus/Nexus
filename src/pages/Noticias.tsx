@@ -103,14 +103,14 @@ const Noticias = () => {
   }, []);
 
   return (
-    <div className="w-full flex gap-6 px-4 md:px-0">
+    <div className="w-full min-w-0 flex gap-6">
       {/* Coluna Esquerda: Feed */}
       <div className="flex-1 w-full min-w-0 max-w-[640px]">
-        <div className="flex items-center gap-3 mb-6 p-4 bg-white dark:bg-[#1A282D] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+        <div className="flex items-center gap-3 mb-6 p-4 bg-white dark:bg-[#1A282D] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm min-w-0">
           <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
             <Globe2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Mundo & Tecnologia</h1>
             <p className="text-sm text-gray-500">
               As últimas notícias da comunidade oficial e do mundo.
@@ -171,7 +171,10 @@ const Noticias = () => {
             })}
           </div>
         ) : (
-          <div className="text-center py-20 text-gray-500">Nenhuma notícia encontrada.</div>
+          <div className="text-center py-16 px-6 text-gray-500 bg-white dark:bg-[#1A282D] rounded-xl border border-gray-200 dark:border-gray-800">
+            <p className="font-medium">Nenhuma notícia encontrada.</p>
+            <p className="text-sm mt-2">Puxe para atualizar ou volte mais tarde.</p>
+          </div>
         )}
       </div>
 

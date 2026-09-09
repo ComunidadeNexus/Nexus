@@ -88,13 +88,13 @@
     {
       "name": "Mensagens",
       "short_name": "Chat",
-      "url": "/messages",
+      "url": "/mensagens",
       "icons": [{ "src": "/pwa-96x96.png", "sizes": "96x96" }]
     },
     {
       "name": "Notificações",
       "short_name": "Alertas",
-      "url": "/notifications",
+      "url": "/notificacoes",
       "icons": [{ "src": "/pwa-96x96.png", "sizes": "96x96" }]
     }
   ]

@@ -63,12 +63,12 @@ const Messages = () => {
   const selectedConversation = conversations.find((c) => c.id === conversationId);
 
   return (
-    <div className="w-full h-[calc(100vh-100px)] bg-white dark:bg-[#1A282D] rounded-xl border border-gray-200 dark:border-gray-800 flex overflow-hidden shadow-sm">
+    <div className="w-full min-w-0 h-[calc(100dvh-8.75rem)] lg:h-[calc(100dvh-6.5rem)] bg-white dark:bg-[#1A282D] rounded-xl border border-gray-200 dark:border-gray-800 flex overflow-hidden shadow-sm">
       {/* Conversations List */}
       <aside
         className={cn(
-          "w-80 border-r border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#152024]/50",
-          conversationId ? "hidden md:block" : "w-full md:w-80",
+          "border-r border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-[#152024]/50 min-w-0",
+          conversationId ? "hidden md:block md:w-80 shrink-0" : "w-full md:w-80",
         )}
       >
         <div className="p-4 border-b border-gray-200 dark:border-gray-800">
@@ -77,13 +77,15 @@ const Messages = () => {
             Mensagens
           </h2>
         </div>
-        <ScrollArea className="h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)]">
+        <ScrollArea className="h-[calc(100%-3.5rem)]">
           {conversationsLoading && conversations.length === 0 ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
           ) : conversations.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">Nenhuma conversa ainda.</p>
+            <p className="text-sm text-gray-500 text-center py-8 px-4">
+              Nenhuma conversa ainda. Abra um perfil e toque em Mensagem.
+            </p>
           ) : (
             <div className="p-2 space-y-1">
               {conversations.map((conv) => {
@@ -127,7 +129,7 @@ const Messages = () => {
       </aside>
 
       {/* Chat Area */}
-      <main className={cn("flex-1 flex flex-col", !conversationId && "hidden md:flex")}>
+      <main className={cn("flex-1 flex flex-col min-w-0", !conversationId && "hidden md:flex")}>
         {conversationId ? (
           <>
             {/* Header */}
@@ -196,20 +198,20 @@ const Messages = () => {
             </ScrollArea>
 
             {/* Input */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1A282D] mb-16 md:mb-0">
+            <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1A282D] shrink-0">
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   handleSend();
                 }}
-                className="flex gap-3"
+                className="flex gap-2 sm:gap-3 min-w-0"
               >
-                <div className="flex-1 relative flex items-center">
+                <div className="flex-1 relative flex items-center min-w-0">
                   <Input
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Escreva sua mensagem..."
-                    className="w-full rounded-full px-6 pr-20 bg-gray-100 dark:bg-[#0B1416] border-none focus-visible:ring-1 focus-visible:ring-primary h-12"
+                    className="w-full min-w-0 rounded-full px-4 sm:px-6 pr-16 sm:pr-20 bg-gray-100 dark:bg-[#0B1416] border-none focus-visible:ring-1 focus-visible:ring-primary h-12"
                   />
                   <div className="absolute right-2 flex items-center gap-1">
                     <button
@@ -239,15 +241,15 @@ const Messages = () => {
                     <GifPicker onSelect={handleGifSelect} onClose={() => setShowGifPicker(false)} />
                   )}
                   {showEmojiPicker && (
-                    <div className="absolute bottom-full mb-2 right-0 z-50">
-                      <EmojiPicker onEmojiClick={handleEmojiSelect} width={300} height={400} />
+                    <div className="absolute bottom-full mb-2 right-0 z-50 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl">
+                      <EmojiPicker onEmojiClick={handleEmojiSelect} width={280} height={320} />
                     </div>
                   )}
                 </div>
                 <Button
                   type="submit"
                   disabled={isSending || !newMessage.trim()}
-                  className="rounded-full w-12 h-12 p-0 flex items-center justify-center bg-gradient-to-r from-[#00C6FF] to-[#0072FF] hover:opacity-90 shadow-md transition-opacity"
+                  className="rounded-full min-w-12 min-h-12 w-12 h-12 p-0 flex items-center justify-center bg-gradient-to-r from-[#00C6FF] to-[#0072FF] hover:opacity-90 shadow-md transition-opacity shrink-0"
                 >
                   <Send className="w-5 h-5 ml-1" />
                 </Button>
@@ -255,9 +257,12 @@ const Messages = () => {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 px-6 text-center">
             <MessageCircle className="w-16 h-16 mb-4 opacity-20" />
-            <p className="text-lg font-medium text-gray-500">Selecione uma conversa para começar</p>
+            <p className="text-lg font-medium text-gray-500">Nenhuma conversa selecionada</p>
+            <p className="text-sm mt-1">
+              Escolha alguém na lista ao lado para começar a conversar.
+            </p>
           </div>
         )}
       </main>

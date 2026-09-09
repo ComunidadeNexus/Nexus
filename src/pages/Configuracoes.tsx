@@ -77,7 +77,7 @@ const Configuracoes = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center justify-between p-4 transition-colors ${
+                  className={`w-full flex items-center justify-between min-h-11 p-4 transition-colors ${
                     isActive
                       ? "bg-primary/10 text-primary border-r-2 border-primary"
                       : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#2A3B42]"
@@ -97,7 +97,7 @@ const Configuracoes = () => {
             <div className="p-4 border-t border-gray-200 dark:border-gray-800">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 p-2 rounded-lg transition-colors font-medium"
+                className="w-full flex items-center gap-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 min-h-11 p-2 rounded-lg transition-colors font-medium"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Sair da conta</span>
@@ -128,7 +128,7 @@ const Configuracoes = () => {
               <div className="space-y-6">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Privacidade</h2>
 
-                <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center justify-between gap-4 py-4 min-h-[4.5rem] border-b border-gray-100 dark:border-gray-800">
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-gray-100">Conta Privada</h4>
                     <p className="text-sm text-gray-500">
@@ -138,7 +138,7 @@ const Configuracoes = () => {
                   <Switch />
                 </div>
 
-                <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center justify-between gap-4 py-4 min-h-[4.5rem] border-b border-gray-100 dark:border-gray-800">
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-gray-100">Status Online</h4>
                     <p className="text-sm text-gray-500">
@@ -190,7 +190,7 @@ const Configuracoes = () => {
               <div className="space-y-6">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Notificações</h2>
 
-                <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center justify-between gap-4 py-4 min-h-[4.5rem] border-b border-gray-100 dark:border-gray-800">
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-gray-100">
                       Notificações Push
@@ -200,7 +200,7 @@ const Configuracoes = () => {
                   <Switch defaultChecked />
                 </div>
 
-                <div className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center justify-between gap-4 py-4 min-h-[4.5rem] border-b border-gray-100 dark:border-gray-800">
                   <div>
                     <h4 className="font-medium text-gray-900 dark:text-gray-100">
                       E-mails promocionais
