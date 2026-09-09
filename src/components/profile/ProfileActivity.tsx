@@ -5,15 +5,21 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import PostCard from "@/components/feed/PostCard";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 interface ProfileActivityProps {
   userId: string;
 }
 
+/** Pixel height so the CTA cannot collapse to the old 40px (`h-10` / `py-2.5` + `text-sm`). */
+const SETTINGS_CTA_STYLE = {
+  height: 44,
+  minHeight: 44,
+  boxSizing: "border-box" as const,
+};
+
 const ProfileActivity = ({ userId }: ProfileActivityProps) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [posts, setPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -121,13 +127,13 @@ const ProfileActivity = ({ userId }: ProfileActivityProps) => {
           Todos os posts que você fizer nas comunidades serão mostrados no seu perfil. Para
           exibi-los ou ocultá-los, atualize suas configurações.
         </p>
-        <button
-          type="button"
-          onClick={() => navigate("/configuracoes")}
-          className="inline-flex items-center justify-center h-11 min-h-[44px] px-5 py-0 bg-gray-200 dark:bg-white text-gray-900 font-bold rounded-full text-sm leading-none hover:bg-gray-300 dark:hover:bg-gray-200 transition-colors"
+        <Link
+          to="/configuracoes"
+          style={SETTINGS_CTA_STYLE}
+          className="inline-flex appearance-none box-border shrink-0 items-center justify-center !h-11 !min-h-[44px] px-5 py-0 bg-gray-200 dark:bg-white text-gray-900 font-bold rounded-full text-sm leading-none hover:bg-gray-300 dark:hover:bg-gray-200 transition-colors"
         >
           Atualizar configurações
-        </button>
+        </Link>
       </div>
     );
   }
