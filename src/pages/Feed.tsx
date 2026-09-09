@@ -6,21 +6,12 @@ import { useFeed } from "@/hooks/useFeed";
 
 const Feed = () => {
   const location = useLocation();
-  const isPopularRoute = location.pathname === "/popular";
-
-  const [sortBy, setSortBy] = useState<"hot" | "new" | "top">(isPopularRoute ? "top" : "hot");
+  // Derive sort from the URL so /popular does not wait on a lagged setState
+  // (desktop sidebar navigation reused this component and kept sortBy=top).
+  const sortBy: "hot" | "new" | "top" = location.pathname === "/popular" ? "top" : "hot";
 
   const searchParams = new URLSearchParams(location.search);
   const categorySlug = searchParams.get("categoria");
-
-  // Atualizar sortBy se a rota mudar
-  useEffect(() => {
-    if (location.pathname === "/popular") {
-      setSortBy("top");
-    } else if (location.pathname === "/comunidade" || location.pathname === "/feed") {
-      setSortBy("hot");
-    }
-  }, [location.pathname]);
 
   const { posts, isLoading, error } = useFeed(sortBy, categorySlug);
   const feedPosts = posts ?? [];
@@ -29,7 +20,7 @@ const Feed = () => {
   useEffect(() => {
     setLoadTimedOut(false);
     if (!isLoading) return;
-    const timer = window.setTimeout(() => setLoadTimedOut(true), 10000);
+    const timer = window.setTimeout(() => setLoadTimedOut(true), 4000);
     return () => window.clearTimeout(timer);
   }, [isLoading, sortBy, categorySlug]);
 

@@ -119,7 +119,7 @@ const Configuracoes = () => {
                   no seu Perfil clicando em "Editar Perfil".
                 </p>
                 <div className="pt-4">
-                  <Button className="min-h-11" onClick={() => navigate("/perfil")}>
+                  <Button className="h-11 min-h-[44px]" onClick={() => navigate("/perfil")}>
                     Ir para o Meu Perfil
                   </Button>
                 </div>
@@ -182,7 +182,7 @@ const Configuracoes = () => {
                     />
                   </div>
                   <Button
-                    className="min-h-11"
+                    className="h-11 min-h-[44px]"
                     onClick={handleUpdatePassword}
                     disabled={isUpdatingPassword}
                   >

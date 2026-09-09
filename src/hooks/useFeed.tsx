@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-const FEED_QUERY_TIMEOUT_MS = 8000;
+const FEED_QUERY_TIMEOUT_MS = 3500;
 const FEED_PAGE_SIZE = 50;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -116,170 +116,116 @@ async function loadFeedPosts({
     filterCategoryId = cat.id;
   }
 
-  // Public + joined nucleos. Time out membership separately so a hung RLS
-  // lookup cannot block the whole feed (falls back to public nucleos / global posts).
-  let userNucleos: string[] = [];
-  if (userId) {
-    const memberTimeout = new AbortController();
-    const memberTimer = setTimeout(
-      () => memberTimeout.abort(),
-      Math.min(3000, FEED_QUERY_TIMEOUT_MS),
-    );
-    try {
-      const { data: memberData, error: memberError } = await withTimeout(
-        Promise.resolve(
-          supabase
-            .from("nucleo_members")
-            .select("nucleo_id")
-            .eq("user_id", userId)
-            .abortSignal(mergeAbortSignals(signal, memberTimeout.signal)),
-        ),
-        Math.min(3000, FEED_QUERY_TIMEOUT_MS),
-        "nucleo_members timed out",
-      );
-      if (memberError && !isAbortError(memberError)) {
-        console.error("Error fetching nucleo memberships:", memberError);
-      } else if (memberData) {
-        userNucleos = uniqueUuids(memberData.map((m) => m.nucleo_id));
-      }
-    } catch (err) {
-      if (!isAbortError(err)) {
-        console.error("Error fetching nucleo memberships:", err);
-      }
-    } finally {
-      clearTimeout(memberTimer);
-    }
-  }
-
-  const { data: publicNucleos, error: publicNucleoError } = await supabase
-    .from("nucleos")
-    .select("id")
-    .eq("is_private", false)
+  // Single flat posts query — no .or()/in() privacy filter, no nested embeds.
+  // Those extra round-trips (nucleo_members + nucleos + embeds) can stall the
+  // supabase-js client on desktop (many sidebar queries at once) and on /popular
+  // (order by upvotes + embeds). RLS already hides hidden/premium posts.
+  let postsQuery = supabase
+    .from("posts")
+    .select(
+      "id, user_id, nucleo_id, category_id, content, media_url, media_type, upvotes, downvotes, comments_count, created_at",
+    )
+    .eq("is_hidden", false)
+    .limit(FEED_PAGE_SIZE)
     .abortSignal(signal);
-  if (publicNucleoError) {
-    if (isAbortError(publicNucleoError)) throw publicNucleoError;
-    console.error("Error fetching public nucleos:", publicNucleoError);
-  }
-  const publicNucleoIds = uniqueUuids((publicNucleos || []).map((n) => n.id));
-  const allowedNucleos = uniqueUuids([...userNucleos, ...publicNucleoIds]);
 
-  const selectClause = `
-          id, user_id, nucleo_id, category_id, content, media_url, media_type,
-          upvotes, downvotes, comments_count, created_at,
-          nucleo:nucleos(slug, name),
-          category:categories(name, slug, color)
-        `;
-
-  const buildPostsQuery = () => {
-    let query = supabase
-      .from("posts")
-      .select(selectClause)
-      .eq("is_hidden", false)
-      .limit(FEED_PAGE_SIZE)
-      .abortSignal(signal);
-
-    if (filterCategoryId) {
-      query = query.eq("category_id", filterCategoryId);
-    }
-
-    if (sortBy === "top") {
-      query = query.order("upvotes", { ascending: false });
-    } else {
-      query = query.order("created_at", { ascending: false });
-    }
-
-    return query;
-  };
-
-  // Avoid PostgREST `.or(nucleo_id.is.null, nucleo_id.in.(...))` — empty or
-  // malformed `in.()` and the or+in combo can stall the request. Two queries
-  // (global posts + allowed nucleos) always resolve or abort.
-  const postQueries = [
-    buildPostsQuery().is("nucleo_id", null),
-    ...(allowedNucleos.length > 0 ? [buildPostsQuery().in("nucleo_id", allowedNucleos)] : []),
-  ];
-
-  const postResults = await Promise.all(postQueries);
-  const seen = new Set<string>();
-  const rows: NonNullable<(typeof postResults)[number]["data"]> = [];
-
-  for (const result of postResults) {
-    if (result.error) {
-      if (isAbortError(result.error)) throw result.error;
-      console.error("Error fetching posts:", result.error);
-      continue;
-    }
-    for (const post of result.data || []) {
-      if (!post?.id || seen.has(post.id)) continue;
-      seen.add(post.id);
-      rows.push(post);
-    }
+  if (filterCategoryId) {
+    postsQuery = postsQuery.eq("category_id", filterCategoryId);
   }
 
-  rows.sort((a, b) => {
-    if (sortBy === "top") {
-      return (b.upvotes ?? 0) - (a.upvotes ?? 0);
-    }
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
+  postsQuery =
+    sortBy === "top"
+      ? postsQuery.order("upvotes", { ascending: false })
+      : postsQuery.order("created_at", { ascending: false });
 
-  const userIds = uniqueUuids(rows.map((p) => p.user_id));
+  const { data, error: postsError } = await postsQuery;
+  if (postsError) {
+    if (isAbortError(postsError)) throw postsError;
+    console.error("Error fetching posts:", postsError);
+    return [];
+  }
+  const rows = data || [];
+
   const profilesMap: Record<
     string,
     { name: string | null; username: string | null; avatar_url: string | null }
   > = {};
-
-  if (userIds.length > 0) {
-    const { data: profilesData, error: profilesError } = await supabase
-      .from("profiles")
-      .select("user_id, name, username, avatar_url")
-      .in("user_id", userIds)
-      .abortSignal(signal);
-
-    if (profilesError) {
-      if (isAbortError(profilesError)) throw profilesError;
-      console.error("Error fetching profiles:", profilesError);
-    } else if (profilesData) {
-      profilesData.forEach((p) => {
-        profilesMap[p.user_id] = {
-          name: p.name,
-          username: p.username,
-          avatar_url: p.avatar_url,
-        };
-      });
-    }
-  }
-
+  const nucleosMap: Record<string, { slug: string | null; name: string | null }> = {};
   const userVotesMap: Record<string, "upvote" | "downvote"> = {};
-  const postIds = rows.map((p) => p.id);
-  if (userId && postIds.length > 0) {
-    const { data: votesData, error: votesError } = await supabase
-      .from("reactions")
-      .select("post_id, reaction_type")
-      .eq("user_id", userId)
-      .in("reaction_type", ["like", "curious"])
-      .in("post_id", postIds)
-      .abortSignal(signal);
 
-    if (votesError) {
-      if (isAbortError(votesError)) throw votesError;
-      console.error("Error fetching votes:", votesError);
-    } else if (votesData) {
-      votesData.forEach((v) => {
-        if (v.post_id) {
-          userVotesMap[v.post_id] = v.reaction_type === "like" ? "upvote" : "downvote";
-        }
-      });
+  // Enrichment must not block an already-fetched row list (desktop E2E).
+  try {
+    const userIds = uniqueUuids(rows.map((p) => p.user_id));
+    if (userIds.length > 0) {
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("profiles")
+        .select("user_id, name, username, avatar_url")
+        .in("user_id", userIds)
+        .abortSignal(signal);
+      if (profilesError) {
+        if (isAbortError(profilesError)) throw profilesError;
+        console.error("Error fetching profiles:", profilesError);
+      } else if (profilesData) {
+        profilesData.forEach((p) => {
+          profilesMap[p.user_id] = {
+            name: p.name,
+            username: p.username,
+            avatar_url: p.avatar_url,
+          };
+        });
+      }
+    }
+
+    const nucleoIds = uniqueUuids(rows.map((p) => p.nucleo_id));
+    if (nucleoIds.length > 0) {
+      const { data: nucleosData, error: nucleosError } = await supabase
+        .from("nucleos")
+        .select("id, slug, name")
+        .in("id", nucleoIds)
+        .abortSignal(signal);
+      if (nucleosError) {
+        if (isAbortError(nucleosError)) throw nucleosError;
+        console.error("Error fetching nucleos:", nucleosError);
+      } else if (nucleosData) {
+        nucleosData.forEach((n) => {
+          nucleosMap[n.id] = { slug: n.slug, name: n.name };
+        });
+      }
+    }
+
+    const postIds = rows.map((p) => p.id);
+    if (userId && postIds.length > 0) {
+      const { data: votesData, error: votesError } = await supabase
+        .from("reactions")
+        .select("post_id, reaction_type")
+        .eq("user_id", userId)
+        .in("reaction_type", ["like", "curious"])
+        .in("post_id", postIds)
+        .abortSignal(signal);
+      if (votesError) {
+        if (isAbortError(votesError)) throw votesError;
+        console.error("Error fetching votes:", votesError);
+      } else if (votesData) {
+        votesData.forEach((v) => {
+          if (v.post_id) {
+            userVotesMap[v.post_id] = v.reaction_type === "like" ? "upvote" : "downvote";
+          }
+        });
+      }
+    }
+  } catch (err) {
+    if (!isAbortError(err)) {
+      console.error("Error enriching feed posts:", err);
     }
   }
 
-  return rows.map((post: any) => ({
+  return rows.map((post) => ({
     ...post,
-    title: post.title || post.content?.substring(0, 50) || null,
+    title: post.content?.substring(0, 50) || null,
     upvotes_count: post.upvotes || 0,
     downvotes_count: post.downvotes || 0,
     author: profilesMap[post.user_id] || { name: null, username: null, avatar_url: null },
-    nucleo: post.nucleo || { slug: "geral", name: "Geral" },
+    nucleo: (post.nucleo_id && nucleosMap[post.nucleo_id]) || { slug: "geral", name: "Geral" },
     user_vote: userVotesMap[post.id] || null,
   })) as FeedPost[];
 }
