@@ -5,6 +5,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import PostCard from "@/components/feed/PostCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface ProfileActivityProps {
   userId: string;
@@ -12,6 +13,7 @@ interface ProfileActivityProps {
 
 const ProfileActivity = ({ userId }: ProfileActivityProps) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -54,16 +56,17 @@ const ProfileActivity = ({ userId }: ProfileActivityProps) => {
           }
         }
 
-        // Fetch user votes if logged in
+        // Fetch user votes if logged in (skip empty .in() — it can hang the request)
         const userVotes: Record<string, string> = {};
-        if (user) {
+        const fetchedPosts = data || [];
+        if (user && fetchedPosts.length > 0) {
           const { data: reactions } = await supabase
             .from("reactions")
             .select("post_id, reaction_type")
             .eq("user_id", user.id)
             .in(
               "post_id",
-              (data || []).map((p) => p.id),
+              fetchedPosts.map((p) => p.id),
             );
 
           if (reactions) {
@@ -75,7 +78,7 @@ const ProfileActivity = ({ userId }: ProfileActivityProps) => {
           }
         }
 
-        const formattedPosts = (data || []).map((post) => ({
+        const formattedPosts = fetchedPosts.map((post) => ({
           ...post,
           author: profilesMap[post.user_id] || { name: null, username: null, avatar_url: null },
           nucleo: post.nucleo || { slug: "geral", name: "Geral" },
@@ -118,7 +121,11 @@ const ProfileActivity = ({ userId }: ProfileActivityProps) => {
           Todos os posts que você fizer nas comunidades serão mostrados no seu perfil. Para
           exibi-los ou ocultá-los, atualize suas configurações.
         </p>
-        <button className="px-5 py-2.5 bg-gray-200 dark:bg-white text-gray-900 font-bold rounded-full text-sm hover:bg-gray-300 dark:hover:bg-gray-200 transition-colors">
+        <button
+          type="button"
+          onClick={() => navigate("/configuracoes")}
+          className="min-h-11 px-5 py-2.5 bg-gray-200 dark:bg-white text-gray-900 font-bold rounded-full text-sm hover:bg-gray-300 dark:hover:bg-gray-200 transition-colors"
+        >
           Atualizar configurações
         </button>
       </div>

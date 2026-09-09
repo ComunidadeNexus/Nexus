@@ -119,7 +119,9 @@ const Configuracoes = () => {
                   no seu Perfil clicando em "Editar Perfil".
                 </p>
                 <div className="pt-4">
-                  <Button onClick={() => navigate("/perfil")}>Ir para o Meu Perfil</Button>
+                  <Button className="min-h-11" onClick={() => navigate("/perfil")}>
+                    Ir para o Meu Perfil
+                  </Button>
                 </div>
               </div>
             )}
@@ -179,7 +181,11 @@ const Configuracoes = () => {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                     />
                   </div>
-                  <Button onClick={handleUpdatePassword} disabled={isUpdatingPassword}>
+                  <Button
+                    className="min-h-11"
+                    onClick={handleUpdatePassword}
+                    disabled={isUpdatingPassword}
+                  >
                     {isUpdatingPassword ? "Atualizando..." : "Atualizar Senha"}
                   </Button>
                 </div>

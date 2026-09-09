@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,126 +40,154 @@ export const useFeed = (sortBy: "hot" | "new" | "top" = "hot", categorySlug?: st
   const {
     data: posts,
     isLoading,
+    isFetched,
+    isError,
     error,
   } = useQuery({
-    queryKey: ["feed-posts", sortBy, categorySlug],
-    queryFn: async () => {
-      let filterCategoryId = null;
-      if (categorySlug) {
-        const { data: cat } = await supabase
-          .from("categories")
+    queryKey: ["feed-posts", sortBy, categorySlug ?? null],
+    retry: 1,
+    queryFn: async (): Promise<FeedPost[]> => {
+      try {
+        const slug = categorySlug?.trim() || null;
+        let filterCategoryId: string | null = null;
+
+        if (slug) {
+          // Avoid .single() — 0 rows returns HTTP 406 and can leave the query pending.
+          const { data: cats, error: catError } = await supabase
+            .from("categories")
+            .select("id")
+            .eq("slug", slug)
+            .eq("is_active", true)
+            .limit(1);
+
+          if (catError) {
+            console.error("Error fetching category:", catError);
+            return [];
+          }
+
+          const cat = cats?.[0];
+          if (!cat) {
+            return [];
+          }
+          filterCategoryId = cat.id;
+        }
+
+        // Fetch allowed nucleos (public + user's joined nucleos)
+        let userNucleos: string[] = [];
+        if (user) {
+          const { data: memberData } = await supabase
+            .from("nucleo_members")
+            .select("nucleo_id")
+            .eq("user_id", user.id);
+          if (memberData) userNucleos = memberData.map((m) => m.nucleo_id);
+        }
+
+        const { data: publicNucleos } = await supabase
+          .from("nucleos")
           .select("id")
-          .eq("slug", categorySlug)
-          .single();
-        if (cat) filterCategoryId = cat.id;
-      }
+          .eq("is_private", false);
+        const publicNucleoIds = publicNucleos ? publicNucleos.map((n) => n.id) : [];
 
-      // Fetch allowed nucleos (public + user's joined nucleos)
-      let userNucleos: string[] = [];
-      if (user) {
-        const { data: memberData } = await supabase
-          .from("nucleo_members")
-          .select("nucleo_id")
-          .eq("user_id", user.id);
-        if (memberData) userNucleos = memberData.map((m) => m.nucleo_id);
-      }
+        const allowedNucleos = [...new Set([...userNucleos, ...publicNucleoIds])];
 
-      const { data: publicNucleos } = await supabase
-        .from("nucleos")
-        .select("id")
-        .eq("is_private", false);
-      const publicNucleoIds = publicNucleos ? publicNucleos.map((n) => n.id) : [];
-
-      const allowedNucleos = [...new Set([...userNucleos, ...publicNucleoIds])];
-
-      let query = supabase
-        .from("posts")
-        .select(
-          `
+        let query = supabase
+          .from("posts")
+          .select(
+            `
           id, user_id, nucleo_id, category_id, content, media_url, media_type, 
           upvotes, downvotes, comments_count, created_at,
           nucleo:nucleos(slug, name),
           category:categories(name, slug, color)
         `,
-        )
-        // @ts-ignore
-        .eq("is_hidden", false);
+          )
+          // @ts-ignore
+          .eq("is_hidden", false);
 
-      // Apply privacy filter
-      if (allowedNucleos.length > 0) {
-        query = query.or(`nucleo_id.is.null,nucleo_id.in.(${allowedNucleos.join(",")})`);
-      } else {
-        query = query.or(`nucleo_id.is.null`);
-      }
-
-      if (filterCategoryId) {
-        query = query.eq("category_id", filterCategoryId);
-      }
-
-      if (sortBy === "new") {
-        query = query.order("created_at", { ascending: false });
-      } else if (sortBy === "top") {
-        query = query.order("upvotes", { ascending: false });
-      } else {
-        query = query.order("created_at", { ascending: false });
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error fetching posts:", error);
-        throw error;
-      }
-
-      // Buscar perfis separadamente para evitar erro de FK
-      const userIds = [...new Set((data || []).map((p) => p.user_id))];
-      const profilesMap: Record<string, any> = {};
-
-      if (userIds.length > 0) {
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("user_id, name, username, avatar_url")
-          .in("user_id", userIds);
-
-        if (profilesData) {
-          profilesData.forEach((p) => {
-            profilesMap[p.user_id] = {
-              name: p.name,
-              username: p.username,
-              avatar_url: p.avatar_url,
-            };
-          });
+        // Apply privacy filter
+        if (allowedNucleos.length > 0) {
+          query = query.or(`nucleo_id.is.null,nucleo_id.in.(${allowedNucleos.join(",")})`);
+        } else {
+          query = query.or(`nucleo_id.is.null`);
         }
-      }
 
-      // Se o usuário estiver logado, buscar seus votos também
-      const userVotesMap: Record<string, "upvote" | "downvote"> = {};
-      if (user) {
-        const { data: votesData } = await supabase
-          .from("reactions")
-          .select("post_id, reaction_type")
-          .eq("user_id", user.id)
-          .in("reaction_type", ["like", "curious"]);
-
-        if (votesData) {
-          votesData.forEach((v) => {
-            if (v.post_id) {
-              userVotesMap[v.post_id] = v.reaction_type === "like" ? "upvote" : "downvote";
-            }
-          });
+        if (filterCategoryId) {
+          query = query.eq("category_id", filterCategoryId);
         }
-      }
 
-      // Format response
-      return (data || []).map((post: any) => ({
-        ...post,
-        title: post.title || post.content?.substring(0, 50) || null, // Mock title fallback
-        upvotes_count: post.upvotes || 0,
-        downvotes_count: post.downvotes || 0,
-        author: profilesMap[post.user_id] || { name: null, username: null, avatar_url: null },
-        nucleo: post.nucleo || { slug: "geral", name: "Geral" },
-        user_vote: userVotesMap[post.id] || null,
-      })) as FeedPost[];
+        if (sortBy === "new") {
+          query = query.order("created_at", { ascending: false });
+        } else if (sortBy === "top") {
+          query = query.order("upvotes", { ascending: false });
+        } else {
+          query = query.order("created_at", { ascending: false });
+        }
+
+        const { data, error: postsError } = await query;
+
+        if (postsError) {
+          console.error("Error fetching posts:", postsError);
+          return [];
+        }
+
+        const rows = data || [];
+
+        // Buscar perfis separadamente para evitar erro de FK
+        const userIds = [...new Set(rows.map((p) => p.user_id))];
+        const profilesMap: Record<
+          string,
+          { name: string | null; username: string | null; avatar_url: string | null }
+        > = {};
+
+        if (userIds.length > 0) {
+          const { data: profilesData } = await supabase
+            .from("profiles")
+            .select("user_id, name, username, avatar_url")
+            .in("user_id", userIds);
+
+          if (profilesData) {
+            profilesData.forEach((p) => {
+              profilesMap[p.user_id] = {
+                name: p.name,
+                username: p.username,
+                avatar_url: p.avatar_url,
+              };
+            });
+          }
+        }
+
+        // Se o usuário estiver logado, buscar seus votos também
+        const userVotesMap: Record<string, "upvote" | "downvote"> = {};
+        const postIds = rows.map((p) => p.id);
+        if (user && postIds.length > 0) {
+          const { data: votesData } = await supabase
+            .from("reactions")
+            .select("post_id, reaction_type")
+            .eq("user_id", user.id)
+            .in("reaction_type", ["like", "curious"])
+            .in("post_id", postIds);
+
+          if (votesData) {
+            votesData.forEach((v) => {
+              if (v.post_id) {
+                userVotesMap[v.post_id] = v.reaction_type === "like" ? "upvote" : "downvote";
+              }
+            });
+          }
+        }
+
+        return rows.map((post: any) => ({
+          ...post,
+          title: post.title || post.content?.substring(0, 50) || null,
+          upvotes_count: post.upvotes || 0,
+          downvotes_count: post.downvotes || 0,
+          author: profilesMap[post.user_id] || { name: null, username: null, avatar_url: null },
+          nucleo: post.nucleo || { slug: "geral", name: "Geral" },
+          user_vote: userVotesMap[post.id] || null,
+        })) as FeedPost[];
+      } catch (err) {
+        console.error("Error fetching posts:", err);
+        return [];
+      }
     },
   });
 
@@ -351,8 +378,8 @@ export const useFeed = (sortBy: "hot" | "new" | "top" = "hot", categorySlug?: st
   });
 
   return {
-    posts,
-    isLoading,
+    posts: posts ?? [],
+    isLoading: isLoading && !isFetched && !isError,
     error,
     createPost: createPostMutation.mutate,
     isCreating: createPostMutation.isPending,
