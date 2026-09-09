@@ -24,10 +24,8 @@ export const useGlobalChat = () => {
   const [users, setUsers] = useState<Record<string, ChatUser>>({});
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     try {
-      setIsLoading(true);
-
       const { data, error } = await supabase
         .from("chat_messages")
         .select("*")
@@ -37,28 +35,32 @@ export const useGlobalChat = () => {
 
       if (error) throw error;
 
-      setMessages(data || []);
+      const nextMessages = data || [];
+      setMessages(nextMessages);
+      // Render the transcript as soon as messages arrive. Profile hydration is
+      // secondary and must not keep the panel spinning.
+      setIsLoading(false);
 
-      // Fetch user profiles
-      const userIds = [...new Set((data || []).map((m) => m.user_id))];
-      if (userIds.length > 0) {
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("user_id, name, avatar_url")
-          .in("user_id", userIds);
-
-        const usersMap: Record<string, ChatUser> = {};
-        (profilesData || []).forEach((p) => {
-          usersMap[p.user_id] = { name: p.name, avatar_url: p.avatar_url };
-        });
-        setUsers(usersMap);
+      const userIds = [...new Set(nextMessages.map((m) => m.user_id))];
+      if (userIds.length === 0) {
+        return;
       }
+
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", userIds);
+
+      const usersMap: Record<string, ChatUser> = {};
+      (profilesData || []).forEach((p) => {
+        usersMap[p.user_id] = { name: p.name, avatar_url: p.avatar_url };
+      });
+      setUsers(usersMap);
     } catch (error) {
       console.error("Error fetching messages:", error);
-    } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const sendMessage = async (
     content: string,
@@ -172,7 +174,7 @@ export const useGlobalChat = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user?.id, fetchMessages]);
 
   return {
     messages,

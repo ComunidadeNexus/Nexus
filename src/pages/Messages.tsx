@@ -78,7 +78,7 @@ const Messages = () => {
           </h2>
         </div>
         <ScrollArea className="h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)]">
-          {conversationsLoading ? (
+          {conversationsLoading && conversations.length === 0 ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
@@ -153,7 +153,7 @@ const Messages = () => {
 
             {/* Messages */}
             <ScrollArea className="flex-1 p-4 bg-gray-50/30 dark:bg-[#0B1416]/30">
-              {messagesLoading ? (
+              {messagesLoading && messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </div>

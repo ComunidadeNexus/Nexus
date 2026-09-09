@@ -33,20 +33,23 @@ interface ChatUser {
 
 export const useDirectMessages = () => {
   const { user } = useAuth();
+  const userId = user?.id;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchConversations = async () => {
-    if (!user) return;
+  const fetchConversations = useCallback(async () => {
+    if (!userId) {
+      setConversations([]);
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      setIsLoading(true);
-
       // Fetch conversations where user is a participant
       const { data: participationsData, error: participationsError } = await supabase
         .from("conversation_participants")
         .select("conversation_id")
-        .eq("user_id", user.id);
+        .eq("user_id", userId);
 
       if (participationsError) throw participationsError;
 
@@ -54,7 +57,6 @@ export const useDirectMessages = () => {
 
       if (conversationIds.length === 0) {
         setConversations([]);
-        setIsLoading(false);
         return;
       }
 
@@ -77,12 +79,17 @@ export const useDirectMessages = () => {
       const allUserIds = [...new Set((allParticipants || []).map((p) => p.user_id))];
 
       // Fetch profiles
-      const { data: profilesData } = await supabase
-        .from("profiles")
-        .select("user_id, name, avatar_url")
-        .in("user_id", allUserIds);
-
-      const profilesMap = new Map((profilesData || []).map((p) => [p.user_id, p]));
+      let profilesMap = new Map<
+        string,
+        { user_id: string; name: string | null; avatar_url: string | null }
+      >();
+      if (allUserIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("user_id, name, avatar_url")
+          .in("user_id", allUserIds);
+        profilesMap = new Map((profilesData || []).map((p) => [p.user_id, p]));
+      }
 
       // Fetch last messages for each conversation
       const lastMessagesPromises = conversationIds.map((convId) =>
@@ -103,7 +110,7 @@ export const useDirectMessages = () => {
         .select("conversation_id")
         .in("conversation_id", conversationIds)
         .eq("is_read", false)
-        .neq("sender_id", user.id);
+        .neq("sender_id", userId);
 
       const unreadCountMap = new Map<string, number>();
       (unreadData || []).forEach((msg) => {
@@ -115,7 +122,7 @@ export const useDirectMessages = () => {
       const formattedConversations: Conversation[] = (conversationsData || []).map(
         (conv, index) => {
           const convParticipants = (allParticipants || [])
-            .filter((p) => p.conversation_id === conv.id && p.user_id !== user.id)
+            .filter((p) => p.conversation_id === conv.id && p.user_id !== userId)
             .map((p) => {
               const profile = profilesMap.get(p.user_id);
               return {
@@ -139,10 +146,11 @@ export const useDirectMessages = () => {
       setConversations(formattedConversations);
     } catch (error) {
       console.error("Error fetching conversations:", error);
+      setConversations([]);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
 
   const startConversation = async (otherUserId: string) => {
     if (!user) return { error: "Not authenticated", conversationId: null };
@@ -170,7 +178,7 @@ export const useDirectMessages = () => {
   useEffect(() => {
     fetchConversations();
 
-    if (!user) return;
+    if (!userId) return;
 
     // Setup realtime subscription for new messages
     const channel = supabase
@@ -191,7 +199,7 @@ export const useDirectMessages = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [userId, fetchConversations]);
 
   return {
     conversations,
@@ -204,12 +212,17 @@ export const useDirectMessages = () => {
 
 export const useConversation = (conversationId: string | null) => {
   const { user } = useAuth();
+  const userId = user?.id;
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [users, setUsers] = useState<Record<string, ChatUser>>({});
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchMessages = async () => {
-    if (!conversationId || !user) return;
+  const fetchMessages = useCallback(async () => {
+    if (!conversationId || !userId) {
+      setMessages([]);
+      setIsLoading(false);
+      return;
+    }
 
     try {
       setIsLoading(true);
@@ -222,36 +235,39 @@ export const useConversation = (conversationId: string | null) => {
 
       if (error) throw error;
 
-      setMessages(data || []);
+      const nextMessages = data || [];
+      setMessages(nextMessages);
+      setIsLoading(false);
 
       // Mark messages as read
       await supabase
         .from("direct_messages")
         .update({ is_read: true })
         .eq("conversation_id", conversationId)
-        .neq("sender_id", user.id)
+        .neq("sender_id", userId)
         .eq("is_read", false);
 
       // Fetch user profiles
-      const userIds = [...new Set((data || []).map((m) => m.sender_id))];
-      if (userIds.length > 0) {
-        const { data: profilesData } = await supabase
-          .from("profiles")
-          .select("user_id, name, avatar_url")
-          .in("user_id", userIds);
-
-        const usersMap: Record<string, ChatUser> = {};
-        (profilesData || []).forEach((p) => {
-          usersMap[p.user_id] = { name: p.name, avatar_url: p.avatar_url };
-        });
-        setUsers(usersMap);
+      const senderIds = [...new Set(nextMessages.map((m) => m.sender_id))];
+      if (senderIds.length === 0) {
+        return;
       }
+
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("user_id, name, avatar_url")
+        .in("user_id", senderIds);
+
+      const usersMap: Record<string, ChatUser> = {};
+      (profilesData || []).forEach((p) => {
+        usersMap[p.user_id] = { name: p.name, avatar_url: p.avatar_url };
+      });
+      setUsers(usersMap);
     } catch (error) {
       console.error("Error fetching messages:", error);
-    } finally {
       setIsLoading(false);
     }
-  };
+  }, [conversationId, userId]);
 
   const sendMessage = async (content: string, mediaUrl?: string, mediaType?: string) => {
     if (!user || !conversationId) return { error: "Not authenticated" };
@@ -287,7 +303,7 @@ export const useConversation = (conversationId: string | null) => {
   useEffect(() => {
     fetchMessages();
 
-    if (!conversationId || !user) return;
+    if (!conversationId || !userId) return;
 
     // Setup realtime subscription
     const channel = supabase
@@ -303,26 +319,28 @@ export const useConversation = (conversationId: string | null) => {
         async (payload) => {
           const newMessage = payload.new as DirectMessage;
 
-          // Fetch user profile if not in cache
-          if (!users[newMessage.sender_id]) {
-            const { data } = await supabase
-              .from("profiles")
-              .select("user_id, name, avatar_url")
-              .eq("user_id", newMessage.sender_id)
-              .single();
-
-            if (data) {
-              setUsers((prev) => ({
-                ...prev,
-                [data.user_id]: { name: data.name, avatar_url: data.avatar_url },
-              }));
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === newMessage.id)) {
+              return prev;
             }
+            return [...prev, newMessage];
+          });
+
+          const { data } = await supabase
+            .from("profiles")
+            .select("user_id, name, avatar_url")
+            .eq("user_id", newMessage.sender_id)
+            .single();
+
+          if (data) {
+            setUsers((prev) => ({
+              ...prev,
+              [data.user_id]: { name: data.name, avatar_url: data.avatar_url },
+            }));
           }
 
-          setMessages((prev) => [...prev, newMessage]);
-
           // Mark as read if not sender
-          if (newMessage.sender_id !== user.id) {
+          if (newMessage.sender_id !== userId) {
             await supabase
               .from("direct_messages")
               .update({ is_read: true })
@@ -335,7 +353,7 @@ export const useConversation = (conversationId: string | null) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, user]);
+  }, [conversationId, userId, fetchMessages]);
 
   return {
     messages,
