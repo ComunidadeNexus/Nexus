@@ -210,7 +210,7 @@ const CreatePostModal = ({
         </DialogTrigger>
       ) : null}
 
-      <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-[700px] max-h-[85dvh] overflow-y-auto p-0 bg-[#121212] border border-gray-800 text-white rounded-xl shadow-2xl [&>button]:hidden">
+      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-[700px] max-h-[85dvh] overflow-y-auto overflow-x-hidden p-0 bg-[#121212] border border-gray-800 text-white rounded-xl shadow-2xl [&>button]:hidden">
         {/* Header Customizado (Reddit style) */}
         <div className="flex items-center justify-between p-4 border-b border-gray-800">
           <div className="flex items-center gap-4 w-full">
@@ -228,7 +228,7 @@ const CreatePostModal = ({
           </div>
         </div>
 
-        <div className="p-4 px-6">
+        <div className="p-4 px-4 sm:px-6 min-w-0">
           {/* Seletor de Comunidade */}
           <div className="mb-4 flex flex-wrap gap-2 min-w-0">
             <Select
@@ -306,32 +306,32 @@ const CreatePostModal = ({
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="flex w-full bg-transparent border-b border-gray-800 p-0 h-auto justify-start mb-4 rounded-none overflow-x-auto">
+            <TabsList className="flex w-full bg-transparent border-b border-gray-800 p-0 h-auto justify-start mb-4 rounded-none min-w-0">
               <TabsTrigger
                 value="text"
-                className={`flex-1 rounded-none border-b-2 py-3 font-bold transition-all ${activeTab === "text" ? "border-[#00C6FF] text-[#00C6FF]" : "border-transparent text-gray-400 hover:bg-white/5"}`}
+                className={`flex-1 min-w-0 rounded-none border-b-2 py-3 px-1 sm:px-3 font-bold transition-all ${activeTab === "text" ? "border-[#00C6FF] text-[#00C6FF]" : "border-transparent text-gray-400 hover:bg-white/5"}`}
               >
-                <Type className="w-4 h-4 mr-2" />
-                Texto
+                <Type className="w-4 h-4 sm:mr-2 shrink-0" />
+                <span className="truncate">Texto</span>
               </TabsTrigger>
               <TabsTrigger
                 value="media"
-                className={`flex-1 rounded-none border-b-2 py-3 font-bold transition-all ${activeTab === "media" ? "border-[#00C6FF] text-[#00C6FF]" : "border-transparent text-gray-400 hover:bg-white/5"}`}
+                className={`flex-1 min-w-0 rounded-none border-b-2 py-3 px-1 sm:px-3 font-bold transition-all ${activeTab === "media" ? "border-[#00C6FF] text-[#00C6FF]" : "border-transparent text-gray-400 hover:bg-white/5"}`}
               >
-                <ImageIcon className="w-4 h-4 mr-2" />
-                Multimídia
+                <ImageIcon className="w-4 h-4 sm:mr-2 shrink-0" />
+                <span className="truncate hidden sm:inline">Multimídia</span>
               </TabsTrigger>
               <TabsTrigger
                 value="link"
-                className={`flex-1 rounded-none border-b-2 py-3 font-bold transition-all ${activeTab === "link" ? "border-[#00C6FF] text-[#00C6FF]" : "border-transparent text-gray-400 hover:bg-white/5"}`}
+                className={`flex-1 min-w-0 rounded-none border-b-2 py-3 px-1 sm:px-3 font-bold transition-all ${activeTab === "link" ? "border-[#00C6FF] text-[#00C6FF]" : "border-transparent text-gray-400 hover:bg-white/5"}`}
               >
-                <LinkIcon className="w-4 h-4 mr-2" />
-                Link
+                <LinkIcon className="w-4 h-4 sm:mr-2 shrink-0" />
+                <span className="truncate">Link</span>
               </TabsTrigger>
               <TabsTrigger
                 value="poll"
                 disabled
-                className="flex-1 rounded-none border-b-2 border-transparent py-3 font-bold text-gray-600 cursor-not-allowed"
+                className="hidden sm:flex flex-1 rounded-none border-b-2 border-transparent py-3 font-bold text-gray-600 cursor-not-allowed"
               >
                 <BarChart2 className="w-4 h-4 mr-2" />
                 Enquete
@@ -419,17 +419,17 @@ const CreatePostModal = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 px-6 border-t border-gray-800 bg-[#121212] flex items-center justify-end gap-3 rounded-b-xl">
+        <div className="p-4 px-4 sm:px-6 border-t border-gray-800 bg-[#121212] flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 sm:gap-3 rounded-b-xl">
           <button
             type="button"
-            className="px-6 py-2 rounded-full font-bold text-gray-400 bg-transparent border border-gray-800 hover:bg-[#1A1A1A] transition-colors"
+            className="min-h-11 px-6 py-2 rounded-full font-bold text-gray-400 bg-transparent border border-gray-800 hover:bg-[#1A1A1A] transition-colors"
           >
             Salvar rascunho
           </button>
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || !title.trim() || !selectedCategory}
-            className="px-6 py-2 bg-[#2A2A2A] text-white rounded-full font-bold shadow-md disabled:opacity-50 transition-all hover:bg-gradient-to-r hover:from-[#00C6FF] hover:to-[#FF007F] disabled:hover:bg-[#2A2A2A]"
+            className="min-h-11 px-6 py-2 bg-[#2A2A2A] text-white rounded-full font-bold shadow-md disabled:opacity-50 transition-all hover:bg-gradient-to-r hover:from-[#00C6FF] hover:to-[#FF007F] disabled:hover:bg-[#2A2A2A]"
           >
             {isSubmitting ? "Publicando..." : "Postar"}
           </button>
