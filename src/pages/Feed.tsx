@@ -23,17 +23,19 @@ const Feed = () => {
   }, [location.pathname]);
 
   const { posts, isLoading } = useFeed(sortBy, categorySlug);
+  const feedPosts = posts ?? [];
+  const showLoading = isLoading && feedPosts.length === 0;
 
   return (
     <div className="w-full">
       {/* Lista de Posts */}
       <div className="flex flex-col gap-0">
-        {isLoading ? (
+        {showLoading ? (
           <div className="flex justify-center p-8">
             <span className="text-gray-500">Carregando posts...</span>
           </div>
-        ) : posts && posts.length > 0 ? (
-          posts.map((post) => (
+        ) : feedPosts.length > 0 ? (
+          feedPosts.map((post) => (
             <PostCard
               key={post.id}
               postId={post.id}

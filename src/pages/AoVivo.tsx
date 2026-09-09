@@ -72,15 +72,15 @@ const AoVivo = () => {
 
           {/* Chat da Twitch Integrado */}
           {showChat && (
-            <div className="w-full lg:w-[min(350px,100%)] min-w-0 bg-[#18181B] rounded-2xl overflow-hidden shadow-2xl border border-gray-800 shrink-0 h-[280px] sm:h-[400px] lg:h-auto lg:min-h-[360px] flex items-center justify-center">
+            <div className="w-full lg:w-[min(350px,100%)] min-w-0 bg-[#18181B] rounded-2xl overflow-hidden shadow-2xl border border-gray-800 shrink-0 h-[280px] sm:h-[400px] lg:h-auto lg:min-h-[360px] flex flex-col items-stretch justify-center">
               {!activeStreamerData ? (
-                <Loader2 className="w-8 h-8 text-gray-500 animate-spin" />
+                <Loader2 className="w-8 h-8 text-gray-500 animate-spin mx-auto" />
               ) : (
                 <iframe
                   src={`https://www.twitch.tv/embed/${activeStreamerData.id}/chat?parent=${PARENT_DOMAIN}&darkpopout`}
                   height="100%"
                   width="100%"
-                  className="border-0"
+                  className="h-full w-full min-h-0 min-w-0 flex-1 border-0"
                   title="Twitch Chat"
                 ></iframe>
               )}
