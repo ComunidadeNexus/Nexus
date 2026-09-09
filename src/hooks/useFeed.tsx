@@ -120,6 +120,11 @@ async function loadFeedPosts({
   // lookup cannot block the whole feed (falls back to public nucleos / global posts).
   let userNucleos: string[] = [];
   if (userId) {
+    const memberTimeout = new AbortController();
+    const memberTimer = setTimeout(
+      () => memberTimeout.abort(),
+      Math.min(3000, FEED_QUERY_TIMEOUT_MS),
+    );
     try {
       const { data: memberData, error: memberError } = await withTimeout(
         Promise.resolve(
@@ -127,18 +132,22 @@ async function loadFeedPosts({
             .from("nucleo_members")
             .select("nucleo_id")
             .eq("user_id", userId)
-            .abortSignal(signal),
+            .abortSignal(mergeAbortSignals(signal, memberTimeout.signal)),
         ),
         Math.min(3000, FEED_QUERY_TIMEOUT_MS),
         "nucleo_members timed out",
       );
-      if (memberError) {
+      if (memberError && !isAbortError(memberError)) {
         console.error("Error fetching nucleo memberships:", memberError);
       } else if (memberData) {
         userNucleos = uniqueUuids(memberData.map((m) => m.nucleo_id));
       }
     } catch (err) {
-      console.error("Error fetching nucleo memberships:", err);
+      if (!isAbortError(err)) {
+        console.error("Error fetching nucleo memberships:", err);
+      }
+    } finally {
+      clearTimeout(memberTimer);
     }
   }
 
