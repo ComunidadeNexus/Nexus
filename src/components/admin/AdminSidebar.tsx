@@ -25,6 +25,7 @@ import {
   Activity,
   Settings,
   Gamepad2,
+  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ const navItems = [
   { path: "/admin/coins", label: "Nexus Coins", icon: Coins },
   { path: "/admin/notificacoes", label: "Notificações", icon: Bell },
   { path: "/admin/assinaturas", label: "Assinaturas", icon: CreditCard },
+  { path: "/admin/premio", label: "Prêmio", icon: Crown },
   { path: "/admin/feedback", label: "Feedback & Dicas", icon: Lightbulb },
   { path: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { path: "/admin/logs", label: "Logs de Auditoria", icon: Activity },

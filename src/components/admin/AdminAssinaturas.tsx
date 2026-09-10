@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { CreditCard, Plus, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { CreditCard, Plus, Pencil, Trash2, AlertTriangle, Check, Crown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -85,9 +85,21 @@ const AdminAssinaturas = () => {
 
   const fetchPlans = async () => {
     setLoadingPlans(true);
-    const { data } = await supabase.from("plans").select("*").order("price_monthly");
-    setPlans(data || []);
+    const { data, error } = await supabase.from("plans").select("*").order("price_monthly");
+    if (error) {
+      toast({ title: "Erro ao carregar planos", description: error.message, variant: "destructive" });
+      setPlans([]);
+    } else {
+      setPlans(data || []);
+    }
     setLoadingPlans(false);
+  };
+
+  const deactivateOtherPlans = async (keepId?: string) => {
+    let query = supabase.from("plans").update({ is_active: false }).eq("is_active", true);
+    if (keepId) query = query.neq("id", keepId);
+    const { error } = await query;
+    if (error) throw error;
   };
 
   const fetchSubscriptions = async () => {
@@ -137,33 +149,143 @@ const AdminAssinaturas = () => {
         .split("\n")
         .map((l) => l.trim())
         .filter(Boolean);
-      const payload = { ...form, features };
+      const payload = {
+        ...form,
+        features,
+        stripe_price_id_monthly: form.stripe_price_id_monthly || null,
+        stripe_price_id_yearly: form.stripe_price_id_yearly || null,
+      };
+
+      if (form.is_active) {
+        await deactivateOtherPlans(editTarget?.id);
+      }
+
       if (editTarget) {
-        await supabase.from("plans").update(payload).eq("id", editTarget.id);
-        toast({ title: "Plano atualizado!" });
+        const { error } = await supabase.from("plans").update(payload).eq("id", editTarget.id);
+        if (error) throw error;
+        toast({ title: "Plano atualizado!", description: "Já aparece para os usuários." });
       } else {
-        await supabase.from("plans").insert(payload);
-        toast({ title: "Plano criado!" });
+        const { error } = await supabase.from("plans").insert(payload);
+        if (error) throw error;
+        toast({ title: "Plano criado!", description: "Já aparece para os usuários." });
       }
       setDialogOpen(false);
       fetchPlans();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Não foi possível salvar o plano.";
+      toast({ title: "Erro ao salvar plano", description: message, variant: "destructive" });
     } finally {
       setSaving(false);
     }
   };
 
   const toggleActive = async (id: string, current: boolean) => {
-    await supabase.from("plans").update({ is_active: !current }).eq("id", id);
-    toast({ title: !current ? "Plano ativado" : "Plano desativado" });
-    fetchPlans();
+    try {
+      if (!current) {
+        await deactivateOtherPlans(id);
+      }
+      const { error } = await supabase.from("plans").update({ is_active: !current }).eq("id", id);
+      if (error) throw error;
+      toast({
+        title: !current ? "Plano ativado" : "Plano desativado",
+        description: !current
+          ? "Este é o plano que os usuários veem agora."
+          : "Ele saiu da página de assinatura.",
+      });
+      fetchPlans();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Não foi possível alterar o plano.";
+      toast({ title: "Erro ao alterar plano", description: message, variant: "destructive" });
+    }
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from("plans").delete().eq("id", id);
-    toast({ title: "Plano deletado" });
-    setDeleteTarget(null);
-    fetchPlans();
+    try {
+      const { error } = await supabase.from("plans").delete().eq("id", id);
+      if (error) throw error;
+      toast({ title: "Plano deletado" });
+      setDeleteTarget(null);
+      fetchPlans();
+    } catch (err: unknown) {
+      const raw = err instanceof Error ? err.message : "";
+      const description = raw.includes("subscriptions_plan_id_fkey")
+        ? "Há assinantes neste plano. Desative em vez de deletar."
+        : raw || "Não foi possível deletar o plano.";
+      toast({ title: "Erro ao deletar plano", description, variant: "destructive" });
+    }
   };
+
+  const publicPlan = plans.find((p) => p.is_active && Number(p.price_monthly) > 0) || null;
+  const otherPlans = plans.filter((p) => p.id !== publicPlan?.id);
+  const formatPrice = (value: number) => `R$ ${Number(value).toFixed(2).replace(".", ",")}`;
+
+  const renderPlanCard = (plan: Plan, highlight = false) => (
+    <div
+      key={plan.id}
+      className={`p-5 rounded-2xl border transition-all ${
+        highlight
+          ? "border-yellow-500/40 bg-yellow-500/5"
+          : "border-white/10 bg-white/5 hover:bg-white/8"
+      }`}
+    >
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <p className="font-semibold text-foreground">{plan.name}</p>
+          <p className="text-2xl font-bold text-emerald-400 mt-1">
+            {formatPrice(plan.price_monthly)}
+            <span className="text-sm text-muted-foreground font-normal">/mês</span>
+          </p>
+          {Number(plan.price_yearly) > 0 && (
+            <p className="text-sm text-muted-foreground">{formatPrice(plan.price_yearly)}/ano</p>
+          )}
+        </div>
+        <Badge
+          className={`text-xs ${plan.is_active ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}`}
+        >
+          {plan.is_active ? "Visível para usuários" : "Inativo"}
+        </Badge>
+      </div>
+      {plan.description && (
+        <p className="text-xs text-muted-foreground mb-3">{plan.description}</p>
+      )}
+      {Array.isArray(plan.features) && plan.features.length > 0 && (
+        <ul className="space-y-1 mb-4">
+          {plan.features.map((f: string, i: number) => (
+            <li key={i} className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Check className="w-3 h-3 text-yellow-500 shrink-0" />
+              {f}
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="flex-1 border-white/10 hover:bg-white/10 text-xs"
+          onClick={() => openEdit(plan)}
+        >
+          <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="border-white/10 hover:bg-white/10 text-xs"
+          onClick={() => toggleActive(plan.id, plan.is_active)}
+        >
+          {plan.is_active ? "Desativar" : "Ativar"}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="border-red-500/20 hover:bg-red-500/10"
+          onClick={() => setDeleteTarget(plan.id)}
+        >
+          <Trash2 className="w-3.5 h-3.5 text-red-400" />
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -174,7 +296,10 @@ const AdminAssinaturas = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Assinaturas</h1>
-            <p className="text-sm text-muted-foreground">Planos e assinantes</p>
+            <p className="text-sm text-muted-foreground">
+              Só um plano ativo aparece para os usuários. Criar ou editar atualiza a página de
+              assinatura na hora.
+            </p>
           </div>
         </div>
         <Button onClick={openCreate} className="bg-violet-600 hover:bg-violet-700">
@@ -217,80 +342,30 @@ const AdminAssinaturas = () => {
               ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className="p-5 rounded-2xl border border-white/10 bg-white/5 hover:bg-white/8 transition-all"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="font-semibold text-foreground">{plan.name}</p>
-                    <p className="text-2xl font-bold text-emerald-400 mt-1">
-                      R$ {plan.price_monthly.toFixed(2)}
-                      <span className="text-sm text-muted-foreground font-normal">/mês</span>
-                    </p>
-                    {plan.price_yearly > 0 && (
-                      <p className="text-sm text-muted-foreground">
-                        R$ {plan.price_yearly.toFixed(2)}/ano
-                      </p>
-                    )}
-                  </div>
-                  <Badge
-                    className={`text-xs ${plan.is_active ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" : "bg-red-500/20 text-red-400 border-red-500/30"}`}
-                  >
-                    {plan.is_active ? "Ativo" : "Inativo"}
-                  </Badge>
+          <div className="space-y-8">
+            {publicPlan ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-yellow-500">
+                  <Crown className="w-4 h-4" />
+                  Mesmo plano da página de assinatura
                 </div>
-                {plan.description && (
-                  <p className="text-xs text-muted-foreground mb-3">{plan.description}</p>
-                )}
-                {Array.isArray(plan.features) && plan.features.length > 0 && (
-                  <ul className="space-y-1 mb-4">
-                    {plan.features.slice(0, 3).map((f: string, i: number) => (
-                      <li
-                        key={i}
-                        className="text-xs text-muted-foreground flex items-center gap-1.5"
-                      >
-                        <span className="w-1 h-1 rounded-full bg-emerald-400 shrink-0" />
-                        {f}
-                      </li>
-                    ))}
-                    {plan.features.length > 3 && (
-                      <li className="text-xs text-muted-foreground">
-                        +{plan.features.length - 3} mais...
-                      </li>
-                    )}
-                  </ul>
-                )}
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 border-white/10 hover:bg-white/10 text-xs"
-                    onClick={() => openEdit(plan)}
-                  >
-                    <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-white/10 hover:bg-white/10 text-xs"
-                    onClick={() => toggleActive(plan.id, plan.is_active)}
-                  >
-                    {plan.is_active ? "Desativar" : "Ativar"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-red-500/20 hover:bg-red-500/10"
-                    onClick={() => setDeleteTarget(plan.id)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                  </Button>
+                <div className="max-w-md">{renderPlanCard(publicPlan, true)}</div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nenhum plano ativo. Ative ou crie um para ele aparecer para os usuários.
+              </p>
+            )}
+            {otherPlans.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Outros planos (não aparecem para os usuários)
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {otherPlans.map((plan) => renderPlanCard(plan))}
                 </div>
               </div>
-            ))}
+            )}
           </div>
         ))}
 
@@ -473,7 +548,8 @@ const AdminAssinaturas = () => {
               <AlertTriangle className="w-5 h-5" /> Deletar Plano
             </DialogTitle>
             <DialogDescription>
-              Assinaturas existentes não serão afetadas, mas ninguém mais poderá assinar este plano.
+              O plano some da página de assinatura. Se alguém já assinou, o delete é bloqueado — nesse
+              caso desative o plano.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

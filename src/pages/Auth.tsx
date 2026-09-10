@@ -41,6 +41,19 @@ type LoginFormData = z.infer<typeof loginSchema>;
 type SignupFormData = z.infer<typeof signupSchema>;
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
+const getSafeNextPath = (raw: string | null) => {
+  if (!raw) return "/comunidade";
+  try {
+    const decoded = decodeURIComponent(raw);
+    if (decoded.startsWith("/") && !decoded.startsWith("//") && !decoded.includes("://")) {
+      return decoded;
+    }
+  } catch {
+    return "/comunidade";
+  }
+  return "/comunidade";
+};
+
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const [isSignup, setIsSignup] = useState(searchParams.get("mode") === "signup");
@@ -50,12 +63,13 @@ const Auth = () => {
   const { signIn, signUp, signInWithOAuth, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const nextPath = getSafeNextPath(searchParams.get("next"));
 
   useEffect(() => {
     if (user) {
-      navigate("/comunidade");
+      navigate(nextPath);
     }
-  }, [user, navigate]);
+  }, [user, navigate, nextPath]);
 
   useEffect(() => {
     const searchError =
@@ -110,7 +124,7 @@ const Auth = () => {
         title: "Bem-vindo de volta!",
         description: "Login realizado com sucesso.",
       });
-      navigate("/comunidade");
+      navigate(nextPath);
     }
   };
 

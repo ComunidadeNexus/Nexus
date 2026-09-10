@@ -12,8 +12,10 @@ import {
   Moon,
   Tv,
   Globe,
+  Shield,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { useProfile } from "@/hooks/useProfile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -28,6 +30,7 @@ import CreatePostModal from "@/components/community/CreatePostModal";
 
 const FeedHeader = () => {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
   const { profile } = useProfile();
   const navigate = useNavigate();
   const location = useLocation();
@@ -208,6 +211,15 @@ const FeedHeader = () => {
                   <Settings className="w-4 h-4" />
                   <span>Configurações</span>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem
+                    onClick={() => navigate("/admin")}
+                    className="cursor-pointer gap-2"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span>Painel Admin</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-800" />
                 <DropdownMenuItem
                   onClick={handleLogout}

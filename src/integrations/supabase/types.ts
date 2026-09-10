@@ -786,6 +786,51 @@ export type Database = {
           },
         ];
       };
+      premium_items: {
+        Row: {
+          category: string;
+          content_type: string;
+          created_at: string;
+          description: string | null;
+          file_url: string;
+          id: string;
+          is_published: boolean;
+          meta: string | null;
+          sort_order: number;
+          thumbnail_url: string | null;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          category?: string;
+          content_type?: string;
+          created_at?: string;
+          description?: string | null;
+          file_url: string;
+          id?: string;
+          is_published?: boolean;
+          meta?: string | null;
+          sort_order?: number;
+          thumbnail_url?: string | null;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          category?: string;
+          content_type?: string;
+          created_at?: string;
+          description?: string | null;
+          file_url?: string;
+          id?: string;
+          is_published?: boolean;
+          meta?: string | null;
+          sort_order?: number;
+          thumbnail_url?: string | null;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           avatar_url: string | null;

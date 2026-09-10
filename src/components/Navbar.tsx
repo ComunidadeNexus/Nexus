@@ -205,6 +205,15 @@ const Navbar = () => {
                       <User className="w-4 h-4 mr-2" />
                       Meu Perfil
                     </DropdownMenuItem>
+                    {isAdmin && (
+                      <DropdownMenuItem
+                        onClick={() => navigate("/admin")}
+                        className="cursor-pointer"
+                      >
+                        <Shield className="w-4 h-4 mr-2" />
+                        Painel Admin
+                      </DropdownMenuItem>
+                    )}
                     {tier === "enterprise" && (
                       <DropdownMenuItem
                         onClick={() => navigate("/analytics")}
@@ -421,6 +430,19 @@ const Navbar = () => {
                       <User className="w-4 h-4 mr-2" />
                       Meu Perfil
                     </Button>
+                    {isAdmin && (
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          navigate("/admin");
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        <Shield className="w-4 h-4 mr-2" />
+                        Painel Admin
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       className="w-full justify-start"

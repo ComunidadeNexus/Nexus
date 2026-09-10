@@ -185,8 +185,8 @@ const AdminDashboard = () => {
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-foreground truncate">
-                          {post.content.slice(0, 60)}
-                          {post.content.length > 60 ? "..." : ""}
+                          {(post.content || "").slice(0, 60)}
+                          {(post.content || "").length > 60 ? "..." : ""}
                         </p>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {format(new Date(post.created_at), "dd MMM, HH:mm", { locale: ptBR })}

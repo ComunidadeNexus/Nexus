@@ -40,6 +40,8 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         // Bundle principal ainda pode passar de 2 MiB; evita falha no generateSW
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/steam-api/],
       },
       manifest: {
         name: "Nexus - Comunidade Digital",

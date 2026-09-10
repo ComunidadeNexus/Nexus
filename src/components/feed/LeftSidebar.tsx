@@ -17,12 +17,14 @@ import {
   Gamepad2,
   Tv,
   BookOpen,
+  Shield,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import CreateNucleoModal from "../nucleos/CreateNucleoModal";
 import { useCategories } from "@/hooks/useCategories";
 import { DynamicIcon } from "@/components/ui/DynamicIcon";
+import { useAdmin } from "@/hooks/useAdmin";
 
 const LeftSidebar = () => {
   const [topicsOpen, setTopicsOpen] = useState(true);
@@ -31,6 +33,7 @@ const LeftSidebar = () => {
   const [isCreateNucleoOpen, setIsCreateNucleoOpen] = useState(false);
   const location = useLocation();
   const { categories } = useCategories();
+  const { isAdmin } = useAdmin();
   const currentCategory = new URLSearchParams(location.search).get("categoria");
   const isHomePath = location.pathname === "/feed" || location.pathname === "/comunidade";
 
@@ -76,6 +79,12 @@ const LeftSidebar = () => {
           <Compass className="w-5 h-5" />
           <span>Explorar</span>
         </Link>
+        {isAdmin && (
+          <Link to="/admin" className={getNavItemClass("/admin")}>
+            <Shield className="w-5 h-5" />
+            <span>Painel Admin</span>
+          </Link>
+        )}
       </div>
 
       <div className="h-px bg-gray-200 dark:bg-gray-800 my-2 mx-3"></div>
