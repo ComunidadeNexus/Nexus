@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAdminData } from "@/hooks/useAdminData";
 import AdminStatCard from "./AdminStatCard";
 import {
@@ -22,6 +23,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const {
     stats,
     loadingStats,
@@ -133,6 +135,35 @@ const AdminDashboard = () => {
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Visão geral da plataforma Nexus</p>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <button
+          onClick={() => navigate("/admin/premio")}
+          className="flex items-center gap-3 p-4 rounded-2xl border border-yellow-500/30 bg-yellow-500/10 text-left hover:bg-yellow-500/15 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+            <Crown className="w-5 h-5 text-yellow-400" />
+          </div>
+          <div>
+            <p className="font-semibold text-foreground">Área Premium</p>
+            <p className="text-xs text-muted-foreground">
+              Publicar downloads e conteúdos do cofre
+            </p>
+          </div>
+        </button>
+        <button
+          onClick={() => navigate("/admin/assinaturas")}
+          className="flex items-center gap-3 p-4 rounded-2xl border border-white/10 bg-white/5 text-left hover:bg-white/8 transition-colors"
+        >
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+            <CreditCard className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div>
+            <p className="font-semibold text-foreground">Assinaturas</p>
+            <p className="text-xs text-muted-foreground">Editar o plano que os usuários veem</p>
+          </div>
+        </button>
       </div>
 
       {/* Stats Grid */}

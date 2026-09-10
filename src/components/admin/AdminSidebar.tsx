@@ -34,6 +34,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const navItems = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { path: "/admin/premio", label: "Área Premium", icon: Crown, highlight: true },
+  { path: "/admin/assinaturas", label: "Assinaturas", icon: CreditCard },
   { path: "/admin/membros", label: "Membros", icon: Users },
   { path: "/admin/conteudo", label: "Moderação", icon: FileText },
   { path: "/admin/chat", label: "Chat Global", icon: MessageSquare },
@@ -45,8 +47,6 @@ const navItems = [
   { path: "/admin/jogos", label: "Jogos & Downloads", icon: Gamepad2 },
   { path: "/admin/coins", label: "Nexus Coins", icon: Coins },
   { path: "/admin/notificacoes", label: "Notificações", icon: Bell },
-  { path: "/admin/assinaturas", label: "Assinaturas", icon: CreditCard },
-  { path: "/admin/premio", label: "Prêmio", icon: Crown },
   { path: "/admin/feedback", label: "Feedback & Dicas", icon: Lightbulb },
   { path: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { path: "/admin/logs", label: "Logs de Auditoria", icon: Activity },
@@ -133,6 +133,7 @@ const AdminSidebar = ({
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item);
+          const highlight = "highlight" in item && item.highlight;
           return (
             <button
               key={item.path}
@@ -141,20 +142,35 @@ const AdminSidebar = ({
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group",
                 active
-                  ? "bg-gradient-to-r from-violet-500/20 to-purple-600/10 text-violet-400 border border-violet-500/30"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/5",
+                  ? highlight
+                    ? "bg-yellow-500/15 text-yellow-400 border border-yellow-500/40"
+                    : "bg-gradient-to-r from-violet-500/20 to-purple-600/10 text-violet-400 border border-violet-500/30"
+                  : highlight
+                    ? "text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 border border-yellow-500/20"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5",
                 collapsed && !isMobile && "justify-center px-2",
               )}
             >
               <Icon
                 className={cn(
                   "w-5 h-5 shrink-0",
-                  active ? "text-violet-400" : "text-muted-foreground group-hover:text-foreground",
+                  active
+                    ? highlight
+                      ? "text-yellow-400"
+                      : "text-violet-400"
+                    : highlight
+                      ? "text-yellow-400"
+                      : "text-muted-foreground group-hover:text-foreground",
                 )}
               />
               {(!collapsed || isMobile) && <span>{item.label}</span>}
               {(!collapsed || isMobile) && active && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-violet-400" />
+                <div
+                  className={cn(
+                    "ml-auto w-1.5 h-1.5 rounded-full",
+                    highlight ? "bg-yellow-400" : "bg-violet-400",
+                  )}
+                />
               )}
             </button>
           );
