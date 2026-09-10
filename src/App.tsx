@@ -77,6 +77,29 @@ const App = () => (
                 <Route path="/painel" element={<Navigate to="/admin" replace />} />
                 <Route path="/painel-admin" element={<Navigate to="/admin" replace />} />
 
+                {/* Admin precisa ficar fora do layout logado: o path="*" de lá engolia /admin */}
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="membros" element={<AdminMembros />} />
+                  <Route path="conteudo" element={<AdminConteudo />} />
+                  <Route path="chat" element={<AdminChat />} />
+                  <Route path="categorias" element={<AdminCategorias />} />
+                  <Route path="nucleos" element={<AdminNucleos />} />
+                  <Route path="marketplace" element={<AdminMarketplace />} />
+                  <Route path="gamificacao" element={<AdminGamificacao />} />
+                  <Route path="coins" element={<AdminCoins />} />
+                  <Route path="jogos" element={<AdminJogos />} />
+                  <Route path="notificacoes" element={<AdminNotificacoes />} />
+                  <Route path="assinaturas" element={<AdminAssinaturas />} />
+                  <Route path="premio" element={<AdminPremio />} />
+                  <Route path="feedback" element={<AdminFeedback />} />
+                  <Route path="analytics" element={<Analytics />} />
+                  <Route path="denuncias" element={<AdminDenuncias />} />
+                  <Route path="logs" element={<AdminLogs />} />
+                  <Route path="configuracoes" element={<AdminConfig />} />
+                  <Route path="*" element={<Navigate to="/admin" replace />} />
+                </Route>
+
                 {/* Rotas Logadas com Novo Layout Reddit */}
                 <Route
                   element={
@@ -125,34 +148,8 @@ const App = () => (
                   <Route path="/núcleo/:slug" element={<AliasRedirect to="/nucleo/:slug" />} />
                   <Route path="/notificações" element={<AliasRedirect to="/notificacoes" />} />
                   <Route path="/configurações" element={<AliasRedirect to="/configuracoes" />} />
-
-                  <Route path="*" element={<NotFound />} />
                 </Route>
 
-                {/* Rotas Administrativas */}
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="membros" element={<AdminMembros />} />
-                  <Route path="conteudo" element={<AdminConteudo />} />
-                  <Route path="chat" element={<AdminChat />} />
-                  <Route path="categorias" element={<AdminCategorias />} />
-                  <Route path="nucleos" element={<AdminNucleos />} />
-                  <Route path="marketplace" element={<AdminMarketplace />} />
-                  <Route path="gamificacao" element={<AdminGamificacao />} />
-                  <Route path="coins" element={<AdminCoins />} />
-                  <Route path="jogos" element={<AdminJogos />} />
-                  <Route path="notificacoes" element={<AdminNotificacoes />} />
-                  <Route path="assinaturas" element={<AdminAssinaturas />} />
-                  <Route path="premio" element={<AdminPremio />} />
-                  <Route path="feedback" element={<AdminFeedback />} />
-                  <Route path="analytics" element={<Analytics />} />
-                  <Route path="denuncias" element={<AdminDenuncias />} />
-                  <Route path="logs" element={<AdminLogs />} />
-                  <Route path="configuracoes" element={<AdminConfig />} />
-                  <Route path="*" element={<Navigate to="/admin" replace />} />
-                </Route>
-
-                {/* Erro 404 (rotas públicas / deslogado) */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </ErrorBoundary>
