@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { usePublicPlans, type PublicPlan } from "@/hooks/usePublicPlans";
+import { usePremiumAccess } from "@/hooks/usePremiumAccess";
 
 const checkoutTier = (plan: PublicPlan): "pro" | "enterprise" => {
   const name = plan.name.toLowerCase();
@@ -32,6 +33,7 @@ const Subscription = () => {
   const [isYearly, setIsYearly] = useState(false);
   const [subscribingTier, setSubscribingTier] = useState<string | null>(null);
   const { plans, isLoading: plansLoading } = usePublicPlans();
+  const { hasAccess: hasPremiumAccess, loading: accessLoading } = usePremiumAccess();
 
   const {
     subscribed,
@@ -102,7 +104,7 @@ const Subscription = () => {
     });
   };
 
-  const pageLoading = plansLoading;
+  const pageLoading = plansLoading || accessLoading;
 
   return (
     <div className="min-h-screen bg-background">
@@ -137,6 +139,25 @@ const Subscription = () => {
                 </Badge>
               </Label>
             </div>
+          )}
+
+          {hasPremiumAccess && !subscribed && (
+            <Card className="mb-8 border-yellow-500/40 bg-yellow-500/5">
+              <CardContent className="pt-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Crown className="w-5 h-5 text-yellow-500" />
+                      <span className="font-semibold">Acesso Premium ativo</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Você já tem o Cofre liberado. Não precisa assinar de novo.
+                    </p>
+                  </div>
+                  <Button onClick={() => navigate("/premium")}>Abrir Área Premium</Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {subscribed && (
@@ -178,9 +199,10 @@ const Subscription = () => {
             <div className={`grid gap-6 ${plans.length === 1 ? "max-w-md mx-auto" : "md:grid-cols-2 xl:grid-cols-3"}`}>
               {plans.map((plan) => {
                 const isCurrentPlan =
-                  subscribed &&
-                  (tier === plan.name.toLowerCase() ||
-                    (tier === "pro" && plan.name.toLowerCase().includes("pro")));
+                  hasPremiumAccess ||
+                  (subscribed &&
+                    (tier === plan.name.toLowerCase() ||
+                      (tier === "pro" && plan.name.toLowerCase().includes("pro"))));
                 const price =
                   isYearly && plan.price_yearly > 0 ? plan.price_yearly : plan.price_monthly;
                 const isSubscribing = subscribingTier === plan.id;
@@ -236,9 +258,9 @@ const Subscription = () => {
                     </CardContent>
 
                     <CardFooter>
-                      {isCurrentPlan ? (
-                        <Button className="w-full" variant="outline" onClick={handleManageSubscription}>
-                          Gerenciar
+                      {hasPremiumAccess || isCurrentPlan ? (
+                        <Button className="w-full" variant="outline" onClick={() => navigate("/premium")}>
+                          Acessar Área Premium
                         </Button>
                       ) : (
                         <Button
