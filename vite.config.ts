@@ -37,6 +37,15 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: "auto",
+      includeAssets: [
+        "favicon.svg",
+        "favicon-16x16.png",
+        "favicon-32x32.png",
+        "apple-touch-icon.png",
+        "logo-nexus.png",
+        "pwa-192x192.png",
+        "pwa-512x512.png",
+      ],
       workbox: {
         // Bundle principal ainda pode passar de 2 MiB; evita falha no generateSW
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
@@ -44,23 +53,29 @@ export default defineConfig(({ mode }) => ({
         navigateFallbackDenylist: [/^\/steam-api/],
       },
       manifest: {
-        name: "Nexus - Comunidade Digital",
+        id: "/",
+        name: "Nexus",
         short_name: "Nexus",
-        description: "A rede social gamificada para comunidades digitais",
-        theme_color: "#00ffff",
+        description: "A comunidade tech do Nexus no seu celular, com ícone na tela inicial.",
+        theme_color: "#00C6FF",
         background_color: "#0a0c14",
         display: "standalone",
-        start_url: "/",
+        orientation: "portrait-primary",
+        start_url: "/comunidade",
+        scope: "/",
+        lang: "pt-BR",
         icons: [
           {
             src: "/pwa-192x192.png",
             sizes: "192x192",
             type: "image/png",
+            purpose: "any",
           },
           {
             src: "/pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
+            purpose: "any",
           },
           {
             src: "/pwa-maskable-192x192.png",

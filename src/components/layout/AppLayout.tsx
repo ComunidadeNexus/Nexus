@@ -2,6 +2,7 @@ import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import FeedLayout from "@/components/feed/FeedLayout";
 import { FloatingHelpButtons } from "./FloatingHelpButtons";
+import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 
 const HIDE_FAB_PREFIXES = ["/chat", "/mensagens", "/ao-vivo"];
 
@@ -28,6 +29,7 @@ const AppLayout = () => {
         <Outlet />
       </FeedLayout>
       {!hideFabs && <FloatingHelpButtons />}
+      <PwaInstallBanner />
     </>
   );
 };

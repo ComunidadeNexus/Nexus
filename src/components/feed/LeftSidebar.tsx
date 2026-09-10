@@ -17,6 +17,7 @@ import {
   Gamepad2,
   Tv,
   BookOpen,
+  Smartphone,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -260,6 +261,10 @@ const LeftSidebar = ({
             <Link to="/sobre" className={getNavItemClass("/sobre")}>
               <Info className="w-5 h-5" />
               <span>Sobre o Nexus</span>
+            </Link>
+            <Link to="/instalar" className={getNavItemClass("/instalar")}>
+              <Smartphone className="w-5 h-5" />
+              <span>Instalar app</span>
             </Link>
           </div>
         )}

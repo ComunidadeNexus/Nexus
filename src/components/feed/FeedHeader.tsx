@@ -13,6 +13,7 @@ import {
   Tv,
   Globe,
   Shield,
+  Smartphone,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -28,10 +29,12 @@ import {
 import { useTheme } from "@/components/theme/ThemeProvider";
 import CreatePostModal from "@/components/community/CreatePostModal";
 import MobileNavDrawer from "@/components/feed/MobileNavDrawer";
+import { usePwaInstall } from "@/hooks/usePwaInstall";
 
 const FeedHeader = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
+  const { isInstalled } = usePwaInstall();
   const { profile } = useProfile();
   const navigate = useNavigate();
   const location = useLocation();
@@ -206,6 +209,15 @@ const FeedHeader = () => {
                   <Moon className="w-4 h-4" />
                   <span>Modo {theme === "dark" ? "Claro" : "Escuro"}</span>
                 </DropdownMenuItem>
+                {!isInstalled && (
+                  <DropdownMenuItem
+                    onClick={() => navigate("/instalar")}
+                    className="cursor-pointer gap-2 min-h-11"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>Instalar app</span>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={() => navigate("/configuracoes")}
                   className="cursor-pointer gap-2 min-h-11"

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Zap, MessageSquare, Trophy, Network, ArrowRight, Loader2 } from "lucide-react";
+import { Zap, MessageSquare, Trophy, Network, ArrowRight, Loader2, Smartphone } from "lucide-react";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -101,6 +101,13 @@ const Index = () => {
             className="px-8 py-4 rounded-full bg-[#1A1D24]/50 border border-gray-600/50 text-gray-200 font-medium text-lg hover:bg-white/5 transition-all w-full sm:w-auto"
           >
             Já tenho uma conta
+          </button>
+          <button
+            onClick={() => navigate("/instalar")}
+            className="px-8 py-4 rounded-full border border-primary/40 text-primary font-medium text-lg hover:bg-primary/10 transition-all w-full sm:w-auto inline-flex items-center justify-center gap-2"
+          >
+            <Smartphone className="w-5 h-5" />
+            Instalar no celular
           </button>
         </div>
       </main>
