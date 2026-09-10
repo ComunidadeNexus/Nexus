@@ -385,7 +385,7 @@ const AdminMembros = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Alterar Role</label>
                   <div className="flex gap-2 flex-wrap">
-                    {["user", "premium", "moderator", "admin"].map((role) => (
+                    {["user", "moderator", "admin"].map((role) => (
                       <button
                         key={role}
                         onClick={() =>

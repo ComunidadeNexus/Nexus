@@ -248,26 +248,30 @@ export const useAdminData = () => {
 
   // ─── USER ACTIONS ────────────────────────────────────────────────────────
   const updateUserRole = async (userId: string, role: string) => {
-    try {
-      const { data: existing } = await supabase
-        .from("user_roles")
-        .select("id")
-        .eq("user_id", userId)
-        .limit(1)
-        .maybeSingle();
+    if (role === "premium") {
+      return grantPremium(userId);
+    }
 
-      if (existing) {
-        const { error } = await supabase
-          .from("user_roles")
-          .update({ role: role as "user" | "premium" | "moderator" | "admin" })
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("user_roles")
-          .insert({ user_id: userId, role: role as "user" | "premium" | "moderator" | "admin" });
-        if (error) throw error;
+    try {
+      const { data: currentRoles, error: currentError } = await supabase
+        .from("user_roles")
+        .select("id, role")
+        .eq("user_id", userId);
+      if (currentError) throw currentError;
+
+      const roles = currentRoles || [];
+      if (roles.some((r) => r.role === role)) {
+        toast({ title: "Este usuário já tem essa role" });
+        return;
       }
+
+      // Never overwrite an existing admin/premium row. Insert the new role instead.
+      const { error } = await supabase.from("user_roles").insert({
+        user_id: userId,
+        role: role as "user" | "premium" | "moderator" | "admin",
+      });
+      if (error) throw error;
+
       toast({ title: "Role atualizada com sucesso!" });
       fetchUsers();
     } catch (err) {
