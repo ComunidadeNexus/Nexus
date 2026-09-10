@@ -43,11 +43,11 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
   };
 
   return (
-    <div className="border-t border-gray-100 dark:border-gray-800 p-3 bg-gray-50 dark:bg-[#152024]">
+    <div className="border-t border-gray-100 dark:border-gray-800 p-3 max-md:px-3 max-md:py-2 bg-gray-50 dark:bg-[#152024]">
       {/* Formulário de novo comentário */}
       <div className="relative">
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 mb-4">
-          <Avatar className="w-8 h-8 shrink-0">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2 mb-3 md:mb-4">
+          <Avatar className="w-7 h-7 md:w-8 md:h-8 shrink-0">
             <AvatarFallback>U</AvatarFallback>
           </Avatar>
 
@@ -89,7 +89,7 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
           <button
             type="submit"
             disabled={!newComment.trim() || isCreating}
-            className="bg-primary text-white px-5 py-2.5 rounded-full text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors shadow-sm"
+            className="bg-primary text-white px-5 py-2.5 rounded-full text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors shadow-sm max-md:px-4"
           >
             {isCreating ? "..." : "Enviar"}
           </button>
@@ -108,21 +108,21 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
         )}
       </div>
 
-      {/* Lista de comentários */}
-      <div className="flex flex-col gap-4">
+      {/* Lista de comentários — flat list (no nesting in this tree); tighter on mobile */}
+      <div className="flex flex-col gap-3 md:gap-4">
         {isLoading ? (
           <span className="text-xs text-gray-500 text-center block">Carregando comentários...</span>
         ) : comments && comments.length > 0 ? (
           comments.map((comment) => (
             <div key={comment.id} className="flex gap-2">
-              <Avatar className="w-8 h-8 shrink-0">
+              <Avatar className="w-7 h-7 md:w-8 md:h-8 shrink-0">
                 <AvatarImage src={comment.author?.avatar_url || undefined} />
                 <AvatarFallback>
                   {comment.author?.username?.[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex flex-col bg-white dark:bg-[#1A282D] border border-gray-100 dark:border-gray-800 rounded-xl rounded-tl-none p-3 shadow-sm">
-                <span className="text-xs font-bold text-gray-900 dark:text-gray-100 mb-1">
+              <div className="flex flex-col bg-white dark:bg-[#1A282D] border border-gray-100 dark:border-gray-800 rounded-xl rounded-tl-none p-3 shadow-sm max-md:bg-transparent max-md:border-0 max-md:shadow-none max-md:rounded-none max-md:p-0">
+                <span className="text-xs font-bold text-gray-900 dark:text-gray-100 mb-0.5 md:mb-1">
                   {comment.author?.name || comment.author?.username || "Usuário"}
                 </span>
                 <div className="text-sm text-gray-700 dark:text-gray-300">

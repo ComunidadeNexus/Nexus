@@ -56,6 +56,61 @@ const NucleoHeader = ({
     }
   };
 
+  const actionButtons = user ? (
+    isMember ? (
+      <>
+        {isOwner && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Settings className="w-4 h-4 mr-2" />
+                Gerenciar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-48 bg-[#1A1A1A] border-gray-800 text-white"
+            >
+              <DropdownMenuItem
+                onClick={() => setIsEditModalOpen(true)}
+                className="hover:bg-[#2A2A2A] cursor-pointer"
+              >
+                <Pencil className="w-4 h-4 mr-2" />
+                Editar Comunidade
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setIsDeleteDialogOpen(true)}
+                className="text-red-400 hover:text-red-300 hover:bg-red-900/20 cursor-pointer focus:text-red-400"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Excluir Comunidade
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        <Button variant="outline" size="sm" onClick={onLeave} disabled={isOwner}>
+          {isOwner ? (
+            <>
+              <Crown className="w-4 h-4 mr-2" />
+              Dono
+            </>
+          ) : isModerator ? (
+            <>
+              <Shield className="w-4 h-4 mr-2" />
+              Moderador
+            </>
+          ) : (
+            "Sair"
+          )}
+        </Button>
+      </>
+    ) : (
+      <Button onClick={onJoin} style={{ backgroundColor: nucleo.color }}>
+        Entrar no Núcleo
+      </Button>
+    )
+  ) : null;
+
   return (
     <div className="relative">
       <EditNucleoModal open={isEditModalOpen} onOpenChange={setIsEditModalOpen} nucleo={nucleo} />
@@ -91,7 +146,7 @@ const NucleoHeader = ({
 
       {/* Banner */}
       <div
-        className="h-32 md:h-48 w-full"
+        className="relative h-24 md:h-48 w-full"
         style={{
           background: nucleo.banner_url
             ? `url(${nucleo.banner_url}) center/cover`
@@ -101,104 +156,59 @@ const NucleoHeader = ({
         <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
       </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 -mt-16 relative">
-        <div className="flex flex-col md:flex-row md:items-end gap-4">
-          <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background shadow-xl bg-[#1A1A1A]">
-            <AvatarImage src={nucleo.avatar_url || undefined} className="object-cover" />
-            <AvatarFallback
-              style={{ backgroundColor: nucleo.color }}
-              className="text-white font-bold text-3xl"
-            >
-              {nucleo.name.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
+      {/* Content — mobile: avatar + name + join in Reddit community header order */}
+      <div className="max-w-4xl mx-auto px-3 md:px-4 -mt-8 md:-mt-16 relative">
+        <div className="flex flex-col md:flex-row md:items-end gap-3 md:gap-4">
+          <div className="flex items-end gap-3 flex-1 min-w-0">
+            <Avatar className="h-16 w-16 md:h-32 md:w-32 border-4 border-background shadow-xl bg-[#1A1A1A] shrink-0">
+              <AvatarImage src={nucleo.avatar_url || undefined} className="object-cover" />
+              <AvatarFallback
+                style={{ backgroundColor: nucleo.color }}
+                className="text-white font-bold text-xl md:text-3xl"
+              >
+                {nucleo.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
 
-          <div className="flex-1 pb-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl md:text-3xl font-bold">{nucleo.name}</h1>
-              {nucleo.is_verified && <CheckCircle className="w-5 h-5 text-primary" />}
-              {nucleo.is_private && (
-                <Badge variant="secondary" className="gap-1">
-                  <Lock className="w-3 h-3" />
-                  Privado
-                </Badge>
-              )}
-            </div>
-
-            <p className="text-muted-foreground mt-1 max-w-xl">
-              {nucleo.description || "Sem descrição"}
-            </p>
-
-            <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Users className="w-4 h-4" />
-                <span>{nucleo.members_count} membros</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>{nucleo.posts_count} posts</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-2 pb-2">
-            {user && (
-              <>
-                {isMember ? (
-                  <>
-                    {isOwner && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Settings className="w-4 h-4 mr-2" />
-                            Gerenciar
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          className="w-48 bg-[#1A1A1A] border-gray-800 text-white"
-                        >
-                          <DropdownMenuItem
-                            onClick={() => setIsEditModalOpen(true)}
-                            className="hover:bg-[#2A2A2A] cursor-pointer"
-                          >
-                            <Pencil className="w-4 h-4 mr-2" />
-                            Editar Comunidade
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setIsDeleteDialogOpen(true)}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-900/20 cursor-pointer focus:text-red-400"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Excluir Comunidade
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+            <div className="flex-1 min-w-0 pb-1 md:pb-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-lg md:text-3xl font-bold">{nucleo.name}</h1>
+                    {nucleo.is_verified && (
+                      <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                     )}
-                    <Button variant="outline" size="sm" onClick={onLeave} disabled={isOwner}>
-                      {isOwner ? (
-                        <>
-                          <Crown className="w-4 h-4 mr-2" />
-                          Dono
-                        </>
-                      ) : isModerator ? (
-                        <>
-                          <Shield className="w-4 h-4 mr-2" />
-                          Moderador
-                        </>
-                      ) : (
-                        "Sair"
-                      )}
-                    </Button>
-                  </>
-                ) : (
-                  <Button onClick={onJoin} style={{ backgroundColor: nucleo.color }}>
-                    Entrar no Núcleo
-                  </Button>
-                )}
-              </>
-            )}
+                    {nucleo.is_private && (
+                      <Badge variant="secondary" className="gap-1">
+                        <Lock className="w-3 h-3" />
+                        Privado
+                      </Badge>
+                    )}
+                  </div>
+
+                  <p className="text-muted-foreground mt-1 max-w-xl max-md:line-clamp-2 max-md:text-sm">
+                    {nucleo.description || "Sem descrição"}
+                  </p>
+
+                  <div className="flex items-center gap-3 md:gap-4 mt-1.5 md:mt-3 text-xs md:text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                      <span>{nucleo.members_count} membros</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span>{nucleo.posts_count} posts</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-2 shrink-0 md:hidden">
+                  {actionButtons}
+                </div>
+              </div>
+            </div>
           </div>
+
+          <div className="hidden md:flex gap-2 pb-2">{actionButtons}</div>
         </div>
       </div>
     </div>

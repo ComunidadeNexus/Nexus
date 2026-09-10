@@ -165,7 +165,7 @@ const NucleoDetail = () => {
     <div className="min-h-screen bg-background">
       <main className="pb-24">
         {/* Back button */}
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-4xl mx-auto px-3 py-2 md:px-4 md:py-4">
           <Button variant="ghost" size="sm" onClick={() => navigate("/nucleos")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
@@ -182,12 +182,12 @@ const NucleoDetail = () => {
         />
 
         {/* Content */}
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="max-w-4xl mx-auto px-0 md:px-4 py-3 md:py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             {/* Main Content */}
             <div className="lg:col-span-2">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-3 md:mb-4 px-3 md:px-0">
                   <TabsList>
                     <TabsTrigger value="posts">Posts</TabsTrigger>
                     <TabsTrigger value="about">Sobre</TabsTrigger>
@@ -198,9 +198,9 @@ const NucleoDetail = () => {
                   )}
                 </div>
 
-                <TabsContent value="posts" className="space-y-4">
+                <TabsContent value="posts" className="space-y-0 md:space-y-4">
                   {nucleo.is_private && !isMember ? (
-                    <div className="text-center py-16 bg-muted/20 border border-dashed border-gray-700/50 rounded-2xl flex flex-col items-center justify-center">
+                    <div className="text-center py-16 bg-muted/20 border border-dashed border-gray-700/50 rounded-2xl flex flex-col items-center justify-center max-md:mx-3">
                       <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center mb-4 border border-white/5 shadow-xl">
                         <svg
                           className="w-8 h-8 text-muted-foreground"
@@ -223,7 +223,7 @@ const NucleoDetail = () => {
                       </p>
                     </div>
                   ) : posts.length === 0 ? (
-                    <div className="text-center py-12 bg-muted/30 rounded-lg">
+                    <div className="text-center py-12 bg-muted/30 rounded-lg max-md:mx-3">
                       <p className="text-muted-foreground">Nenhum post neste núcleo ainda.</p>
                       {isMember && (
                         <p className="text-sm text-muted-foreground mt-2">
@@ -254,7 +254,7 @@ const NucleoDetail = () => {
                 </TabsContent>
 
                 <TabsContent value="about">
-                  <div className="space-y-4">
+                  <div className="space-y-4 px-3 md:px-0">
                     <NucleoRules
                       rules={rules}
                       canManage={isModerator}
@@ -267,7 +267,7 @@ const NucleoDetail = () => {
             </div>
 
             {/* Sidebar */}
-            <div className="space-y-4">
+            <div className="space-y-4 px-3 md:px-0">
               <NucleoMembers members={members} />
               <NucleoRules
                 rules={rules}
