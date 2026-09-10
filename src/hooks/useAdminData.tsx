@@ -17,6 +17,7 @@ export interface AdminUser {
   following_count: number;
   created_at: string;
   role?: string;
+  roles?: string[];
   wallet_balance?: number;
 }
 
@@ -175,8 +176,15 @@ export const useAdminData = () => {
         .in("user_id", userIds);
 
       const rolesMap: Record<string, string> = {};
+      const rolesListMap: Record<string, string[]> = {};
+      const roleRank: Record<string, number> = { admin: 4, moderator: 3, premium: 2, user: 1 };
       rolesData?.forEach((r) => {
-        rolesMap[r.user_id] = r.role;
+        if (!rolesListMap[r.user_id]) rolesListMap[r.user_id] = [];
+        rolesListMap[r.user_id].push(r.role);
+        const current = rolesMap[r.user_id];
+        if (!current || (roleRank[r.role] || 0) > (roleRank[current] || 0)) {
+          rolesMap[r.user_id] = r.role;
+        }
       });
 
       // Fetch wallets
@@ -193,11 +201,16 @@ export const useAdminData = () => {
       let mapped = (profilesData || []).map((p) => ({
         ...p,
         role: rolesMap[p.user_id] || "user",
+        roles: rolesListMap[p.user_id] || ["user"],
         wallet_balance: walletsMap[p.user_id] || 0,
       }));
 
       if (filterRole) {
-        mapped = mapped.filter((u) => u.role === filterRole);
+        mapped = mapped.filter((u) =>
+          filterRole === "premium"
+            ? (u.roles || []).includes("premium") || u.role === "premium"
+            : u.role === filterRole,
+        );
       }
 
       setUsers(mapped);
@@ -244,18 +257,108 @@ export const useAdminData = () => {
         .maybeSingle();
 
       if (existing) {
-        await supabase
+        const { error } = await supabase
           .from("user_roles")
-          .update({ role: role as any })
-          .eq("user_id", userId);
+          .update({ role: role as "user" | "premium" | "moderator" | "admin" })
+          .eq("id", existing.id);
+        if (error) throw error;
       } else {
-        await supabase.from("user_roles").insert({ user_id: userId, role: role as any });
+        const { error } = await supabase
+          .from("user_roles")
+          .insert({ user_id: userId, role: role as "user" | "premium" | "moderator" | "admin" });
+        if (error) throw error;
       }
       toast({ title: "Role atualizada com sucesso!" });
       fetchUsers();
     } catch (err) {
-      toast({ title: "Erro ao atualizar role", variant: "destructive" });
+      const message = err instanceof Error ? err.message : "Erro ao atualizar role";
+      toast({ title: "Erro ao atualizar role", description: message, variant: "destructive" });
     }
+  };
+
+  const grantPremium = async (userId: string) => {
+    const { data: existing, error: existingError } = await supabase
+      .from("user_roles")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("role", "premium")
+      .maybeSingle();
+
+    if (existingError) {
+      toast({
+        title: "Erro ao verificar Premium",
+        description: existingError.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (existing) {
+      toast({ title: "Este usuário já tem acesso Premium" });
+      return true;
+    }
+
+    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "premium" });
+    if (error) {
+      toast({ title: "Erro ao dar Premium", description: error.message, variant: "destructive" });
+      return false;
+    }
+
+    await logAdminAction("GRANT_PREMIUM", userId);
+    toast({
+      title: "Premium liberado",
+      description: "O usuário já entra na Área Premium.",
+    });
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.user_id !== userId) return u;
+        const roles = Array.from(new Set([...(u.roles || []), "premium"]));
+        const roleRank: Record<string, number> = { admin: 4, moderator: 3, premium: 2, user: 1 };
+        const role = roles.reduce(
+          (best, r) => ((roleRank[r] || 0) > (roleRank[best] || 0) ? r : best),
+          u.role || "user",
+        );
+        return { ...u, roles, role };
+      }),
+    );
+    fetchUsers();
+    fetchStats();
+    return true;
+  };
+
+  const revokePremium = async (userId: string) => {
+    const { error } = await supabase
+      .from("user_roles")
+      .delete()
+      .eq("user_id", userId)
+      .eq("role", "premium");
+
+    if (error) {
+      toast({
+        title: "Erro ao remover Premium",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    await logAdminAction("REVOKE_PREMIUM", userId);
+    toast({ title: "Acesso Premium removido" });
+    setUsers((prev) =>
+      prev.map((u) => {
+        if (u.user_id !== userId) return u;
+        const roles = (u.roles || []).filter((r) => r !== "premium");
+        const roleRank: Record<string, number> = { admin: 4, moderator: 3, premium: 2, user: 1 };
+        const role = roles.reduce(
+          (best, r) => ((roleRank[r] || 0) > (roleRank[best] || 0) ? r : best),
+          "user",
+        );
+        return { ...u, roles: roles.length ? roles : ["user"], role };
+      }),
+    );
+    fetchUsers();
+    fetchStats();
+    return true;
   };
 
   const toggleBanUser = async (userId: string, isBanned: boolean) => {
@@ -475,6 +578,8 @@ export const useAdminData = () => {
     loadingPosts,
     fetchPosts,
     updateUserRole,
+    grantPremium,
+    revokePremium,
     toggleBanUser,
     toggleVerifyUser,
     grantXP,

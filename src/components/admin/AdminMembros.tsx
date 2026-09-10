@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAdminData, AdminUser } from "@/hooks/useAdminData";
+import { useAdminData } from "@/hooks/useAdminData";
 import {
   Users,
   Search,
@@ -48,6 +48,8 @@ const AdminMembros = () => {
     loadingUsers,
     fetchUsers,
     updateUserRole,
+    grantPremium,
+    revokePremium,
     toggleBanUser,
     toggleVerifyUser,
     grantXP,
@@ -56,11 +58,16 @@ const AdminMembros = () => {
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
   const [filterBanned, setFilterBanned] = useState("");
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [xpAmount, setXpAmount] = useState("100");
   const [coinsAmount, setCoinsAmount] = useState("50");
   const [coinsDesc, setCoinsDesc] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+
+  const selectedUser = users.find((u) => u.user_id === selectedUserId) ?? null;
+  const selectedHasPremium =
+    !!selectedUser &&
+    ((selectedUser.roles || []).includes("premium") || selectedUser.role === "premium");
 
   useEffect(() => {
     fetchUsers(search, filterRole, filterBanned);
@@ -68,10 +75,13 @@ const AdminMembros = () => {
 
   const handleSearch = () => fetchUsers(search, filterRole, filterBanned);
 
-  const handleAction = async (fn: () => Promise<void>) => {
+  const handleAction = async (fn: () => Promise<unknown>) => {
     setActionLoading(true);
-    await fn();
-    setActionLoading(false);
+    try {
+      await fn();
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const exportToCSV = () => {
@@ -244,7 +254,14 @@ const AdminMembros = () => {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge className={`text-xs ${roleConf.className}`}>{roleConf.label}</Badge>
+                        <div className="flex flex-wrap items-center gap-1">
+                          <Badge className={`text-xs ${roleConf.className}`}>{roleConf.label}</Badge>
+                          {(user.roles || []).includes("premium") && user.role !== "premium" && (
+                            <Badge className="text-xs bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                              Premium
+                            </Badge>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-foreground">Lv.{user.level}</span>
@@ -278,7 +295,7 @@ const AdminMembros = () => {
                           size="sm"
                           variant="outline"
                           className="border-white/10 hover:bg-white/10 text-xs"
-                          onClick={() => setSelectedUser(user)}
+                          onClick={() => setSelectedUserId(user.user_id)}
                         >
                           Gerenciar
                         </Button>
@@ -293,7 +310,7 @@ const AdminMembros = () => {
       </div>
 
       {/* User Management Dialog */}
-      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUserId(null)}>
         <DialogContent className="max-w-lg bg-background/95 backdrop-blur border-white/10">
           {selectedUser && (
             <>
@@ -335,6 +352,33 @@ const AdminMembros = () => {
                       <p className="text-xs text-muted-foreground">{s.label}</p>
                     </div>
                   ))}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Acesso Premium</label>
+                  {selectedHasPremium ? (
+                    <Button
+                      className="w-full border-yellow-500/40 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20"
+                      variant="outline"
+                      onClick={() => handleAction(() => revokePremium(selectedUser.user_id))}
+                      disabled={actionLoading}
+                    >
+                      <Crown className="w-4 h-4 mr-2" />
+                      Remover acesso Premium
+                    </Button>
+                  ) : (
+                    <Button
+                      className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
+                      onClick={() => handleAction(() => grantPremium(selectedUser.user_id))}
+                      disabled={actionLoading}
+                    >
+                      <Crown className="w-4 h-4 mr-2" />
+                      Dar acesso Premium
+                    </Button>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Libera o cofre em /premium para este usuário, sem precisar assinar.
+                  </p>
                 </div>
 
                 {/* Change Role */}
