@@ -24,8 +24,21 @@ import CreateNucleoModal from "../nucleos/CreateNucleoModal";
 import { useCategories } from "@/hooks/useCategories";
 import { DynamicIcon } from "@/components/ui/DynamicIcon";
 import { usePremiumAccess } from "@/hooks/usePremiumAccess";
+import { cn } from "@/lib/utils";
 
-const LeftSidebar = () => {
+interface LeftSidebarProps {
+  variant?: "desktop" | "drawer";
+  onNavigate?: () => void;
+  onCreateNucleo?: () => void;
+  className?: string;
+}
+
+const LeftSidebar = ({
+  variant = "desktop",
+  onNavigate,
+  onCreateNucleo,
+  className,
+}: LeftSidebarProps) => {
   const [topicsOpen, setTopicsOpen] = useState(true);
   const [resourcesOpen, setResourcesOpen] = useState(true);
   const [categoriesOpen, setCategoriesOpen] = useState(true);
@@ -58,8 +71,33 @@ const LeftSidebar = () => {
   const sectionTitleClass =
     "text-[10px] font-bold text-gray-500 uppercase tracking-wider px-3 mb-1 mt-4 flex items-center justify-between cursor-pointer hover:text-primary transition-colors";
 
+  const handleNavClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (!onNavigate) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest("a")) {
+      onNavigate();
+    }
+  };
+
+  const handleCreateNucleo = () => {
+    if (onCreateNucleo) {
+      onCreateNucleo();
+      return;
+    }
+    setIsCreateNucleoOpen(true);
+  };
+
   return (
-    <div className="bg-transparent h-[calc(100vh-60px)] sticky top-[60px] overflow-y-auto pb-20 custom-scrollbar pr-2 mt-2">
+    <nav
+      aria-label="Navegação principal"
+      onClick={handleNavClick}
+      className={cn(
+        variant === "drawer"
+          ? "h-full overflow-y-auto custom-scrollbar px-2 pt-12 pb-8"
+          : "bg-transparent h-[calc(100vh-60px)] sticky top-[60px] overflow-y-auto pb-20 custom-scrollbar pr-2 mt-2",
+        className,
+      )}
+    >
       {/* Feeds */}
       <div className="mb-4">
         <Link to="/feed" className={getNavItemClass("/feed")}>
@@ -193,7 +231,8 @@ const LeftSidebar = () => {
               <span>Premium</span>
             </Link>
             <button
-              onClick={() => setIsCreateNucleoOpen(true)}
+              type="button"
+              onClick={handleCreateNucleo}
               className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-[#2A3B42] transition-colors cursor-pointer w-full text-gray-800 dark:text-gray-200 text-left"
             >
               <Plus className="w-5 h-5" />
@@ -228,8 +267,10 @@ const LeftSidebar = () => {
 
       <div className="h-px bg-gray-200 dark:bg-gray-800 my-2 mx-3"></div>
 
-      <CreateNucleoModal open={isCreateNucleoOpen} onOpenChange={setIsCreateNucleoOpen} />
-    </div>
+      {!onCreateNucleo && (
+        <CreateNucleoModal open={isCreateNucleoOpen} onOpenChange={setIsCreateNucleoOpen} />
+      )}
+    </nav>
   );
 };
 

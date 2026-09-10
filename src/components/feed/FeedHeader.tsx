@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/components/theme/ThemeProvider";
 import CreatePostModal from "@/components/community/CreatePostModal";
+import MobileNavDrawer from "@/components/feed/MobileNavDrawer";
 
 const FeedHeader = () => {
   const { user, signOut } = useAuth();
@@ -61,8 +62,9 @@ const FeedHeader = () => {
 
   return (
     <div className="sticky top-0 z-50 w-full max-w-[100vw] h-12 md:h-14 bg-white dark:bg-[#1A282D] border-b border-gray-200 dark:border-gray-800 flex items-center justify-between gap-1.5 md:gap-2 px-2 sm:px-4 overflow-hidden">
-      {/* Left: Logo */}
+      {/* Left: mobile hamburger + logo */}
       <div className="flex items-center shrink-0 min-w-0">
+        <MobileNavDrawer />
         <Link to="/comunidade" className="flex items-center min-w-0">
           <img
             src="/logo-nexus.png"
