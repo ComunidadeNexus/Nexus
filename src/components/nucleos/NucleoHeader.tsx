@@ -146,7 +146,7 @@ const NucleoHeader = ({
 
       {/* Banner */}
       <div
-        className="h-24 md:h-48 w-full"
+        className="relative h-24 md:h-48 w-full"
         style={{
           background: nucleo.banner_url
             ? `url(${nucleo.banner_url}) center/cover`
