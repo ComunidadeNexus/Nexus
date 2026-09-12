@@ -394,7 +394,7 @@ export const useAdminData = () => {
     }
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth`,
+      redirectTo: `${window.location.origin}/auth?mode=reset`,
     });
     if (error) {
       toast({
@@ -408,7 +408,7 @@ export const useAdminData = () => {
     await logAdminAction("PASSWORD_RESET_EMAIL", userId, { email });
     toast({
       title: "Email de redefinição enviado",
-      description: "A pessoa recebe o link para criar uma senha nova.",
+      description: "O link chega no Gmail da pessoa. Peça para olhar a caixa de entrada e o Spam.",
     });
     return true;
   };

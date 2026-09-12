@@ -198,31 +198,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithOAuth = async (provider: "google" | "discord" | "github") => {
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-      const settingsRes = await fetch(`${supabaseUrl}/auth/v1/settings`, {
-        headers: { apikey: supabaseKey },
-      });
-      if (!settingsRes.ok) {
-        throw new Error("Não foi possível conectar ao servidor de autenticação.");
-      }
-      const settings = await settingsRes.json();
-      if (!settings?.external?.[provider]) {
-        throw new Error(
-          provider === "google"
-            ? "Login com Google ainda não está ativado. Entre com email e senha."
-            : "Este login social ainda não está disponível.",
-        );
-      }
-
+      const next = new URLSearchParams(window.location.search).get("next");
+      const redirectTo = next
+        ? `${window.location.origin}/auth?next=${encodeURIComponent(next)}`
+        : `${window.location.origin}/auth`;
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth`,
+          redirectTo,
           skipBrowserRedirect: true,
+          queryParams: {
+            prompt: "select_account",
+          },
         },
       });
-      if (error) throw error;
+      if (error) {
+        const raw = error.message || "";
+        if (/not enabled|unsupported provider|provider is not/i.test(raw)) {
+          throw new Error(
+            provider === "google"
+              ? "Login com Google ainda não está ativado. Entre com email e senha."
+              : "Este login social ainda não está disponível.",
+          );
+        }
+        throw error;
+      }
       if (!data.url) throw new Error("Não foi possível iniciar o login social.");
 
       // Neutralize before the IdP redirect so the return document does not

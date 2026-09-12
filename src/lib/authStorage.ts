@@ -148,7 +148,23 @@ export type ForcedSignOutSessionDecision = "accept-and-clear" | "reject-and-wipe
  * a JWT we already wiped on Sair.
  */
 export function isExplicitSignInEvent(event: string | undefined | null): boolean {
-  return event === "SIGNED_IN";
+  return event === "SIGNED_IN" || event === "PASSWORD_RECOVERY";
+}
+
+/** Google OAuth `?code=` or recovery hash must not be wiped by the Sair flag. */
+export function isAuthCallbackUrl(
+  location: { search?: string; hash?: string } = typeof window !== "undefined"
+    ? window.location
+    : {},
+): boolean {
+  const search = new URLSearchParams((location.search ?? "").replace(/^\?/, ""));
+  const hash = new URLSearchParams((location.hash ?? "").replace(/^#/, ""));
+  return Boolean(
+    search.get("code") ||
+      search.get("mode") === "reset" ||
+      hash.get("type") === "recovery" ||
+      hash.get("access_token"),
+  );
 }
 
 /**
@@ -273,6 +289,10 @@ export function clearPersistedSupabaseAuth() {
  */
 export function applyForcedSignOutOnBoot() {
   if (typeof window === "undefined") return;
+  if (isAuthCallbackUrl()) {
+    clearForcedSignedOut();
+    return;
+  }
   if (!isDurableSignedOut()) return;
   clearPersistedSupabaseAuth();
 }

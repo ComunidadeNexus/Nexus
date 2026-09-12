@@ -12,6 +12,7 @@ import {
   getPrimarySupabaseStorageKey,
   hasClientSignedOut,
   hasForcedSignedOut,
+  isAuthCallbackUrl,
   isDurableSignedOut,
   isExplicitSignInEvent,
   isSupabaseAuthStorageKey,
@@ -118,7 +119,13 @@ function runProjectRefTests() {
 function withMockWindow(
   localStorage: Storage,
   sessionStorage: Storage,
-  extra: { hostname?: string; cookie?: string; replace?: (url: string) => void } = {},
+  extra: {
+    hostname?: string;
+    cookie?: string;
+    replace?: (url: string) => void;
+    search?: string;
+    hash?: string;
+  } = {},
   run: () => void,
 ) {
   const originalWindow = globalThis.window;
@@ -126,6 +133,9 @@ function withMockWindow(
   const cookies: string[] = [];
   const location = {
     hostname: extra.hostname ?? "comunidadenexus.com",
+    pathname: "/auth",
+    search: extra.search ?? "",
+    hash: extra.hash ?? "",
     replace: extra.replace ?? (() => undefined),
   };
 
@@ -269,9 +279,26 @@ function runForceFlagAndHardRedirectTests() {
 
 function runSuccessfulSignInNeutralizesForceFlag() {
   assert(isExplicitSignInEvent("SIGNED_IN") === true, "SIGNED_IN is an explicit login");
+  assert(
+    isExplicitSignInEvent("PASSWORD_RECOVERY") === true,
+    "PASSWORD_RECOVERY is an explicit login from the email link",
+  );
   assert(isExplicitSignInEvent("TOKEN_REFRESHED") === false, "refresh is not an explicit login");
   assert(isExplicitSignInEvent("INITIAL_SESSION") === false, "initialize is not an explicit login");
   assert(isExplicitSignInEvent("SIGNED_OUT") === false, "sign-out is not an explicit login");
+  assert(
+    isAuthCallbackUrl({ search: "?code=abc" }) === true,
+    "OAuth PKCE code is an auth callback",
+  );
+  assert(
+    isAuthCallbackUrl({ search: "?mode=reset" }) === true,
+    "reset mode is an auth callback",
+  );
+  assert(
+    isAuthCallbackUrl({ hash: "#type=recovery&access_token=tok" }) === true,
+    "recovery hash is an auth callback",
+  );
+  assert(isAuthCallbackUrl({ search: "", hash: "" }) === false, "plain /auth is not a callback");
 
   assert(
     resolveForcedSignOutSession({
@@ -375,6 +402,28 @@ function runSuccessfulSignInNeutralizesForceFlag() {
       "after successful sign-in, /admin hydrate can read the new JWT",
     );
   });
+
+  const recoveryToken = `sb-${PRODUCTION_SUPABASE_PROJECT_REF}-auth-token`;
+  const recoveryStorage = createMemoryStorage({
+    [recoveryToken]: JSON.stringify({ access_token: "recovery-jwt", user: { id: "1" } }),
+  });
+  withMockWindow(
+    recoveryStorage,
+    createMemoryStorage(),
+    { search: "?mode=reset", hash: "#type=recovery&access_token=tok" },
+    () => {
+      markForcedSignedOut();
+      applyForcedSignOutOnBoot();
+      assert(
+        hasForcedSignedOut() === false,
+        "recovery/OAuth callback must clear the Sair flag instead of wiping the link",
+      );
+      assert(
+        recoveryStorage.getItem(recoveryToken) !== null,
+        "boot must keep tokens when opening a reset/OAuth callback URL",
+      );
+    },
+  );
 }
 
 /**

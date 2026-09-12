@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, ArrowLeft, Loader2, Mail } from "lucide-react";
+import { Zap, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const loginSchema = z.object({
@@ -19,6 +19,16 @@ const loginSchema = z.object({
 const forgotPasswordSchema = z.object({
   email: z.string().email("Email inválido"),
 });
+
+const resetPasswordSchema = z
+  .object({
+    password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmPassword"],
+  });
 
 const signupSchema = loginSchema
   .extend({
@@ -40,6 +50,7 @@ const signupSchema = loginSchema
 type LoginFormData = z.infer<typeof loginSchema>;
 type SignupFormData = z.infer<typeof signupSchema>;
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 const getSafeNextPath = (raw: string | null) => {
   if (!raw) return "/comunidade";
@@ -58,6 +69,12 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const [isSignup, setIsSignup] = useState(searchParams.get("mode") === "signup");
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [isResetPassword, setIsResetPassword] = useState(() => {
+    if (searchParams.get("mode") === "reset") return true;
+    if (typeof window === "undefined") return false;
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    return hash.get("type") === "recovery";
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
   const { signIn, signUp, signInWithOAuth, user, signingOut } = useAuth();
@@ -66,21 +83,33 @@ const Auth = () => {
   const nextPath = getSafeNextPath(searchParams.get("next"));
 
   useEffect(() => {
-    if (user && !signingOut) {
+    if (user && !signingOut && !isResetPassword) {
       navigate(nextPath);
     }
-  }, [user, signingOut, navigate, nextPath]);
+  }, [user, signingOut, navigate, nextPath, isResetPassword]);
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsResetPassword(true);
+        setIsForgotPassword(false);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const searchError = searchParams.get("error_description") || searchParams.get("error");
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const hashError = hashParams.get("error_description") || hashParams.get("error");
-    const oauthError = searchError || hashError;
-    if (oauthError) {
+    const callbackError = searchError || hashError;
+    if (callbackError) {
       toast({
         variant: "destructive",
         title: "Erro ao entrar",
-        description: decodeURIComponent(oauthError.replace(/\+/g, " ")),
+        description: decodeURIComponent(callbackError.replace(/\+/g, " ")),
       });
     }
   }, [searchParams, toast]);
@@ -93,6 +122,11 @@ const Auth = () => {
   const forgotPasswordForm = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: { email: "" },
+  });
+
+  const resetPasswordForm = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { password: "", confirmPassword: "" },
   });
 
   const signupForm = useForm<SignupFormData>({
@@ -163,10 +197,33 @@ const Auth = () => {
     } else {
       toast({
         title: "E-mail enviado!",
-        description: "Verifique sua caixa de entrada para redefinir a senha.",
+        description:
+          "Se essa conta existir, o link chega no Gmail da pessoa. Confira a caixa de entrada e o Spam.",
       });
       setIsForgotPassword(false);
     }
+  };
+
+  const handleResetPassword = async (data: ResetPasswordFormData) => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: data.password });
+    setIsLoading(false);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar senha",
+        description: error.message,
+      });
+      return;
+    }
+
+    toast({
+      title: "Senha atualizada",
+      description: "Agora você já pode entrar com a senha nova.",
+    });
+    setIsResetPassword(false);
+    navigate(nextPath);
   };
 
   return (
@@ -185,7 +242,7 @@ const Auth = () => {
 
       <div className="relative z-10 w-full max-w-md mx-4">
         {/* Back Button */}
-        {isForgotPassword && (
+        {isForgotPassword && !isResetPassword && (
           <button
             onClick={() => setIsForgotPassword(false)}
             className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
@@ -206,7 +263,7 @@ const Auth = () => {
           </div>
 
           {/* Toggle */}
-          {!isForgotPassword && (
+          {!isForgotPassword && !isResetPassword && (
             <div className="flex mb-8 p-1 rounded-lg bg-muted/50">
               <button
                 onClick={() => setIsSignup(false)}
@@ -228,7 +285,63 @@ const Auth = () => {
           )}
 
           {/* Forms */}
-          {isForgotPassword ? (
+          {isResetPassword ? (
+            <form
+              onSubmit={resetPasswordForm.handleSubmit(handleResetPassword)}
+              className="space-y-4"
+            >
+              <div className="text-center mb-6">
+                <h2 className="text-lg font-semibold">Nova senha</h2>
+                <p className="text-sm text-muted-foreground mt-2">
+                  {user
+                    ? "Digite a senha nova para esta conta."
+                    : "Abrindo o link de redefinição... se não mudar em alguns segundos, peça o email de novo."}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reset-password">Senha nova</Label>
+                <Input
+                  id="reset-password"
+                  type="password"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  {...resetPasswordForm.register("password")}
+                />
+                {resetPasswordForm.formState.errors.password && (
+                  <p className="text-sm text-destructive">
+                    {resetPasswordForm.formState.errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reset-confirm-password">Confirmar senha</Label>
+                <Input
+                  id="reset-confirm-password"
+                  type="password"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  {...resetPasswordForm.register("confirmPassword")}
+                />
+                {resetPasswordForm.formState.errors.confirmPassword && (
+                  <p className="text-sm text-destructive">
+                    {resetPasswordForm.formState.errors.confirmPassword.message}
+                  </p>
+                )}
+              </div>
+
+              <Button
+                type="submit"
+                variant="gradient"
+                className="w-full"
+                size="lg"
+                disabled={isLoading || !user}
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar senha nova"}
+              </Button>
+            </form>
+          ) : isForgotPassword ? (
             <form
               onSubmit={forgotPasswordForm.handleSubmit(handleForgotPassword)}
               className="space-y-4"
@@ -450,7 +563,7 @@ const Auth = () => {
           )}
 
           {/* Social Logins */}
-          {!isForgotPassword && (
+          {!isForgotPassword && !isResetPassword && (
             <>
               <div className="relative my-8">
                 <div className="absolute inset-0 flex items-center">
