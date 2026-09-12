@@ -8,7 +8,10 @@ import {
   hasForcedSignedOut,
   markForcedSignedOut,
   performHardSignOut,
+  readStoredAuthSession,
+  sessionFromStored,
 } from "@/lib/authStorage";
+import { clearAdminRoleCache } from "@/lib/adminRole";
 
 interface AuthContextType {
   user: User | null;
@@ -28,17 +31,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const alreadySignedOut =
+  typeof window !== "undefined" && (hasClientSignedOut() || hasForcedSignedOut());
+const storedAuth = alreadySignedOut ? null : readStoredAuthSession();
+const initialSession = storedAuth ? sessionFromStored(storedAuth) : null;
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [signingOut, setSigningOut] = useState(() => hasClientSignedOut() || hasForcedSignedOut());
+  const [user, setUser] = useState<User | null>(initialSession?.user ?? null);
+  const [session, setSession] = useState<Session | null>(initialSession);
+  const [loading, setLoading] = useState(!initialSession?.user);
+  const [signingOut, setSigningOut] = useState(
+    () => hasClientSignedOut() || hasForcedSignedOut(),
+  );
+  const sessionRef = useRef<Session | null>(initialSession);
   const signingOutRef = useRef(signingOut);
 
   const beginSignedOut = () => {
     signingOutRef.current = true;
     markForcedSignedOut();
+    clearAdminRoleCache(sessionRef.current?.user?.id);
     setSigningOut(true);
+    sessionRef.current = null;
     setSession(null);
     setUser(null);
   };
@@ -50,48 +63,66 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    let settled = false;
+    sessionRef.current = session;
+  }, [session]);
+
+  useEffect(() => {
     const applySession = (nextSession: Session | null) => {
       if ((signingOutRef.current || hasClientSignedOut() || hasForcedSignedOut()) && nextSession) {
         // In-memory supabase session / late TOKEN_REFRESHED must not revive the user.
         clearPersistedSupabaseAuth();
+        sessionRef.current = null;
         setSession(null);
         setUser(null);
         setSigningOut(true);
         setLoading(false);
-        settled = true;
         return;
       }
+      sessionRef.current = nextSession;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       setLoading(false);
-      settled = true;
     };
 
     // Set up auth state listener BEFORE checking session
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      applySession(session);
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (signingOutRef.current || hasClientSignedOut() || hasForcedSignedOut()) {
+        applySession(nextSession);
+        return;
+      }
+      // Mobile token refresh can emit a transient null session. Do not wipe a
+      // hydrated user or the /admin gate restarts and the spinner comes back.
+      if (!nextSession && event !== "SIGNED_OUT" && sessionRef.current) {
+        setLoading(false);
+        return;
+      }
+      applySession(nextSession);
     });
 
     // Check for existing session — always clear loading, including reject/hang.
     supabase.auth
       .getSession()
-      .then(({ data: { session } }) => {
-        applySession(session);
+      .then(({ data: { session: nextSession } }) => {
+        if (signingOutRef.current || hasClientSignedOut() || hasForcedSignedOut()) {
+          applySession(nextSession);
+          return;
+        }
+        if (!nextSession && sessionRef.current) {
+          setLoading(false);
+          return;
+        }
+        applySession(nextSession);
       })
       .catch((error) => {
         console.error("Error reading auth session:", error);
-        if (!settled) setLoading(false);
+        setLoading(false);
       });
 
     const timeoutId = window.setTimeout(() => {
-      if (!settled) {
-        console.warn("Auth session check timed out");
-        setLoading(false);
-      }
-    }, 8000);
+      setLoading(false);
+    }, 4000);
 
     return () => {
       subscription.unsubscribe();

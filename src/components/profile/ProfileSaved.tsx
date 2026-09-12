@@ -84,7 +84,7 @@ export const ProfileSaved = ({ userId }: { userId: string }) => {
 
   if (posts.length === 0) {
     return (
-      <div className="p-8 text-center text-gray-500 bg-white dark:bg-[#1A282D] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+      <div className="p-8 text-center text-gray-600 dark:text-gray-400 bg-white dark:bg-[#1A282D] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
         <Bookmark className="w-12 h-12 mx-auto mb-3 opacity-20" />
         <p>Você ainda não curtiu ou salvou nenhum post.</p>
       </div>

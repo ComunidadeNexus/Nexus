@@ -125,7 +125,7 @@ const ProfileSidebarWidget = ({
           <img src={bannerUrl} alt="Capa do Perfil" className="w-full h-full object-cover" />
         )}
         {/* Overlay para escurecer a base da capa, melhorando a leitura do texto */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0B1416] via-[#0B1416]/60 to-transparent pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-transparent dark:from-[#0B1416] dark:via-[#0B1416]/60 dark:to-transparent pointer-events-none"></div>
       </div>
 
       {isOwnProfile && (

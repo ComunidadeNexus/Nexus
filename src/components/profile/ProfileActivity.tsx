@@ -112,7 +112,7 @@ const ProfileActivity = ({ userId }: ProfileActivityProps) => {
 
   if (posts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+      <div className="flex flex-col items-center justify-center py-16 text-center px-4 mt-2 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#1A1D24] shadow-sm">
         <div className="flex items-center justify-center mb-6">
           <img
             src="/logo-nexus.png"
@@ -123,7 +123,7 @@ const ProfileActivity = ({ userId }: ProfileActivityProps) => {
         <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           Você ainda não tem nenhum post
         </h2>
-        <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto leading-relaxed">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto leading-relaxed">
           Todos os posts que você fizer nas comunidades serão mostrados no seu perfil. Para
           exibi-los ou ocultá-los, atualize suas configurações.
         </p>

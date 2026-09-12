@@ -56,7 +56,7 @@ export const ProfileComments = ({ userId }: { userId: string }) => {
 
   if (comments.length === 0) {
     return (
-      <div className="p-8 text-center text-gray-500 bg-white dark:bg-[#1A282D] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+      <div className="p-8 text-center text-gray-600 dark:text-gray-400 bg-white dark:bg-[#1A282D] rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
         <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-20" />
         <p>Nenhum comentário feito ainda.</p>
       </div>
