@@ -1,14 +1,14 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  clearClientSignedOut,
+  clearForcedSignedOut,
   clearPersistedSupabaseAuth,
   hasClientSignedOut,
-  markClientSignedOut,
+  hasForcedSignedOut,
+  markForcedSignedOut,
+  performHardSignOut,
 } from "@/lib/authStorage";
-import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   user: User | null;
@@ -28,20 +28,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const SIGN_OUT_TIMEOUT_MS = 2500;
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [signingOut, setSigningOut] = useState(() => hasClientSignedOut());
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(() => hasClientSignedOut() || hasForcedSignedOut());
   const signingOutRef = useRef(signingOut);
 
   const beginSignedOut = () => {
     signingOutRef.current = true;
-    markClientSignedOut();
+    markForcedSignedOut();
     setSigningOut(true);
     setSession(null);
     setUser(null);
@@ -49,14 +45,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const endSignedOut = () => {
     signingOutRef.current = false;
-    clearClientSignedOut();
+    clearForcedSignedOut();
     setSigningOut(false);
   };
 
   useEffect(() => {
     let settled = false;
     const applySession = (nextSession: Session | null) => {
-      if ((signingOutRef.current || hasClientSignedOut()) && nextSession) {
+      if ((signingOutRef.current || hasClientSignedOut() || hasForcedSignedOut()) && nextSession) {
         // In-memory supabase session / late TOKEN_REFRESHED must not revive the user.
         clearPersistedSupabaseAuth();
         setSession(null);
@@ -177,39 +173,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     beginSignedOut();
-    // Wipe first so a hung lock/network signOut cannot leave this device logged in.
-    clearPersistedSupabaseAuth();
-    toast({
-      title: "Logout realizado",
-      description: "Você saiu da sua conta com sucesso.",
-    });
-    navigate("/auth", { replace: true });
-
+    // Never await supabase.auth.signOut() here. GoTrue global/local both take the
+    // navigator lock (10s) and an in-flight TOKEN_REFRESHED can rewrite the JWT
+    // after a storage wipe. Hard-redirect so the next document load cannot revive it.
     try {
-      // Default scope is `global` and can return early without _removeSession
-      // (network / lock / non-401 logout API error). Fall back to local, then wipe again.
-      await Promise.race([
-        (async () => {
-          const { error } = await supabase.auth.signOut({ scope: "global" });
-          if (error) {
-            await supabase.auth.signOut({ scope: "local" });
-          }
-        })(),
-        new Promise<void>((resolve) => {
-          window.setTimeout(resolve, SIGN_OUT_TIMEOUT_MS);
-        }),
-      ]);
-    } catch (error) {
-      console.error("Error during signOut:", error);
-      try {
-        await supabase.auth.signOut({ scope: "local" });
-      } catch {
-        // storage wipe below is the guarantee
-      }
-    } finally {
-      clearPersistedSupabaseAuth();
-      beginSignedOut();
+      await supabase.auth.stopAutoRefresh();
+    } catch {
+      // ignore — wipe + replace is the guarantee
     }
+    performHardSignOut();
   };
 
   useEffect(() => {

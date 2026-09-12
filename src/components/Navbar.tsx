@@ -279,7 +279,7 @@ const Navbar = () => {
                       Regras da Comunidade
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={signOut} className="cursor-pointer">
+                    <DropdownMenuItem onSelect={() => void signOut()} className="cursor-pointer">
                       <LogOut className="w-4 h-4 mr-2" />
                       Sair
                     </DropdownMenuItem>
@@ -457,7 +457,11 @@ const Navbar = () => {
                       <BookOpen className="w-4 h-4 mr-2" />
                       Regras da Comunidade
                     </Button>
-                    <Button variant="ghost" className="w-full justify-start" onClick={signOut}>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start"
+                      onClick={() => void signOut()}
+                    >
                       <LogOut className="w-4 h-4 mr-2" />
                       Sair
                     </Button>

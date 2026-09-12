@@ -46,12 +46,8 @@ const Configuracoes = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      toast.error("Erro ao sair");
-    }
+  const handleLogout = () => {
+    void signOut();
   };
 
   const tabs = [
