@@ -57,7 +57,7 @@ const AdminMembros = () => {
     toggleVerifyUser,
     grantXP,
     creditCoins,
-    sendPasswordReset,
+    resetUserPassword,
   } = useAdminData();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
@@ -67,6 +67,8 @@ const AdminMembros = () => {
   const [xpAmount, setXpAmount] = useState("100");
   const [coinsAmount, setCoinsAmount] = useState("50");
   const [coinsDesc, setCoinsDesc] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
   const selectedUser = users.find((u) => u.user_id === selectedUserId) ?? null;
@@ -77,6 +79,11 @@ const AdminMembros = () => {
   useEffect(() => {
     fetchUsers(search, filterRole, filterBanned);
   }, []);
+
+  useEffect(() => {
+    setNewPassword("");
+    setConfirmPassword("");
+  }, [selectedUserId]);
 
   const handleSearch = () => fetchUsers(search, filterRole, filterBanned);
 
@@ -410,21 +417,42 @@ const AdminMembros = () => {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    A senha não aparece: o sistema só guarda um código. Se a pessoa esqueceu, envie a
-                    redefinição.
+                    A senha antiga não aparece. Digite uma senha nova para este usuário poder entrar.
                   </p>
+                  <Input
+                    type="password"
+                    placeholder="Senha nova (mín. 6 caracteres)"
+                    autoComplete="new-password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                  <Input
+                    type="password"
+                    placeholder="Confirmar senha nova"
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
                   <Button
                     variant="outline"
                     className="w-full border-white/10"
-                    disabled={actionLoading || !selectedUser.email}
-                    onClick={() =>
-                      handleAction(() =>
-                        sendPasswordReset(selectedUser.email || "", selectedUser.user_id),
-                      )
-                    }
+                    disabled={actionLoading || !newPassword || !confirmPassword}
+                    onClick={() => {
+                      if (newPassword !== confirmPassword) {
+                        toast({ title: "As senhas não coincidem", variant: "destructive" });
+                        return;
+                      }
+                      handleAction(async () => {
+                        const ok = await resetUserPassword(selectedUser.user_id, newPassword);
+                        if (ok) {
+                          setNewPassword("");
+                          setConfirmPassword("");
+                        }
+                      });
+                    }}
                   >
                     <KeyRound className="w-4 h-4 mr-2" />
-                    Enviar redefinição de senha
+                    Redefinir senha
                   </Button>
                 </div>
 

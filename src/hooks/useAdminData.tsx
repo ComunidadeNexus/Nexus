@@ -387,28 +387,31 @@ export const useAdminData = () => {
     return true;
   };
 
-  const sendPasswordReset = async (email: string, userId: string) => {
-    if (!email) {
-      toast({ title: "Este usuário não tem email de login", variant: "destructive" });
+  const resetUserPassword = async (userId: string, password: string) => {
+    if (!userId) {
+      toast({ title: "Usuário inválido", variant: "destructive" });
+      return false;
+    }
+    if (!password || password.length < 6) {
+      toast({ title: "A senha deve ter pelo menos 6 caracteres", variant: "destructive" });
       return false;
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth?mode=reset`,
+    const { data, error } = await supabase.functions.invoke("admin-set-password", {
+      body: { user_id: userId, password },
     });
-    if (error) {
+    if (error || data?.error) {
       toast({
-        title: "Erro ao enviar redefinição",
-        description: error.message,
+        title: "Erro ao redefinir senha",
+        description: (data && data.error) || error?.message || "Tente de novo.",
         variant: "destructive",
       });
       return false;
     }
 
-    await logAdminAction("PASSWORD_RESET_EMAIL", userId, { email });
     toast({
-      title: "Email de redefinição enviado",
-      description: "O link chega no Gmail da pessoa. Peça para olhar a caixa de entrada e o Spam.",
+      title: "Senha redefinida",
+      description: "A pessoa já pode entrar com a senha nova.",
     });
     return true;
   };
@@ -639,7 +642,7 @@ export const useAdminData = () => {
     togglePinPost,
     deletePost,
     creditCoins,
-    sendPasswordReset,
+    resetUserPassword,
     sendMassNotification,
     reports,
     fetchReports,
