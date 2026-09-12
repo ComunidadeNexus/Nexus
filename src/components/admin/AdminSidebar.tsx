@@ -195,11 +195,12 @@ const AdminSidebar = ({
           </div>
         )}
         <button
+          type="button"
           onClick={() => {
             void signOut();
           }}
           className={cn(
-            "w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all",
+            "w-full flex items-center gap-2 px-3 min-h-11 py-2 rounded-xl text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all",
             collapsed && !isMobile && "justify-center",
           )}
         >

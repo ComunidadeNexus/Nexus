@@ -43,8 +43,8 @@ const FeedHeader = () => {
     () => new URLSearchParams(window.location.search).get("q") || "",
   );
 
-  const handleLogout = async () => {
-    await signOut();
+  const handleLogout = () => {
+    void signOut();
   };
 
   const displayName = profile?.name || profile?.username || "Usuário";
@@ -235,7 +235,7 @@ const FeedHeader = () => {
                 )}
                 <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-800" />
                 <DropdownMenuItem
-                  onClick={handleLogout}
+                  onSelect={handleLogout}
                   className="cursor-pointer gap-2 text-red-500 focus:text-red-500 min-h-11"
                 >
                   <LogOut className="w-4 h-4" />
