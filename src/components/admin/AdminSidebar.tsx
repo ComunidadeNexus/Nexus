@@ -196,8 +196,7 @@ const AdminSidebar = ({
         )}
         <button
           onClick={() => {
-            signOut();
-            navigate("/");
+            void signOut();
           }}
           className={cn(
             "w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all",

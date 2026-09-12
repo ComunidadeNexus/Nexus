@@ -4,14 +4,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Zap, MessageSquare, Trophy, Network, ArrowRight, Loader2, Smartphone } from "lucide-react";
 
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, signingOut } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && user && !signingOut) {
       navigate("/comunidade");
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, signingOut, navigate]);
 
   if (loading) {
     return (

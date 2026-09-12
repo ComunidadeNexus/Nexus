@@ -45,7 +45,6 @@ const FeedHeader = () => {
 
   const handleLogout = async () => {
     await signOut();
-    navigate("/auth");
   };
 
   const displayName = profile?.name || profile?.username || "Usuário";
@@ -225,7 +224,7 @@ const FeedHeader = () => {
                   <Settings className="w-4 h-4" />
                   <span>Configurações</span>
                 </DropdownMenuItem>
-                {isAdmin && (
+                {user && isAdmin && (
                   <DropdownMenuItem
                     onClick={() => navigate("/admin")}
                     className="cursor-pointer gap-2"

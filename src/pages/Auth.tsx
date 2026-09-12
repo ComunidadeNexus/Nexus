@@ -60,20 +60,19 @@ const Auth = () => {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
-  const { signIn, signUp, signInWithOAuth, user } = useAuth();
+  const { signIn, signUp, signInWithOAuth, user, signingOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const nextPath = getSafeNextPath(searchParams.get("next"));
 
   useEffect(() => {
-    if (user) {
+    if (user && !signingOut) {
       navigate(nextPath);
     }
-  }, [user, navigate, nextPath]);
+  }, [user, signingOut, navigate, nextPath]);
 
   useEffect(() => {
-    const searchError =
-      searchParams.get("error_description") || searchParams.get("error");
+    const searchError = searchParams.get("error_description") || searchParams.get("error");
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const hashError = hashParams.get("error_description") || hashParams.get("error");
     const oauthError = searchError || hashError;
