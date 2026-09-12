@@ -7,8 +7,10 @@ import {
   hasClientSignedOut,
   hasForcedSignedOut,
   markForcedSignedOut,
+  noteSuccessfulSignIn,
   performHardSignOut,
   readStoredAuthSession,
+  resolveForcedSignOutSession,
   sessionFromStored,
 } from "@/lib/authStorage";
 import { clearAdminRoleCache } from "@/lib/adminRole";
@@ -67,8 +69,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [session]);
 
   useEffect(() => {
-    const applySession = (nextSession: Session | null) => {
-      if ((signingOutRef.current || hasClientSignedOut() || hasForcedSignedOut()) && nextSession) {
+    const applySession = (nextSession: Session | null, event: string | null = null) => {
+      const forcedSignedOut =
+        signingOutRef.current || hasClientSignedOut() || hasForcedSignedOut();
+      const decision = resolveForcedSignOutSession({
+        event,
+        hasSession: Boolean(nextSession),
+        forcedSignedOut,
+      });
+
+      if (decision === "accept-and-clear") {
+        // Real password / OAuth SIGNED_IN — never treat this as JWT revival.
+        endSignedOut();
+        sessionRef.current = nextSession;
+        setSession(nextSession);
+        setUser(nextSession?.user ?? null);
+        setLoading(false);
+        return;
+      }
+
+      if (decision === "reject-and-wipe") {
         // In-memory supabase session / late TOKEN_REFRESHED must not revive the user.
         clearPersistedSupabaseAuth();
         sessionRef.current = null;
@@ -78,6 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
         return;
       }
+
       sessionRef.current = nextSession;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
@@ -88,8 +109,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === "SIGNED_IN" && nextSession) {
+        applySession(nextSession, event);
+        return;
+      }
       if (signingOutRef.current || hasClientSignedOut() || hasForcedSignedOut()) {
-        applySession(nextSession);
+        applySession(nextSession, event);
         return;
       }
       // Mobile token refresh can emit a transient null session. Do not wipe a
@@ -98,22 +123,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
         return;
       }
-      applySession(nextSession);
+      applySession(nextSession, event);
     });
 
     // Check for existing session — always clear loading, including reject/hang.
+    // getSession / initialize() recovery is not SIGNED_IN; keep the Sair wipe.
     supabase.auth
       .getSession()
       .then(({ data: { session: nextSession } }) => {
         if (signingOutRef.current || hasClientSignedOut() || hasForcedSignedOut()) {
-          applySession(nextSession);
+          applySession(nextSession, "INITIAL_SESSION");
           return;
         }
         if (!nextSession && sessionRef.current) {
           setLoading(false);
           return;
         }
-        applySession(nextSession);
+        applySession(nextSession, "INITIAL_SESSION");
       })
       .catch((error) => {
         console.error("Error reading auth session:", error);
@@ -131,13 +157,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    endSignedOut();
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
+      noteSuccessfulSignIn();
+      endSignedOut();
       return { error: null };
     } catch (error) {
       return { error: error as Error };
@@ -145,7 +172,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, name: string, username: string) => {
-    endSignedOut();
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -159,6 +185,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         },
       });
       if (error) throw error;
+      noteSuccessfulSignIn();
+      endSignedOut();
       return { error: null };
     } catch (error) {
       return { error: error as Error };
@@ -166,7 +194,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithOAuth = async (provider: "google" | "discord" | "github") => {
-    endSignedOut();
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -195,6 +222,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       if (!data.url) throw new Error("Não foi possível iniciar o login social.");
 
+      // Neutralize before the IdP redirect so the return document does not
+      // boot-wipe the PKCE verifier. SIGNED_IN on return still accepts the session.
+      noteSuccessfulSignIn();
+      endSignedOut();
       window.location.assign(data.url);
       return { error: null };
     } catch (error) {
