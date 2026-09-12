@@ -45,7 +45,6 @@ const FeedHeader = () => {
 
   const handleLogout = async () => {
     await signOut();
-    navigate("/auth");
   };
 
   const displayName = profile?.name || profile?.username || "Usuário";
