@@ -2,6 +2,44 @@ import React, { useState, useEffect } from "react";
 import { Tv, Users, Heart, Gamepad2, Trophy, Flame, MessageSquare, Loader2 } from "lucide-react";
 import { useTwitchLive } from "@/hooks/useTwitchLive";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
+
+function StreamerAvatar({
+  name,
+  src,
+  className,
+  ringClassName,
+}: {
+  name: string;
+  src?: string | null;
+  className?: string;
+  ringClassName?: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const initial = name.trim().charAt(0).toUpperCase() || "?";
+  const validSrc = src && !failed ? src : undefined;
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  return (
+    <Avatar className={cn(className, ringClassName)}>
+      {validSrc && (
+        <AvatarImage
+          src={validSrc}
+          alt={name}
+          className="object-cover"
+          onError={() => setFailed(true)}
+        />
+      )}
+      <AvatarFallback className="bg-primary/15 text-primary font-bold text-lg">
+        {initial}
+      </AvatarFallback>
+    </Avatar>
+  );
+}
 
 const CATEGORIES = ["Todos", "Esports", "Roleplay", "Variedades", "Just Chatting", "Esportes"];
 
@@ -92,10 +130,11 @@ const AoVivo = () => {
         {activeStreamerData ? (
           <div className="bg-white dark:bg-[#1A282D] rounded-2xl p-5 border border-gray-200 dark:border-gray-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-center gap-4 min-w-0">
-              <img
+              <StreamerAvatar
+                name={activeStreamerData.name}
                 src={activeStreamerData.avatar}
-                alt={activeStreamerData.name}
-                className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 shrink-0 ${activeStreamerData.live ? "border-red-500 shadow-lg" : "border-gray-500 grayscale"}`}
+                className="w-14 h-14 sm:w-16 sm:h-16 shrink-0"
+                ringClassName={`border-2 ${activeStreamerData.live ? "border-red-500 shadow-lg" : "border-gray-500 grayscale"}`}
               />
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-1 min-w-0">
@@ -199,10 +238,10 @@ const AoVivo = () => {
                 }`}
               >
                 <div className="relative">
-                  <img
+                  <StreamerAvatar
+                    name={streamer.name}
                     src={streamer.avatar}
-                    alt={streamer.name}
-                    className={`w-20 h-20 rounded-full shadow-md object-cover ${!streamer.live && "grayscale"}`}
+                    className={`w-20 h-20 shadow-md ${!streamer.live ? "grayscale" : ""}`}
                   />
                   {streamer.live && (
                     <div className="absolute -bottom-1 -right-1 px-2 py-0.5 bg-red-500 border-2 border-white dark:border-[#1A282D] rounded-full text-[10px] font-bold text-white uppercase shadow-sm">

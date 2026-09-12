@@ -1,7 +1,10 @@
+import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
+
+const ADMIN_GATE_TIMEOUT_MS = 8000;
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -11,8 +14,25 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const location = useLocation();
+  const [gateTimedOut, setGateTimedOut] = useState(false);
 
-  if (authLoading || adminLoading) {
+  useEffect(() => {
+    if (isAdmin || (!authLoading && !adminLoading)) {
+      setGateTimedOut(false);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setGateTimedOut(true), ADMIN_GATE_TIMEOUT_MS);
+    return () => window.clearTimeout(timeoutId);
+  }, [isAdmin, authLoading, adminLoading]);
+
+  // A confirmed admin must reach the panel even if a re-check sets loading again
+  // (common on mobile when getSession + onAuthStateChange churn the user object).
+  if (isAdmin) {
+    return <>{children}</>;
+  }
+
+  if ((authLoading || adminLoading) && !gateTimedOut) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -28,11 +48,7 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
     return <Navigate to={`/auth?next=${next}`} replace />;
   }
 
-  if (!isAdmin) {
-    return <Navigate to="/comunidade" replace />;
-  }
-
-  return <>{children}</>;
+  return <Navigate to="/comunidade" replace />;
 };
 
 export default AdminRoute;

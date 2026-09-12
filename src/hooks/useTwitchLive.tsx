@@ -17,14 +17,22 @@ const BASE_STREAMERS = [
   { id: "baiano", name: "Baiano", category: "Esports" },
   { id: "paulinholokobr", name: "PaulinhoLOKO", category: "Roleplay" },
   { id: "cellbit", name: "Cellbit", category: "Just Chatting" },
-  { id: "loud_coringa", name: "Coringa", category: "Roleplay" },
+  { id: "coringa", name: "Coringa", category: "Roleplay" },
   { id: "casimito", name: "Casimito", category: "Esportes" },
   { id: "yayahuz", name: "Yayah", category: "Variedades" },
   { id: "mount", name: "Mount", category: "Roleplay" },
   { id: "frtt", name: "frttt", category: "Esports" },
   { id: "gabepeixe", name: "Gabepeixe", category: "Roleplay" },
-  { id: "mch_agg", name: "Michel", category: "Esports" },
+  { id: "michel", name: "Michel", category: "Esports" },
 ];
+
+export function resolveTwitchAvatarUrl(raw: string | null | undefined): string | undefined {
+  if (!raw) return undefined;
+  const value = raw.trim();
+  if (!/^https?:\/\//i.test(value)) return undefined;
+  if (/user not found/i.test(value)) return undefined;
+  return value;
+}
 
 export function useTwitchLive() {
   const [streamers, setStreamers] = useState<TwitchStreamer[]>([]);
@@ -67,9 +75,7 @@ export function useTwitchLive() {
 
             return {
               ...streamer,
-              avatar: avatarUrl.startsWith("http")
-                ? avatarUrl
-                : "https://static-cdn.jtvnw.net/jtv_user_pictures/x-profile_image-70x70.png", // fallback se der erro
+              avatar: resolveTwitchAvatarUrl(avatarUrl) ?? "",
               live: isLive,
               viewers: formattedViewers,
               order: index,
@@ -79,7 +85,7 @@ export function useTwitchLive() {
             // Em caso de erro de rede, assume que está offline para não quebrar a tela
             return {
               ...streamer,
-              avatar: "https://static-cdn.jtvnw.net/jtv_user_pictures/x-profile_image-70x70.png",
+              avatar: "",
               live: false,
               viewers: "0",
               order: index,
