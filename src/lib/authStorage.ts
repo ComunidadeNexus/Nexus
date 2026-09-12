@@ -132,6 +132,39 @@ export function hasForcedSignedOut() {
   }
 }
 
+export type ForcedSignOutSessionDecision = "accept-and-clear" | "reject-and-wipe" | "apply";
+
+/**
+ * Explicit password / OAuth login. Not initialize() or TOKEN_REFRESHED recovering
+ * a JWT we already wiped on Sair.
+ */
+export function isExplicitSignInEvent(event: string | undefined | null): boolean {
+  return event === "SIGNED_IN";
+}
+
+/**
+ * While the Sair flag is set, only a real SIGNED_IN may keep a session.
+ * Recovery events (INITIAL_SESSION, TOKEN_REFRESHED, getSession) stay blocked.
+ */
+export function resolveForcedSignOutSession(input: {
+  event?: string | null;
+  hasSession: boolean;
+  forcedSignedOut: boolean;
+}): ForcedSignOutSessionDecision {
+  if (isExplicitSignInEvent(input.event) && input.hasSession) {
+    return "accept-and-clear";
+  }
+  if (input.forcedSignedOut && input.hasSession) {
+    return "reject-and-wipe";
+  }
+  return "apply";
+}
+
+/** Earliest success-path helper: neutralize the Sair flag after a real login. */
+export function noteSuccessfulSignIn() {
+  clearForcedSignedOut();
+}
+
 function removeKnownKeys(storage: Storage) {
   for (const key of getKnownSupabaseAuthStorageKeys()) {
     storage.removeItem(key);

@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "preview": "vite preview",
-    "test:admin-gate": "npx --yes tsx src/lib/adminGate.test.ts"
+    "test": "npx --yes tsx src/lib/adminGate.test.ts && npx --yes tsx src/lib/authStorage.test.ts",
+    "test:admin-gate": "npx --yes tsx src/lib/adminGate.test.ts",
+    "test:auth-storage": "npx --yes tsx src/lib/authStorage.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

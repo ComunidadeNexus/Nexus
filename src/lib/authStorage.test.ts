@@ -12,11 +12,14 @@ import {
   getPrimarySupabaseStorageKey,
   hasClientSignedOut,
   hasForcedSignedOut,
+  isExplicitSignInEvent,
   isSupabaseAuthStorageKey,
   markClientSignedOut,
   markForcedSignedOut,
+  noteSuccessfulSignIn,
   performHardSignOut,
   projectRefFromSupabaseUrl,
+  resolveForcedSignOutSession,
   storageKeysForProjectRef,
 } from "./authStorage";
 
@@ -235,6 +238,108 @@ function runForceFlagAndHardRedirectTests() {
   );
 }
 
+function runSuccessfulSignInNeutralizesForceFlag() {
+  assert(isExplicitSignInEvent("SIGNED_IN") === true, "SIGNED_IN is an explicit login");
+  assert(isExplicitSignInEvent("TOKEN_REFRESHED") === false, "refresh is not an explicit login");
+  assert(isExplicitSignInEvent("INITIAL_SESSION") === false, "initialize is not an explicit login");
+  assert(isExplicitSignInEvent("SIGNED_OUT") === false, "sign-out is not an explicit login");
+
+  assert(
+    resolveForcedSignOutSession({
+      event: "SIGNED_IN",
+      hasSession: true,
+      forcedSignedOut: true,
+    }) === "accept-and-clear",
+    "SIGNED_IN must neutralize the Sair flag instead of wiping the new JWT",
+  );
+  assert(
+    resolveForcedSignOutSession({
+      event: "TOKEN_REFRESHED",
+      hasSession: true,
+      forcedSignedOut: true,
+    }) === "reject-and-wipe",
+    "TOKEN_REFRESHED must not recover a wiped JWT while the flag is set",
+  );
+  assert(
+    resolveForcedSignOutSession({
+      event: "INITIAL_SESSION",
+      hasSession: true,
+      forcedSignedOut: true,
+    }) === "reject-and-wipe",
+    "INITIAL_SESSION / getSession must not recover a wiped JWT while the flag is set",
+  );
+  assert(
+    resolveForcedSignOutSession({
+      event: "INITIAL_SESSION",
+      hasSession: false,
+      forcedSignedOut: true,
+    }) === "apply",
+    "a null recovery session stays signed out without extra work",
+  );
+  assert(
+    resolveForcedSignOutSession({
+      event: "TOKEN_REFRESHED",
+      hasSession: true,
+      forcedSignedOut: false,
+    }) === "apply",
+    "after login, token refresh is a normal session update",
+  );
+
+  const prodToken = `sb-${PRODUCTION_SUPABASE_PROJECT_REF}-auth-token`;
+  const wipedJwt = JSON.stringify({ access_token: "wiped-jwt", user: { id: "1" } });
+  const freshJwt = JSON.stringify({ access_token: "fresh-login", user: { id: "1" } });
+  const localStorage = createMemoryStorage({ [prodToken]: wipedJwt });
+  const sessionStorage = createMemoryStorage();
+
+  withMockWindow(localStorage, sessionStorage, {}, () => {
+    markForcedSignedOut();
+    clearPersistedSupabaseAuth();
+    assert(localStorage.getItem(prodToken) === null, "Sair wipe removes the JWT");
+    assert(hasForcedSignedOut() === true, "Sair leaves the force flag set");
+
+    // GoTrue initialize() / a leftover rewrite must not come back before login.
+    localStorage.setItem(prodToken, wipedJwt);
+    applyForcedSignOutOnBoot();
+    assert(
+      localStorage.getItem(prodToken) === null,
+      "boot wipe blocks JWT recovery while the force flag is set",
+    );
+    assert(
+      hasForcedSignedOut() === true,
+      "boot wipe must not clear the force flag — only a successful sign-in does",
+    );
+
+    const recovery = resolveForcedSignOutSession({
+      event: "TOKEN_REFRESHED",
+      hasSession: true,
+      forcedSignedOut: hasForcedSignedOut(),
+    });
+    assert(recovery === "reject-and-wipe", "recovery events stay blocked until sign-in");
+    if (recovery === "reject-and-wipe") {
+      clearPersistedSupabaseAuth();
+    }
+
+    const signedIn = resolveForcedSignOutSession({
+      event: "SIGNED_IN",
+      hasSession: true,
+      forcedSignedOut: hasForcedSignedOut(),
+    });
+    assert(signedIn === "accept-and-clear", "password SIGNED_IN is the success path");
+    if (signedIn === "accept-and-clear") {
+      noteSuccessfulSignIn();
+    }
+    assert(hasForcedSignedOut() === false, "successful sign-in clears nexus-force-signed-out");
+    assert(hasClientSignedOut() === false, "successful sign-in clears the session signed-out flag");
+
+    localStorage.setItem(prodToken, freshJwt);
+    applyForcedSignOutOnBoot();
+    assert(
+      localStorage.getItem(prodToken) === freshJwt,
+      "after successful sign-in, boot must not wipe the new JWT",
+    );
+  });
+}
+
 function runLegacyWipeRegression() {
   const localStorage = createMemoryStorage({
     "sb-proj-auth-token": JSON.stringify({ access_token: "keep-me-out" }),
@@ -278,5 +383,6 @@ runKeyMatcherTests();
 runProjectRefTests();
 runProductionKeyWipeTests();
 runForceFlagAndHardRedirectTests();
+runSuccessfulSignInNeutralizesForceFlag();
 runLegacyWipeRegression();
 console.log("authStorage tests passed");
