@@ -19,6 +19,7 @@ import {
   noteSuccessfulSignIn,
   performHardSignOut,
   projectRefFromSupabaseUrl,
+  readStoredAuthSession,
   resolveForcedSignOutSession,
   storageKeysForProjectRef,
 } from "./authStorage";
@@ -127,6 +128,9 @@ function withMockWindow(
     replace: extra.replace ?? (() => undefined),
   };
 
+  const originalLocalStorage = (globalThis as { localStorage?: Storage }).localStorage;
+  const originalSessionStorage = (globalThis as { sessionStorage?: Storage }).sessionStorage;
+
   Object.defineProperty(globalThis, "window", {
     configurable: true,
     value: {
@@ -135,6 +139,14 @@ function withMockWindow(
       location,
       addEventListener: () => undefined,
     },
+  });
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: localStorage,
+  });
+  Object.defineProperty(globalThis, "sessionStorage", {
+    configurable: true,
+    value: sessionStorage,
   });
   Object.defineProperty(globalThis, "document", {
     configurable: true,
@@ -156,6 +168,22 @@ function withMockWindow(
       configurable: true,
       value: originalWindow,
     });
+    if (originalLocalStorage === undefined) {
+      delete (globalThis as { localStorage?: Storage }).localStorage;
+    } else {
+      Object.defineProperty(globalThis, "localStorage", {
+        configurable: true,
+        value: originalLocalStorage,
+      });
+    }
+    if (originalSessionStorage === undefined) {
+      delete (globalThis as { sessionStorage?: Storage }).sessionStorage;
+    } else {
+      Object.defineProperty(globalThis, "sessionStorage", {
+        configurable: true,
+        value: originalSessionStorage,
+      });
+    }
     if (originalDocument !== undefined) {
       Object.defineProperty(globalThis, "document", {
         configurable: true,
@@ -299,6 +327,10 @@ function runSuccessfulSignInNeutralizesForceFlag() {
 
     // GoTrue initialize() / a leftover rewrite must not come back before login.
     localStorage.setItem(prodToken, wipedJwt);
+    assert(
+      readStoredAuthSession() === null,
+      "AuthContext / AdminRoute hydrate must ignore a JWT while the force flag is set",
+    );
     applyForcedSignOutOnBoot();
     assert(
       localStorage.getItem(prodToken) === null,
@@ -336,6 +368,10 @@ function runSuccessfulSignInNeutralizesForceFlag() {
     assert(
       localStorage.getItem(prodToken) === freshJwt,
       "after successful sign-in, boot must not wipe the new JWT",
+    );
+    assert(
+      readStoredAuthSession()?.access_token === "fresh-login",
+      "after successful sign-in, /admin hydrate can read the new JWT",
     );
   });
 }
