@@ -49,8 +49,9 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         // Bundle principal ainda pode passar de 2 MiB; evita falha no generateSW
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        cleanupOutdatedCaches: true,
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/steam-api/],
+        navigateFallbackDenylist: [/^\/steam-api/, /\/auth\/v1\//, /\/rest\/v1\//],
       },
       manifest: {
         id: "/",

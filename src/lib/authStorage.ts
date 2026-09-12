@@ -1,3 +1,5 @@
+import type { Session, User } from "@supabase/supabase-js";
+
 const AUTH_COOKIE_EXPIRE = "Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT";
 
 /** sessionStorage: same-tab SPA flag (PR #10). Not enough after a new tab / PWA restart. */
@@ -17,6 +19,13 @@ export const FORCE_SIGNED_OUT_FLAG = "nexus-force-signed-out";
 export const PRODUCTION_SUPABASE_PROJECT_REF = "ltqxjcanrwvfqziwokvx";
 
 export const AUTH_REDIRECT_PATH = "/auth";
+
+export type StoredAuthSession = {
+  access_token: string;
+  refresh_token?: string;
+  expires_at?: number;
+  user: Pick<User, "id"> & Partial<User>;
+};
 
 function readEnv(name: string): string | undefined {
   try {
@@ -245,4 +254,63 @@ export function performHardSignOut(redirectTo = AUTH_REDIRECT_PATH) {
 
   wipeAgain();
   window.location.replace(redirectTo);
+}
+
+function asStoredSession(value: unknown): StoredAuthSession | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const nested =
+    record.access_token && typeof record.access_token === "string"
+      ? record
+      : record.currentSession && typeof record.currentSession === "object"
+        ? (record.currentSession as Record<string, unknown>)
+        : null;
+  if (!nested) return null;
+
+  const accessToken = nested.access_token;
+  const user = (nested.user ?? record.user) as { id?: string } | undefined;
+  if (typeof accessToken !== "string" || !user?.id) return null;
+
+  return {
+    access_token: accessToken,
+    refresh_token: typeof nested.refresh_token === "string" ? nested.refresh_token : undefined,
+    expires_at: typeof nested.expires_at === "number" ? nested.expires_at : undefined,
+    user: user as StoredAuthSession["user"],
+  };
+}
+
+/** Read the persisted Supabase session without touching supabase-js (or navigator.locks). */
+export function readStoredAuthSession(): StoredAuthSession | null {
+  if (typeof localStorage === "undefined") return null;
+  if (hasClientSignedOut() || hasForcedSignedOut()) return null;
+
+  try {
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+      if (!key || !isSupabaseAuthStorageKey(key)) continue;
+      const raw = localStorage.getItem(key);
+      if (!raw || raw === "chunk") continue;
+      try {
+        const stored = asStoredSession(JSON.parse(raw));
+        if (stored) return stored;
+      } catch {
+        // chunked / non-JSON auth keys
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+export function sessionFromStored(stored: StoredAuthSession): Session {
+  return {
+    access_token: stored.access_token,
+    refresh_token: stored.refresh_token ?? "",
+    token_type: "bearer",
+    expires_in: 0,
+    expires_at: stored.expires_at,
+    user: stored.user as User,
+  };
 }
