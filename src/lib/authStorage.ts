@@ -1,4 +1,29 @@
 const AUTH_COOKIE_EXPIRE = "Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT";
+export const SIGNED_OUT_FLAG = "nexus-signed-out";
+
+export function markClientSignedOut() {
+  try {
+    window.sessionStorage.setItem(SIGNED_OUT_FLAG, "1");
+  } catch {
+    // private mode / blocked storage
+  }
+}
+
+export function clearClientSignedOut() {
+  try {
+    window.sessionStorage.removeItem(SIGNED_OUT_FLAG);
+  } catch {
+    // private mode / blocked storage
+  }
+}
+
+export function hasClientSignedOut() {
+  try {
+    return window.sessionStorage.getItem(SIGNED_OUT_FLAG) === "1";
+  } catch {
+    return false;
+  }
+}
 
 /** Supabase persists the JWT under `sb-<ref>-auth-token` (and chunked `.0` / `.1` keys). */
 export function isSupabaseAuthStorageKey(key: string): boolean {

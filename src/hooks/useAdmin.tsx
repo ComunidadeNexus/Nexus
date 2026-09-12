@@ -5,8 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 const ADMIN_CHECK_TIMEOUT_MS = 6000;
 
 export const useAdmin = () => {
-  const { user, loading: authLoading } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { user, loading: authLoading, signingOut } = useAuth();
+  const [roleAdmin, setRoleAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const userId = user?.id;
 
@@ -16,8 +16,8 @@ export const useAdmin = () => {
       return;
     }
 
-    if (!userId) {
-      setIsAdmin(false);
+    if (signingOut || !userId) {
+      setRoleAdmin(false);
       setLoading(false);
       return;
     }
@@ -43,9 +43,9 @@ export const useAdmin = () => {
 
         if (error) {
           console.error("Error checking admin role:", error);
-          setIsAdmin(false);
+          setRoleAdmin(false);
         } else {
-          setIsAdmin((data || []).some((row) => row.role === "admin"));
+          setRoleAdmin((data || []).some((row) => row.role === "admin"));
         }
       } catch (err) {
         if (cancelled) return;
@@ -53,7 +53,7 @@ export const useAdmin = () => {
         // Timeout: stop the spinner and keep the last known role so a slow
         // re-check cannot trap an already-confirmed admin on the gate.
         if (!(err instanceof Error && err.message === "admin-check-timeout")) {
-          setIsAdmin(false);
+          setRoleAdmin(false);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -66,7 +66,11 @@ export const useAdmin = () => {
       cancelled = true;
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [userId, authLoading]);
+  }, [userId, authLoading, signingOut]);
 
-  return { isAdmin, loading: authLoading || loading };
+  // Drop admin immediately on Sair. Keep roleAdmin across user-object churn
+  // (mobile getSession) so the admin gate does not bounce a confirmed admin.
+  const isAdmin = !signingOut && roleAdmin;
+
+  return { isAdmin, loading: signingOut ? false : authLoading || loading };
 };

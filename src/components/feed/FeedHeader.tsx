@@ -224,7 +224,7 @@ const FeedHeader = () => {
                   <Settings className="w-4 h-4" />
                   <span>Configurações</span>
                 </DropdownMenuItem>
-                {isAdmin && (
+                {user && isAdmin && (
                   <DropdownMenuItem
                     onClick={() => navigate("/admin")}
                     className="cursor-pointer gap-2"

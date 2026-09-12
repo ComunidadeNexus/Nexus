@@ -11,23 +11,28 @@ interface AdminRouteProps {
 }
 
 const AdminRoute = ({ children }: AdminRouteProps) => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signingOut } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const location = useLocation();
   const [gateTimedOut, setGateTimedOut] = useState(false);
 
   useEffect(() => {
-    if (isAdmin || (!authLoading && !adminLoading)) {
+    if (signingOut || isAdmin || (!authLoading && !adminLoading)) {
       setGateTimedOut(false);
       return;
     }
 
     const timeoutId = window.setTimeout(() => setGateTimedOut(true), ADMIN_GATE_TIMEOUT_MS);
     return () => window.clearTimeout(timeoutId);
-  }, [isAdmin, authLoading, adminLoading]);
+  }, [signingOut, isAdmin, authLoading, adminLoading]);
+
+  if (signingOut) {
+    return <Navigate to="/auth" replace />;
+  }
 
   // A confirmed admin must reach the panel even if a re-check sets loading again
   // (common on mobile when getSession + onAuthStateChange churn the user object).
+  // isAdmin is already false while signingOut, so Sair cannot keep this mounted.
   if (isAdmin) {
     return <>{children}</>;
   }

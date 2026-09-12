@@ -1,4 +1,11 @@
-import { clearPersistedSupabaseAuth, isSupabaseAuthStorageKey } from "./authStorage";
+import {
+  SIGNED_OUT_FLAG,
+  clearClientSignedOut,
+  clearPersistedSupabaseAuth,
+  hasClientSignedOut,
+  isSupabaseAuthStorageKey,
+  markClientSignedOut,
+} from "./authStorage";
 
 const KEY_CASES: Array<[string, boolean]> = [
   ["sb-abcdef-auth-token", true],
@@ -84,6 +91,16 @@ function runStorageWipeTests() {
       "code verifier should be removed",
     );
     assert(sessionStorage.getItem("other") === "1", "unrelated session key should stay");
+
+    markClientSignedOut();
+    assert(sessionStorage.getItem(SIGNED_OUT_FLAG) === "1", "signed-out flag should persist");
+    assert(hasClientSignedOut() === true, "hasClientSignedOut should read the flag");
+    clearClientSignedOut();
+    assert(hasClientSignedOut() === false, "clearClientSignedOut should drop the flag");
+    assert(
+      sessionStorage.getItem("other") === "1",
+      "clearing the signed-out flag should not wipe other keys",
+    );
   } finally {
     Object.defineProperty(globalThis, "window", {
       configurable: true,

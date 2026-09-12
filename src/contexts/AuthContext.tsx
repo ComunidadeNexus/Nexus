@@ -2,13 +2,19 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 import { User, Session } from "@supabase/supabase-js";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { clearPersistedSupabaseAuth } from "@/lib/authStorage";
+import {
+  clearClientSignedOut,
+  clearPersistedSupabaseAuth,
+  hasClientSignedOut,
+  markClientSignedOut,
+} from "@/lib/authStorage";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  signingOut: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (
     email: string,
@@ -28,18 +34,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [signingOut, setSigningOut] = useState(() => hasClientSignedOut());
   const { toast } = useToast();
   const navigate = useNavigate();
-  const signingOutRef = useRef(false);
+  const signingOutRef = useRef(signingOut);
+
+  const beginSignedOut = () => {
+    signingOutRef.current = true;
+    markClientSignedOut();
+    setSigningOut(true);
+    setSession(null);
+    setUser(null);
+  };
+
+  const endSignedOut = () => {
+    signingOutRef.current = false;
+    clearClientSignedOut();
+    setSigningOut(false);
+  };
 
   useEffect(() => {
     let settled = false;
     const applySession = (nextSession: Session | null) => {
-      if (signingOutRef.current && nextSession) {
-        // A late token refresh can rewrite storage after we wiped it.
+      if ((signingOutRef.current || hasClientSignedOut()) && nextSession) {
+        // In-memory supabase session / late TOKEN_REFRESHED must not revive the user.
         clearPersistedSupabaseAuth();
         setSession(null);
         setUser(null);
+        setSigningOut(true);
         setLoading(false);
         settled = true;
         return;
@@ -82,7 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    signingOutRef.current = false;
+    endSignedOut();
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -96,7 +118,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, name: string, username: string) => {
-    signingOutRef.current = false;
+    endSignedOut();
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -117,7 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithOAuth = async (provider: "google" | "discord" | "github") => {
-    signingOutRef.current = false;
+    endSignedOut();
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
       const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -154,9 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    signingOutRef.current = true;
-    setSession(null);
-    setUser(null);
+    beginSignedOut();
     // Wipe first so a hung lock/network signOut cannot leave this device logged in.
     clearPersistedSupabaseAuth();
     toast({
@@ -188,8 +208,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } finally {
       clearPersistedSupabaseAuth();
-      setSession(null);
-      setUser(null);
+      beginSignedOut();
     }
   };
 
@@ -199,7 +218,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, session, loading, signIn, signUp, signInWithOAuth, signOut }}
+      value={{
+        user: signingOut ? null : user,
+        session: signingOut ? null : session,
+        loading: signingOut ? false : loading,
+        signingOut,
+        signIn,
+        signUp,
+        signInWithOAuth,
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>

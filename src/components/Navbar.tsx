@@ -205,7 +205,7 @@ const Navbar = () => {
                       <User className="w-4 h-4 mr-2" />
                       Meu Perfil
                     </DropdownMenuItem>
-                    {isAdmin && (
+                    {user && isAdmin && (
                       <DropdownMenuItem
                         onClick={() => navigate("/admin")}
                         className="cursor-pointer"
@@ -433,7 +433,7 @@ const Navbar = () => {
                       <User className="w-4 h-4 mr-2" />
                       Meu Perfil
                     </Button>
-                    {isAdmin && (
+                    {user && isAdmin && (
                       <Button
                         variant="ghost"
                         className="w-full justify-start"
