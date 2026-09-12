@@ -224,11 +224,14 @@ const Navbar = () => {
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem
-                      onClick={() => navigate("/premium")}
-                      className="cursor-pointer font-medium text-yellow-500"
+                      disabled
+                      className="cursor-not-allowed font-medium text-muted-foreground opacity-70"
                     >
                       <Crown className="w-4 h-4 mr-2" />
                       Área Premium
+                      <span className="ml-auto text-[10px] text-yellow-600 dark:text-yellow-500">
+                        Em breve
+                      </span>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => navigate("/mensagens")}
