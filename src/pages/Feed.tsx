@@ -24,7 +24,7 @@ const Feed = () => {
 
   const chipClass = (active: boolean) =>
     cn(
-      "shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
+      "shrink-0 inline-flex items-center min-h-11 px-3.5 py-2.5 rounded-full text-xs font-semibold border transition-colors",
       active
         ? "bg-primary/15 text-primary border-primary/30"
         : "bg-gray-100 dark:bg-[#2A3B42] text-gray-700 dark:text-gray-300 border-transparent",
@@ -42,7 +42,7 @@ const Feed = () => {
   return (
     <div className="w-full">
       {/* Mobile: existing Início / Popular / categorias as a thin chip row */}
-      <div className="md:hidden sticky top-12 z-40 bg-white dark:bg-[#1A282D] border-b border-gray-200 dark:border-gray-800">
+      <div className="md:hidden sticky top-14 z-40 bg-white dark:bg-[#1A282D] border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar px-3 py-2">
           <Link to="/comunidade" className={chipClass(isHomeSort)}>
             Início

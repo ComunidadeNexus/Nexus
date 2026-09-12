@@ -64,7 +64,7 @@ const FeedHeader = () => {
   };
 
   return (
-    <div className="sticky top-0 z-50 w-full max-w-[100vw] h-12 md:h-14 bg-white dark:bg-[#1A282D] border-b border-gray-200 dark:border-gray-800 flex items-center justify-between gap-1.5 md:gap-2 px-2 sm:px-4 overflow-hidden">
+    <div className="sticky top-0 z-50 w-full max-w-[100vw] h-14 bg-white dark:bg-[#1A282D] border-b border-gray-200 dark:border-gray-800 flex items-center justify-between gap-1.5 md:gap-2 px-2 sm:px-4 overflow-hidden">
       {/* Left: mobile hamburger + logo */}
       <div className="flex items-center shrink-0 min-w-0">
         <MobileNavDrawer />
@@ -91,7 +91,7 @@ const FeedHeader = () => {
             autoComplete="off"
             enterKeyHint="search"
             aria-label="Pesquisar no Nexus"
-            className="block w-full min-w-0 pl-8 sm:pl-10 pr-3 py-2 h-8 md:h-10 border border-transparent rounded-full leading-5 bg-gray-100 dark:bg-[#2A3B42] text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:bg-white dark:focus:bg-[#1A282D] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
+            className="block w-full min-w-0 pl-8 sm:pl-10 pr-3 py-2 h-11 md:h-10 border border-transparent rounded-full leading-5 bg-gray-100 dark:bg-[#2A3B42] text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:bg-white dark:focus:bg-[#1A282D] focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
           />
         </div>
       </form>
