@@ -39,6 +39,12 @@ assert(
 );
 
 assert(
+  resolveAdminGate({ isAdmin: true, userPresent: true, waiting: false, gateTimedOut: false }) ===
+    "children",
+  "admin navigating to /admin with a live session must enter — not bounce to /auth",
+);
+
+assert(
   resolveAdminGate({ isAdmin: false, userPresent: true, waiting: false, gateTimedOut: false }) ===
     "comunidade",
   "settled logged-in non-admin is blocked",

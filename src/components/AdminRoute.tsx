@@ -3,6 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/contexts/AuthContext";
 import { ADMIN_GATE_TIMEOUT_MS, resolveAdminGate } from "@/lib/adminGate";
+import { isDurableSignedOut, readStoredAuthSession } from "@/lib/authStorage";
 import { Loader2 } from "lucide-react";
 
 interface AdminRouteProps {
@@ -29,14 +30,19 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
     return () => window.clearTimeout(timeoutId);
   }, [userId, signingOut]);
 
-  if (signingOut) {
+  // Only a real Sair (durable localStorage flag) is a hard bounce.
+  // A leftover sessionStorage signed-out bit, or a stuck signingOut after
+  // login, must not treat opening /admin as logout.
+  const hardSignedOut = signingOut && isDurableSignedOut();
+  if (hardSignedOut) {
     return <Navigate to="/auth" replace />;
   }
 
+  const storedUser = !isDurableSignedOut() && Boolean(readStoredAuthSession()?.user?.id);
   const view = resolveAdminGate({
     isAdmin,
-    userPresent: Boolean(user),
-    waiting: authLoading || adminLoading,
+    userPresent: Boolean(user) || storedUser,
+    waiting: authLoading || adminLoading || (!user && storedUser),
     gateTimedOut,
   });
 

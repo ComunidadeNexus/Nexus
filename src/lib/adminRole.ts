@@ -144,30 +144,6 @@ async function selectOwnAdminRole(
   );
 }
 
-async function refreshAccessToken(
-  refreshToken: string,
-  signal: AbortSignal,
-): Promise<string | null> {
-  const { url, apiKey } = supabaseConfig();
-  if (!url || !apiKey) return null;
-
-  const response = await fetch(`${url}/auth/v1/token?grant_type=refresh_token`, {
-    method: "POST",
-    signal,
-    headers: {
-      apikey: apiKey,
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-  });
-  if (!response.ok) return null;
-  const body = await parseJson(response);
-  if (!body || typeof body !== "object") return null;
-  const accessToken = (body as { access_token?: unknown }).access_token;
-  return typeof accessToken === "string" ? accessToken : null;
-}
-
 async function resolveAdminRole(input: {
   userId: string;
   accessToken?: string | null;
@@ -192,18 +168,8 @@ async function resolveAdminRole(input: {
     }
   }
 
-  if (input.refreshToken) {
-    const refreshed = await refreshAccessToken(input.refreshToken, signal);
-    if (refreshed) {
-      token = refreshed;
-      const second = await attempt(token);
-      if (typeof second === "boolean") {
-        setCachedAdminRole(input.userId, second);
-        return second;
-      }
-    }
-  }
-
+  // Do not call /auth/v1/token here. A raw refresh rotates the refresh token
+  // out from under supabase-js; opening /admin then looks like Sair.
   return cached;
 }
 

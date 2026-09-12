@@ -1,4 +1,5 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { isDurableSignedOut } from "@/lib/authStorage";
 import { Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
@@ -9,7 +10,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading, signingOut } = useAuth();
 
-  if (signingOut) {
+  if (signingOut && isDurableSignedOut()) {
     return <Navigate to="/auth" replace />;
   }
 

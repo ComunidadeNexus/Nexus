@@ -12,6 +12,7 @@ import {
   getPrimarySupabaseStorageKey,
   hasClientSignedOut,
   hasForcedSignedOut,
+  isDurableSignedOut,
   isExplicitSignInEvent,
   isSupabaseAuthStorageKey,
   markClientSignedOut,
@@ -376,6 +377,71 @@ function runSuccessfulSignInNeutralizesForceFlag() {
   });
 }
 
+/**
+ * Production after PR #12: /comunidade logged in, force flag null, then opening
+ * /admin (full document load) set nexus-force-signed-out=1 and wiped the JWT.
+ * A leftover sessionStorage signed-out bit must not be promoted to Sair.
+ */
+function runAdminNavigationMustNotLookLikeSair() {
+  const prodToken = `sb-${PRODUCTION_SUPABASE_PROJECT_REF}-auth-token`;
+  const liveJwt = JSON.stringify({
+    access_token: "live-after-login",
+    refresh_token: "refresh-1",
+    expires_at: 1_800_000_000,
+    user: { id: "admin-1" },
+  });
+
+  const localStorage = createMemoryStorage({ [prodToken]: liveJwt });
+  const sessionStorage = createMemoryStorage({ [SIGNED_OUT_FLAG]: "1" });
+
+  withMockWindow(localStorage, sessionStorage, {}, () => {
+    assert(hasForcedSignedOut() === false, "QA: force flag is null on /comunidade");
+    assert(hasClientSignedOut() === true, "same-tab leftover from the earlier Sair");
+    assert(isDurableSignedOut() === false, "session leftover is not durable Sair");
+
+    applyForcedSignOutOnBoot();
+    assert(
+      localStorage.getItem(FORCE_SIGNED_OUT_FLAG) === null,
+      "opening /admin must not SET nexus-force-signed-out",
+    );
+    assert(
+      localStorage.getItem(prodToken) === liveJwt,
+      "opening /admin must not wipe the live JWT",
+    );
+    assert(
+      readStoredAuthSession()?.access_token === "live-after-login",
+      "AdminRoute hydrate must still see the session",
+    );
+
+    assert(
+      resolveForcedSignOutSession({
+        event: "TOKEN_REFRESHED",
+        hasSession: true,
+        forcedSignedOut: isDurableSignedOut(),
+      }) === "apply",
+      "admin-page token refresh must not be classified as Sair revival",
+    );
+    assert(
+      resolveForcedSignOutSession({
+        event: "INITIAL_SESSION",
+        hasSession: true,
+        forcedSignedOut: isDurableSignedOut(),
+      }) === "apply",
+      "getSession on /admin boot must apply the live session",
+    );
+  });
+
+  const sairLocal = createMemoryStorage({ [prodToken]: liveJwt });
+  const sairSession = createMemoryStorage();
+  withMockWindow(sairLocal, sairSession, {}, () => {
+    markForcedSignedOut();
+    applyForcedSignOutOnBoot();
+    assert(sairLocal.getItem(prodToken) === null, "real Sair still wipes JWT on boot");
+    assert(hasForcedSignedOut() === true, "real Sair keeps the durable flag");
+    assert(readStoredAuthSession() === null, "real Sair still blocks hydrate");
+  });
+}
+
 function runLegacyWipeRegression() {
   const localStorage = createMemoryStorage({
     "sb-proj-auth-token": JSON.stringify({ access_token: "keep-me-out" }),
@@ -420,5 +486,6 @@ runProjectRefTests();
 runProductionKeyWipeTests();
 runForceFlagAndHardRedirectTests();
 runSuccessfulSignInNeutralizesForceFlag();
+runAdminNavigationMustNotLookLikeSair();
 runLegacyWipeRegression();
 console.log("authStorage tests passed");
