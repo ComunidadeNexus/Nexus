@@ -19,6 +19,8 @@ export interface AdminUser {
   role?: string;
   roles?: string[];
   wallet_balance?: number;
+  email?: string | null;
+  last_sign_in_at?: string | null;
 }
 
 export interface AdminPost {
@@ -198,11 +200,31 @@ export const useAdminData = () => {
         walletsMap[w.user_id] = w.balance;
       });
 
+      const loginsMap: Record<string, { email: string | null; last_sign_in_at: string | null }> = {};
+      if (userIds.length > 0) {
+        const { data: loginsData, error: loginsError } = await supabase.rpc(
+          "admin_list_member_logins",
+          { _user_ids: userIds },
+        );
+        if (loginsError) {
+          console.error("Error fetching member logins:", loginsError);
+        } else {
+          loginsData?.forEach((row) => {
+            loginsMap[row.user_id] = {
+              email: row.email,
+              last_sign_in_at: row.last_sign_in_at,
+            };
+          });
+        }
+      }
+
       let mapped = (profilesData || []).map((p) => ({
         ...p,
         role: rolesMap[p.user_id] || "user",
         roles: rolesListMap[p.user_id] || ["user"],
         wallet_balance: walletsMap[p.user_id] || 0,
+        email: loginsMap[p.user_id]?.email ?? null,
+        last_sign_in_at: loginsMap[p.user_id]?.last_sign_in_at ?? null,
       }));
 
       if (filterRole) {
@@ -362,6 +384,32 @@ export const useAdminData = () => {
     );
     fetchUsers();
     fetchStats();
+    return true;
+  };
+
+  const sendPasswordReset = async (email: string, userId: string) => {
+    if (!email) {
+      toast({ title: "Este usuário não tem email de login", variant: "destructive" });
+      return false;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth`,
+    });
+    if (error) {
+      toast({
+        title: "Erro ao enviar redefinição",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    await logAdminAction("PASSWORD_RESET_EMAIL", userId, { email });
+    toast({
+      title: "Email de redefinição enviado",
+      description: "A pessoa recebe o link para criar uma senha nova.",
+    });
     return true;
   };
 
@@ -591,6 +639,7 @@ export const useAdminData = () => {
     togglePinPost,
     deletePost,
     creditCoins,
+    sendPasswordReset,
     sendMassNotification,
     reports,
     fetchReports,

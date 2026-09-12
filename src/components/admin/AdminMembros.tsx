@@ -13,6 +13,8 @@ import {
   Loader2,
   Filter,
   Download,
+  Copy,
+  KeyRound,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
 
 const ROLE_CONFIG: Record<string, { label: string; className: string }> = {
   admin: { label: "Admin", className: "bg-violet-500/20 text-violet-400 border-violet-500/30" },
@@ -54,7 +57,9 @@ const AdminMembros = () => {
     toggleVerifyUser,
     grantXP,
     creditCoins,
+    sendPasswordReset,
   } = useAdminData();
+  const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState("");
   const [filterBanned, setFilterBanned] = useState("");
@@ -84,16 +89,28 @@ const AdminMembros = () => {
     }
   };
 
+  const copyText = async (value: string, label: string) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      toast({ title: `${label} copiado` });
+    } catch {
+      toast({ title: "Não deu para copiar", variant: "destructive" });
+    }
+  };
+
   const exportToCSV = () => {
     if (!users.length) return;
 
-    const headers = ["ID", "Nome", "Role", "XP", "Coins", "Nivel", "Status", "Data Cadastro"];
+    const headers = ["ID", "Email", "Nome", "Username", "Role", "XP", "Coins", "Nivel", "Status", "Data Cadastro"];
     const csvContent = [
       headers.join(","),
       ...users.map((u) =>
         [
           u.user_id,
-          `"${(u.username || u.name || "").replace(/"/g, '""')}"`,
+          `"${(u.email || "").replace(/"/g, '""')}"`,
+          `"${(u.name || "").replace(/"/g, '""')}"`,
+          `"${(u.username || "").replace(/"/g, '""')}"`,
           u.role,
           u.xp_points,
           u.wallet_balance || 0,
@@ -229,7 +246,8 @@ const AdminMembros = () => {
                   return (
                     <tr
                       key={user.user_id}
-                      className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                      className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer"
+                      onClick={() => setSelectedUserId(user.user_id)}
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -247,6 +265,11 @@ const AdminMembros = () => {
                           <div>
                             <p className="font-medium text-foreground">{user.name || "Sem nome"}</p>
                             <p className="text-xs text-muted-foreground">@{user.username || "—"}</p>
+                            {user.email && (
+                              <p className="text-[11px] text-muted-foreground/80 truncate max-w-[180px]">
+                                {user.email}
+                              </p>
+                            )}
                           </div>
                           {user.is_verified && (
                             <BadgeCheck className="w-4 h-4 text-sky-400 shrink-0" />
@@ -295,7 +318,10 @@ const AdminMembros = () => {
                           size="sm"
                           variant="outline"
                           className="border-white/10 hover:bg-white/10 text-xs"
-                          onClick={() => setSelectedUserId(user.user_id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedUserId(user.user_id);
+                          }}
                         >
                           Gerenciar
                         </Button>
@@ -337,6 +363,71 @@ const AdminMembros = () => {
               </DialogHeader>
 
               <div className="space-y-5 py-2">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
+                  <p className="text-sm font-medium text-foreground">Login</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-muted-foreground">Email</p>
+                      <p className="text-sm text-foreground truncate">{selectedUser.email || "—"}</p>
+                    </div>
+                    {selectedUser.email && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="shrink-0"
+                        onClick={() => copyText(selectedUser.email || "", "Email")}
+                        aria-label="Copiar email"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-muted-foreground">Username</p>
+                      <p className="text-sm text-foreground truncate">
+                        @{selectedUser.username || "—"}
+                      </p>
+                    </div>
+                    {selectedUser.username && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="shrink-0"
+                        onClick={() => copyText(selectedUser.username || "", "Username")}
+                        aria-label="Copiar username"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                  {selectedUser.last_sign_in_at && (
+                    <p className="text-xs text-muted-foreground">
+                      Último acesso:{" "}
+                      {format(new Date(selectedUser.last_sign_in_at), "dd/MM/yyyy HH:mm", {
+                        locale: ptBR,
+                      })}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    A senha não aparece: o sistema só guarda um código. Se a pessoa esqueceu, envie a
+                    redefinição.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full border-white/10"
+                    disabled={actionLoading || !selectedUser.email}
+                    onClick={() =>
+                      handleAction(() =>
+                        sendPasswordReset(selectedUser.email || "", selectedUser.user_id),
+                      )
+                    }
+                  >
+                    <KeyRound className="w-4 h-4 mr-2" />
+                    Enviar redefinição de senha
+                  </Button>
+                </div>
+
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-3">
                   {[

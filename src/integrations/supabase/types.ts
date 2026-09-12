@@ -1150,6 +1150,14 @@ export type Database = {
         };
         Returns: string;
       };
+      admin_list_member_logins: {
+        Args: { _user_ids: string[] };
+        Returns: {
+          email: string | null;
+          last_sign_in_at: string | null;
+          user_id: string;
+        }[];
+      };
       has_premium_access: { Args: { _user_id: string }; Returns: boolean };
       has_role: {
         Args: {
