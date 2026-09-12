@@ -2,10 +2,10 @@ import { createContext, useContext, useEffect, useRef, useState, ReactNode } fro
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  clearClientSignedOut,
   clearForcedSignedOut,
   clearPersistedSupabaseAuth,
-  hasClientSignedOut,
-  hasForcedSignedOut,
+  isDurableSignedOut,
   markForcedSignedOut,
   noteSuccessfulSignIn,
   performHardSignOut,
@@ -33,19 +33,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const alreadySignedOut =
-  typeof window !== "undefined" && (hasClientSignedOut() || hasForcedSignedOut());
-const storedAuth = alreadySignedOut ? null : readStoredAuthSession();
-const initialSession = storedAuth ? sessionFromStored(storedAuth) : null;
+function readInitialSession(): Session | null {
+  if (typeof window === "undefined") return null;
+  if (isDurableSignedOut()) return null;
+  const stored = readStoredAuthSession();
+  return stored ? sessionFromStored(stored) : null;
+}
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(initialSession?.user ?? null);
-  const [session, setSession] = useState<Session | null>(initialSession);
-  const [loading, setLoading] = useState(!initialSession?.user);
-  const [signingOut, setSigningOut] = useState(
-    () => hasClientSignedOut() || hasForcedSignedOut(),
-  );
-  const sessionRef = useRef<Session | null>(initialSession);
+  const [session, setSession] = useState<Session | null>(readInitialSession);
+  const [user, setUser] = useState<User | null>(() => readInitialSession()?.user ?? null);
+  const [loading, setLoading] = useState(() => !readInitialSession()?.user);
+  const [signingOut, setSigningOut] = useState(() => isDurableSignedOut());
+  const sessionRef = useRef<Session | null>(session);
   const signingOutRef = useRef(signingOut);
 
   const beginSignedOut = () => {
@@ -70,8 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const applySession = (nextSession: Session | null, event: string | null = null) => {
-      const forcedSignedOut =
-        signingOutRef.current || hasClientSignedOut() || hasForcedSignedOut();
+      const forcedSignedOut = signingOutRef.current || isDurableSignedOut();
       const decision = resolveForcedSignOutSession({
         event,
         hasSession: Boolean(nextSession),
@@ -99,6 +98,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      if (nextSession) {
+        // Leftover same-tab flag must not keep looking like Sair after a live session.
+        clearClientSignedOut();
+      }
       sessionRef.current = nextSession;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
@@ -113,7 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         applySession(nextSession, event);
         return;
       }
-      if (signingOutRef.current || hasClientSignedOut() || hasForcedSignedOut()) {
+      if (signingOutRef.current || isDurableSignedOut()) {
         applySession(nextSession, event);
         return;
       }
@@ -131,7 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth
       .getSession()
       .then(({ data: { session: nextSession } }) => {
-        if (signingOutRef.current || hasClientSignedOut() || hasForcedSignedOut()) {
+        if (signingOutRef.current || isDurableSignedOut()) {
           applySession(nextSession, "INITIAL_SESSION");
           return;
         }
@@ -253,10 +256,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider
       value={{
-        user: signingOut ? null : user,
-        session: signingOut ? null : session,
-        loading: signingOut ? false : loading,
-        signingOut,
+        user: signingOut && isDurableSignedOut() ? null : user,
+        session: signingOut && isDurableSignedOut() ? null : session,
+        loading: signingOut && isDurableSignedOut() ? false : loading,
+        signingOut: signingOut && isDurableSignedOut(),
         signIn,
         signUp,
         signInWithOAuth,

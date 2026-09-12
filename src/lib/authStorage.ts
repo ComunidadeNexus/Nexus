@@ -132,6 +132,15 @@ export function hasForcedSignedOut() {
   }
 }
 
+/**
+ * Durable Sair signal. sessionStorage `nexus-signed-out` is same-tab only and
+ * must not be treated as Sair on a later /admin document load — that promoted
+ * leftover SPA state into `nexus-force-signed-out` and wiped a live JWT.
+ */
+export function isDurableSignedOut() {
+  return hasForcedSignedOut();
+}
+
 export type ForcedSignOutSessionDecision = "accept-and-clear" | "reject-and-wipe" | "apply";
 
 /**
@@ -258,12 +267,13 @@ export function clearPersistedSupabaseAuth() {
 
 /**
  * Must run before `createClient()` so GoTrue initialize() cannot recover a JWT
- * we already decided to kill.
+ * we already decided to kill. Only the localStorage Sair flag qualifies —
+ * a leftover sessionStorage `nexus-signed-out` after a successful login must
+ * not wipe the new JWT or promote itself into `nexus-force-signed-out`.
  */
 export function applyForcedSignOutOnBoot() {
   if (typeof window === "undefined") return;
-  if (!hasForcedSignedOut() && !hasClientSignedOut()) return;
-  markForcedSignedOut();
+  if (!isDurableSignedOut()) return;
   clearPersistedSupabaseAuth();
 }
 
@@ -315,7 +325,7 @@ function asStoredSession(value: unknown): StoredAuthSession | null {
 /** Read the persisted Supabase session without touching supabase-js (or navigator.locks). */
 export function readStoredAuthSession(): StoredAuthSession | null {
   if (typeof localStorage === "undefined") return null;
-  if (hasClientSignedOut() || hasForcedSignedOut()) return null;
+  if (isDurableSignedOut()) return null;
 
   try {
     for (let index = 0; index < localStorage.length; index += 1) {

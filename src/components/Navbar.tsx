@@ -21,7 +21,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -206,12 +206,11 @@ const Navbar = () => {
                       Meu Perfil
                     </DropdownMenuItem>
                     {user && isAdmin && (
-                      <DropdownMenuItem
-                        onClick={() => navigate("/admin")}
-                        className="cursor-pointer"
-                      >
-                        <Shield className="w-4 h-4 mr-2" />
-                        Painel Admin
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="cursor-pointer">
+                          <Shield className="w-4 h-4 mr-2" />
+                          Painel Admin
+                        </Link>
                       </DropdownMenuItem>
                     )}
                     {tier === "enterprise" && (

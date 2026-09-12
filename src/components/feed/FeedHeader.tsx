@@ -225,12 +225,11 @@ const FeedHeader = () => {
                   <span>Configurações</span>
                 </DropdownMenuItem>
                 {user && isAdmin && (
-                  <DropdownMenuItem
-                    onClick={() => navigate("/admin")}
-                    className="cursor-pointer gap-2"
-                  >
-                    <Shield className="w-4 h-4" />
-                    <span>Painel Admin</span>
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="cursor-pointer gap-2">
+                      <Shield className="w-4 h-4" />
+                      <span>Painel Admin</span>
+                    </Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-800" />
