@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import AppLayout from "@/components/layout/AppLayout";
@@ -56,6 +56,11 @@ import AdminLogs from "./components/admin/AdminLogs";
 import AdminConfig from "./components/admin/AdminConfig";
 
 const queryClient = new QueryClient();
+
+const RoutedErrorBoundary = ({ children }: { children: React.ReactNode }) => {
+  const { pathname, search } = useLocation();
+  return <ErrorBoundary resetKey={`${pathname}${search}`}>{children}</ErrorBoundary>;
+};
 
 const AppRoutes = () => {
   const { user, signingOut } = useAuth();
@@ -159,9 +164,9 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <ErrorBoundary>
+            <RoutedErrorBoundary>
               <AppRoutes />
-            </ErrorBoundary>
+            </RoutedErrorBoundary>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

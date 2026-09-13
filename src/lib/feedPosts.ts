@@ -134,3 +134,55 @@ export function displayPostTitle(post: Pick<FeedPost, "title">): string {
 export function displayPostAuthor(post: Pick<FeedPost, "author">): string {
   return asTrimmed(post.author?.name) || asTrimmed(post.author?.username) || "Usuário";
 }
+
+function authorFromRow(row: object): FeedPostAuthor | null {
+  if (!("author" in row) || !row.author || typeof row.author !== "object") return null;
+  const author = row.author as Record<string, unknown>;
+  return {
+    name: asString(author.name),
+    username: asString(author.username),
+    avatar_url: asString(author.avatar_url),
+  };
+}
+
+function nucleoFromRow(row: object): FeedPostNucleo | null {
+  if (!("nucleo" in row) || !row.nucleo || typeof row.nucleo !== "object") return null;
+  const nucleo = row.nucleo as Record<string, unknown>;
+  return {
+    slug: asString(nucleo.slug),
+    name: asString(nucleo.name),
+  };
+}
+
+/**
+ * Drop cache holes and coerce optimistic / leftover rows so Feed.tsx never
+ * calls display helpers on null. /comunidade and /feed share the "hot" query
+ * key; CreatePostModal writes into every ["feed-posts"] cache.
+ */
+export function sanitizeFeedPosts(value: unknown): FeedPost[] {
+  if (!Array.isArray(value)) return [];
+
+  const posts: FeedPost[] = [];
+  for (const row of value) {
+    if (!row || typeof row !== "object") continue;
+
+    const record = row as FeedPostRow & { author?: unknown; nucleo?: unknown; user_vote?: unknown };
+    const userId = asString(record.user_id);
+    const id = asString(record.id);
+    const nucleoId = asString(record.nucleo_id);
+    const author = authorFromRow(row);
+    const nucleo = nucleoFromRow(row);
+    const vote =
+      record.user_vote === "upvote" || record.user_vote === "downvote"
+        ? record.user_vote
+        : undefined;
+
+    const mapped = mapFeedPost(record, {
+      profiles: userId && author ? { [userId]: author } : undefined,
+      nucleos: nucleoId && nucleo ? { [nucleoId]: nucleo } : undefined,
+      votes: id && vote ? { [id]: vote } : undefined,
+    });
+    if (mapped) posts.push(mapped);
+  }
+  return posts;
+}

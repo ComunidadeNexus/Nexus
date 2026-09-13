@@ -4,7 +4,7 @@ import PostCard from "@/components/feed/PostCard";
 import CreatePostModal from "@/components/community/CreatePostModal";
 import { useFeed } from "@/hooks/useFeed";
 import { useCategories } from "@/hooks/useCategories";
-import { displayPostAuthor, displayPostTitle } from "@/lib/feedPosts";
+import { displayPostAuthor, displayPostTitle, sanitizeFeedPosts } from "@/lib/feedPosts";
 import { cn } from "@/lib/utils";
 
 const Feed = () => {
@@ -18,7 +18,7 @@ const Feed = () => {
 
   const { posts, isLoading, error } = useFeed(sortBy, categorySlug);
   const { categories } = useCategories();
-  const feedPosts = posts ?? [];
+  const feedPosts = sanitizeFeedPosts(posts);
   const [loadTimedOut, setLoadTimedOut] = useState(false);
   const isHomeSort = location.pathname !== "/popular" && !categorySlug;
   const isPopularSort = location.pathname === "/popular";
