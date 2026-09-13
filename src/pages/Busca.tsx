@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import SearchBar from "@/components/community/SearchBar";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,16 +13,38 @@ import {
   displayPostAuthor,
   displayPostTitle,
   mapFeedPosts,
+  overlayPostVotes,
+  votesMapFromCachedPostLists,
   votesMapFromReactions,
   type FeedPost,
   type FeedPostAuthor,
   type FeedPostNucleo,
 } from "@/lib/feedPosts";
-import { buildPostsSearchOr, normalizeSearchQuery, POST_SEARCH_COLUMNS } from "@/lib/searchPosts";
+import {
+  buildPostsSearchOr,
+  normalizeSearchQuery,
+  POST_SEARCH_COLUMNS,
+  resolveSearchViewerId,
+  searchReactionsBlocked,
+} from "@/lib/searchPosts";
+
+async function resolveLiveViewerId(passedId: string | null): Promise<string | null> {
+  // getSession() waits for GoTrue initialize(). On mobile that often finishes
+  // after the first search paint — without it, reactions RLS returns [] and we
+  // cache empty hearts.
+  try {
+    const { data } = await supabase.auth.getSession();
+    return resolveSearchViewerId(passedId, data.session?.user?.id ?? null);
+  } catch {
+    return resolveSearchViewerId(passedId, null);
+  }
+}
 
 async function loadSearchPosts(searchQuery: string, viewerId: string | null): Promise<FeedPost[]> {
   const postsOr = buildPostsSearchOr(searchQuery);
   if (!postsOr) return [];
+
+  const effectiveViewerId = await resolveLiveViewerId(viewerId);
 
   // Flat select — same columns as the feed. Nested embeds + textSearch
   // were the Posts=0 hole: FTS misses short title tokens, and a join
@@ -44,38 +66,44 @@ async function loadSearchPosts(searchQuery: string, viewerId: string | null): Pr
   const userIds = [...new Set(rows.map((p) => p.user_id).filter(Boolean))];
   const nucleoIds = [...new Set(rows.map((p) => p.nucleo_id).filter(Boolean))];
 
-  const [{ data: profilesData }, { data: nucleosData }, { data: reactionsData }] =
-    await Promise.all([
-      userIds.length
-        ? supabase
-            .from("profiles")
-            .select("user_id, name, username, avatar_url")
-            .in("user_id", userIds)
-        : Promise.resolve({
-            data: [] as {
-              user_id: string;
-              name: string | null;
-              username: string | null;
-              avatar_url: string | null;
-            }[],
-          }),
-      nucleoIds.length
-        ? supabase.from("nucleos").select("id, slug, name").in("id", nucleoIds)
-        : Promise.resolve({
-            data: [] as { id: string; slug: string | null; name: string | null }[],
-          }),
-      viewerId && rows.length > 0
-        ? supabase
-            .from("reactions")
-            .select("post_id, reaction_type")
-            .eq("user_id", viewerId)
-            .in("reaction_type", ["like", "curious"])
-            .in(
-              "post_id",
-              rows.map((p) => p.id),
-            )
-        : Promise.resolve({ data: [] as { post_id: string | null; reaction_type: unknown }[] }),
-    ]);
+  const [{ data: profilesData }, { data: nucleosData }, reactionsResult] = await Promise.all([
+    userIds.length
+      ? supabase
+          .from("profiles")
+          .select("user_id, name, username, avatar_url")
+          .in("user_id", userIds)
+      : Promise.resolve({
+          data: [] as {
+            user_id: string;
+            name: string | null;
+            username: string | null;
+            avatar_url: string | null;
+          }[],
+        }),
+    nucleoIds.length
+      ? supabase.from("nucleos").select("id, slug, name").in("id", nucleoIds)
+      : Promise.resolve({
+          data: [] as { id: string; slug: string | null; name: string | null }[],
+        }),
+    effectiveViewerId && rows.length > 0
+      ? supabase
+          .from("reactions")
+          .select("post_id, reaction_type")
+          .eq("user_id", effectiveViewerId)
+          .in("reaction_type", ["like", "curious"])
+          .in(
+            "post_id",
+            rows.map((p) => p.id),
+          )
+      : Promise.resolve({
+          data: [] as { post_id: string | null; reaction_type: unknown }[],
+          error: null,
+        }),
+  ]);
+
+  if (searchReactionsBlocked(effectiveViewerId, reactionsResult.error)) {
+    throw reactionsResult.error;
+  }
 
   const profiles: Record<string, FeedPostAuthor> = {};
   profilesData?.forEach((p) => {
@@ -93,13 +121,14 @@ async function loadSearchPosts(searchQuery: string, viewerId: string | null): Pr
   return mapFeedPosts(rows, {
     profiles,
     nucleos,
-    votes: votesMapFromReactions(reactionsData),
+    votes: votesMapFromReactions(reactionsResult.data),
   });
 }
 
 const Busca = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
   const searchParams = new URLSearchParams(location.search);
   const initialQuery = searchParams.get("q") || "";
@@ -137,8 +166,18 @@ const Busca = () => {
     queryKey: ["search-posts", normalizedSearch, user?.id ?? null],
     queryFn: () => loadSearchPosts(normalizedSearch, user?.id ?? null),
     enabled: normalizedSearch.length > 0 && !authLoading,
+    refetchOnMount: "always",
   });
-  const posts = normalizedSearch.length > 0 ? (queriedPosts ?? []) : [];
+  const cachedVotes = votesMapFromCachedPostLists([
+    ...queryClient.getQueriesData<FeedPost[]>({ queryKey: ["feed-posts"] }).map(([, data]) => data),
+    ...queryClient
+      .getQueriesData<FeedPost[]>({ queryKey: ["profile-posts"] })
+      .map(([, data]) => data),
+  ]);
+  const posts = overlayPostVotes(
+    normalizedSearch.length > 0 ? (queriedPosts ?? []) : [],
+    cachedVotes,
+  );
   const loading =
     normalizeSearchQuery(query).length > 0 &&
     (authLoading ||
