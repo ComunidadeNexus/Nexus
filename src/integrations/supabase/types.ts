@@ -718,6 +718,7 @@ export type Database = {
           content: string;
           created_at: string;
           downvotes: number;
+          downvotes_count: number;
           id: string;
           is_hidden: boolean;
           is_pinned: boolean;
@@ -727,8 +728,10 @@ export type Database = {
           media_url: string | null;
           nucleo_id: string | null;
           score: number;
+          title: string | null;
           updated_at: string;
           upvotes: number;
+          upvotes_count: number;
           user_id: string;
         };
         Insert: {
@@ -737,6 +740,7 @@ export type Database = {
           content: string;
           created_at?: string;
           downvotes?: number;
+          downvotes_count?: number;
           id?: string;
           is_hidden?: boolean;
           is_pinned?: boolean;
@@ -746,8 +750,10 @@ export type Database = {
           media_url?: string | null;
           nucleo_id?: string | null;
           score?: number;
+          title?: string | null;
           updated_at?: string;
           upvotes?: number;
+          upvotes_count?: number;
           user_id: string;
         };
         Update: {
@@ -756,6 +762,7 @@ export type Database = {
           content?: string;
           created_at?: string;
           downvotes?: number;
+          downvotes_count?: number;
           id?: string;
           is_hidden?: boolean;
           is_pinned?: boolean;
@@ -765,8 +772,10 @@ export type Database = {
           media_url?: string | null;
           nucleo_id?: string | null;
           score?: number;
+          title?: string | null;
           updated_at?: string;
           upvotes?: number;
+          upvotes_count?: number;
           user_id?: string;
         };
         Relationships: [

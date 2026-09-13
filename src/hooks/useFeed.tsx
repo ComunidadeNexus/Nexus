@@ -2,6 +2,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import {
+  mapFeedPosts,
+  type FeedPost,
+  type FeedPostAuthor,
+  type FeedPostNucleo,
+} from "@/lib/feedPosts";
+
+export type { FeedPost } from "@/lib/feedPosts";
 
 const FEED_QUERY_TIMEOUT_MS = 3500;
 const FEED_PAGE_SIZE = 50;
@@ -46,35 +54,6 @@ function isAbortError(err: unknown): boolean {
   const name = "name" in err ? String((err as { name?: string }).name) : "";
   const message = "message" in err ? String((err as { message?: string }).message) : "";
   return name === "AbortError" || /aborted|timed out/i.test(message);
-}
-
-export interface FeedPost {
-  id: string;
-  user_id: string;
-  nucleo_id: string | null;
-  title: string | null;
-  content: string;
-  media_url: string | null;
-  media_type: string | null;
-  upvotes_count: number;
-  downvotes_count: number;
-  comments_count: number;
-  created_at: string;
-  author: {
-    name: string | null;
-    username: string | null;
-    avatar_url: string | null;
-  } | null;
-  nucleo: {
-    slug: string | null;
-    name: string | null;
-  } | null;
-  category: {
-    name: string;
-    slug: string;
-    color: string;
-  } | null;
-  user_vote?: "upvote" | "downvote" | null;
 }
 
 type FeedSort = "hot" | "new" | "top";
@@ -123,7 +102,7 @@ async function loadFeedPosts({
   let postsQuery = supabase
     .from("posts")
     .select(
-      "id, user_id, nucleo_id, category_id, content, media_url, media_type, upvotes, downvotes, comments_count, created_at",
+      "id, user_id, nucleo_id, category_id, title, content, media_url, media_type, upvotes, downvotes, comments_count, created_at",
     )
     .eq("is_hidden", false)
     .limit(FEED_PAGE_SIZE)
@@ -146,11 +125,8 @@ async function loadFeedPosts({
   }
   const rows = data || [];
 
-  const profilesMap: Record<
-    string,
-    { name: string | null; username: string | null; avatar_url: string | null }
-  > = {};
-  const nucleosMap: Record<string, { slug: string | null; name: string | null }> = {};
+  const profilesMap: Record<string, FeedPostAuthor> = {};
+  const nucleosMap: Record<string, FeedPostNucleo> = {};
   const userVotesMap: Record<string, "upvote" | "downvote"> = {};
 
   // Enrichment must not block an already-fetched row list (desktop E2E).
@@ -219,22 +195,147 @@ async function loadFeedPosts({
     }
   }
 
-  return rows.map((post) => ({
-    ...post,
-    title: post.content?.substring(0, 50) || null,
-    upvotes_count: post.upvotes || 0,
-    downvotes_count: post.downvotes || 0,
-    author: profilesMap[post.user_id] || { name: null, username: null, avatar_url: null },
-    nucleo: (post.nucleo_id && nucleosMap[post.nucleo_id]) || { slug: "geral", name: "Geral" },
-    user_vote: userVotesMap[post.id] || null,
-  })) as FeedPost[];
+  return mapFeedPosts(rows, {
+    profiles: profilesMap,
+    nucleos: nucleosMap,
+    votes: userVotesMap,
+  });
 }
+
+function patchFeedPosts(
+  updater: (posts: FeedPost[]) => FeedPost[],
+): (old: FeedPost[] | undefined) => FeedPost[] | undefined {
+  return (old) => {
+    if (!Array.isArray(old)) return old;
+    return updater(old);
+  };
+}
+
+export const useFeedActions = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const voteMutation = useMutation({
+    onMutate: async ({ postId, voteType }) => {
+      await queryClient.cancelQueries({ queryKey: ["feed-posts"] });
+      const previous = queryClient.getQueriesData<FeedPost[]>({ queryKey: ["feed-posts"] });
+
+      queryClient.setQueriesData<FeedPost[]>({ queryKey: ["feed-posts"] }, (old) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((post) => {
+          if (post.id !== postId) return post;
+          const oldVote = post.user_vote;
+          let newUpvotes = post.upvotes_count;
+          let newDownvotes = post.downvotes_count;
+
+          if (oldVote === "upvote") newUpvotes = Math.max(0, newUpvotes - 1);
+          if (oldVote === "downvote") newDownvotes = Math.max(0, newDownvotes - 1);
+
+          if (voteType === "upvote") newUpvotes++;
+          if (voteType === "downvote") newDownvotes++;
+
+          return {
+            ...post,
+            user_vote: voteType,
+            upvotes_count: newUpvotes,
+            downvotes_count: newDownvotes,
+          };
+        });
+      });
+
+      return { previous };
+    },
+    mutationFn: async ({
+      postId,
+      voteType,
+    }: {
+      postId: string;
+      voteType: "upvote" | "downvote" | null;
+    }) => {
+      if (!user) throw new Error("Você precisa estar logado para votar.");
+
+      const dbVoteType =
+        voteType === "upvote" ? "like" : voteType === "downvote" ? "curious" : null;
+
+      const { data: existingReactions } = await supabase
+        .from("reactions")
+        .select("id, reaction_type")
+        .eq("user_id", user.id)
+        .eq("post_id", postId);
+
+      if (dbVoteType === null) {
+        if (existingReactions && existingReactions.length > 0) {
+          await supabase.from("reactions").delete().eq("user_id", user.id).eq("post_id", postId);
+        }
+      } else if (existingReactions && existingReactions.length > 0) {
+        const firstReaction = existingReactions[0];
+        if (firstReaction.reaction_type === dbVoteType && existingReactions.length === 1) return;
+
+        await supabase.from("reactions").delete().eq("user_id", user.id).eq("post_id", postId);
+        await supabase
+          .from("reactions")
+          .insert([{ user_id: user.id, post_id: postId, reaction_type: dbVoteType as never }]);
+      } else {
+        await supabase
+          .from("reactions")
+          .insert([{ user_id: user.id, post_id: postId, reaction_type: dbVoteType as never }]);
+      }
+    },
+    onSuccess: () => {
+      // Optimistic cache already updated.
+    },
+    onError: (error, _variables, context) => {
+      context?.previous?.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+      toast.error("Erro ao registrar voto: " + error.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
+    },
+  });
+
+  const deletePostMutation = useMutation({
+    mutationFn: async (postId: string) => {
+      if (!user) throw new Error("Você precisa estar logado para excluir um post.");
+
+      const { error } = await supabase
+        .from("posts")
+        .delete()
+        .eq("id", postId)
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return postId;
+    },
+    onMutate: async (postId) => {
+      await queryClient.cancelQueries({ queryKey: ["feed-posts"] });
+      queryClient.setQueriesData<FeedPost[]>(
+        { queryKey: ["feed-posts"] },
+        patchFeedPosts((old) => old.filter((p) => p.id !== postId)),
+      );
+    },
+    onSuccess: () => {
+      toast.success("Post excluído com sucesso");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
+    },
+    onError: (error) => {
+      toast.error("Erro ao excluir post: " + error.message);
+    },
+  });
+
+  return {
+    vote: voteMutation.mutate,
+    deletePost: deletePostMutation.mutate,
+  };
+};
 
 export const useFeed = (sortBy: "hot" | "new" | "top" = "hot", categorySlug?: string | null) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const actions = useFeedActions();
 
-  // Fetch Posts
   const {
     data: posts,
     isFetched,
@@ -272,7 +373,6 @@ export const useFeed = (sortBy: "hot" | "new" | "top" = "hot", categorySlug?: st
     },
   });
 
-  // Create Post
   const createPostMutation = useMutation({
     onMutate: async (newPost) => {
       await queryClient.cancelQueries({ queryKey: ["feed-posts"] });
@@ -298,21 +398,24 @@ export const useFeed = (sortBy: "hot" | "new" | "top" = "hot", categorySlug?: st
         nucleo: newPost.nucleo_id
           ? { slug: "nucleo", name: "Núcleo" }
           : { slug: "geral", name: "Geral" },
+        category: null,
         user_vote: null,
       };
 
-      queryClient.setQueryData(["feed-posts", sortBy], (old: FeedPost[] | undefined) => {
-        return old ? [newFeedPost, ...old] : [newFeedPost];
-      });
+      queryClient.setQueriesData<FeedPost[]>(
+        { queryKey: ["feed-posts"] },
+        patchFeedPosts((old) => [newFeedPost, ...old]),
+      );
 
       return { optimisticId };
     },
     mutationFn: async (newPost: { title: string; content: string; nucleo_id?: string }) => {
       if (!user) throw new Error("Você precisa estar logado para postar.");
 
-      const postData: any = {
+      const postData = {
         user_id: user.id,
-        content: newPost.title ? `**${newPost.title}**\n\n${newPost.content}` : newPost.content,
+        title: newPost.title.trim() || null,
+        content: newPost.content,
         nucleo_id: newPost.nucleo_id || null,
       };
 
@@ -321,10 +424,8 @@ export const useFeed = (sortBy: "hot" | "new" | "top" = "hot", categorySlug?: st
       if (error) throw error;
       return data;
     },
-    onSuccess: (data, variables, context) => {
+    onSuccess: () => {
       toast.success("Postagem criada com sucesso!");
-
-      // Remove or replace the optimistic post if needed, but invalidation will handle it
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
     },
     onSettled: () => {
@@ -335,138 +436,15 @@ export const useFeed = (sortBy: "hot" | "new" | "top" = "hot", categorySlug?: st
     },
   });
 
-  // Vote on Post
-  const voteMutation = useMutation({
-    onMutate: async ({ postId, voteType }) => {
-      // Optimistic update for voting
-      await queryClient.cancelQueries({ queryKey: ["feed-posts"] });
-      const previousPosts = queryClient.getQueryData(["feed-posts", sortBy]);
-
-      queryClient.setQueryData(["feed-posts", sortBy], (old: FeedPost[] | undefined) => {
-        if (!old) return old;
-        return old.map((post) => {
-          if (post.id === postId) {
-            const oldVote = post.user_vote;
-            let newUpvotes = post.upvotes_count;
-            let newDownvotes = post.downvotes_count;
-
-            if (oldVote === "upvote") newUpvotes = Math.max(0, newUpvotes - 1);
-            if (oldVote === "downvote") newDownvotes = Math.max(0, newDownvotes - 1);
-
-            if (voteType === "upvote") newUpvotes++;
-            if (voteType === "downvote") newDownvotes++;
-
-            return {
-              ...post,
-              user_vote: voteType,
-              upvotes_count: newUpvotes,
-              downvotes_count: newDownvotes,
-            };
-          }
-          return post;
-        });
-      });
-
-      return { previousPosts };
-    },
-    mutationFn: async ({
-      postId,
-      voteType,
-    }: {
-      postId: string;
-      voteType: "upvote" | "downvote" | null;
-    }) => {
-      if (!user) throw new Error("Você precisa estar logado para votar.");
-
-      const dbVoteType =
-        voteType === "upvote" ? "like" : voteType === "downvote" ? "curious" : null;
-
-      // Pegamos todas as reações caso haja duplicatas por erro anterior
-      const { data: existingReactions } = await supabase
-        .from("reactions")
-        .select("id, reaction_type")
-        .eq("user_id", user.id)
-        .eq("post_id", postId);
-
-      if (dbVoteType === null) {
-        // Remover voto(s)
-        if (existingReactions && existingReactions.length > 0) {
-          await supabase.from("reactions").delete().eq("user_id", user.id).eq("post_id", postId);
-        }
-      } else {
-        if (existingReactions && existingReactions.length > 0) {
-          const firstReaction = existingReactions[0];
-          if (firstReaction.reaction_type === dbVoteType && existingReactions.length === 1) return; // Mesmo voto
-
-          // Se for diferente ou houver duplicatas, limpa tudo e insere novamente
-          await supabase.from("reactions").delete().eq("user_id", user.id).eq("post_id", postId);
-          await supabase
-            .from("reactions")
-            .insert([{ user_id: user.id, post_id: postId, reaction_type: dbVoteType as any }]);
-        } else {
-          // Novo voto
-          await supabase
-            .from("reactions")
-            .insert([{ user_id: user.id, post_id: postId, reaction_type: dbVoteType as any }]);
-        }
-      }
-    },
-    onSuccess: () => {
-      // Pode ser silencioso, já atualizamos otimisticamente
-    },
-    onError: (error, variables, context) => {
-      if (context?.previousPosts) {
-        queryClient.setQueryData(["feed-posts", sortBy], context.previousPosts);
-      }
-      toast.error("Erro ao registrar voto: " + error.message);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
-    },
-  });
-
-  // Delete Post Mutation
-  const deletePostMutation = useMutation({
-    mutationFn: async (postId: string) => {
-      if (!user) throw new Error("Você precisa estar logado para excluir um post.");
-
-      const { error } = await supabase
-        .from("posts")
-        .delete()
-        .eq("id", postId)
-        .eq("user_id", user.id);
-      if (error) throw error;
-      return postId;
-    },
-    onMutate: async (postId) => {
-      // Cancela requisições em andamento para não sobrescrever o cache otimista
-      await queryClient.cancelQueries({ queryKey: ["feed-posts"] });
-
-      // Atualização otimista: Remover o post do cache imediatamente
-      queryClient.setQueryData(["feed-posts", sortBy], (old: FeedPost[] | undefined) =>
-        old ? old.filter((p) => p.id !== postId) : [],
-      );
-    },
-    onSuccess: () => {
-      toast.success("Post excluído com sucesso");
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
-    },
-    onError: (error) => {
-      toast.error("Erro ao excluir post: " + error.message);
-    },
-  });
-
   return {
-    posts: posts ?? [],
+    posts: Array.isArray(posts) ? posts : [],
     // Leave the spinner once the query has settled (success, error, or timeout).
     // fetchStatus === "fetching" is the in-flight first load; paused/idle must not spin forever.
     isLoading: !isFetched && !isError && fetchStatus === "fetching",
     error,
     createPost: createPostMutation.mutate,
     isCreating: createPostMutation.isPending,
-    vote: voteMutation.mutate,
-    deletePost: deletePostMutation.mutate,
+    vote: actions.vote,
+    deletePost: actions.deletePost,
   };
 };

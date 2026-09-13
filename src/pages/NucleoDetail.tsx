@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Post {
   id: string;
+  title?: string | null;
   content: string;
   media_url?: string;
   media_type?: string;
@@ -241,9 +242,9 @@ const NucleoDetail = () => {
                         authorId={post.user_id}
                         authorAvatar={post.profiles?.avatar_url}
                         timeAgo={new Date(post.created_at).toLocaleDateString()}
-                        title={""}
+                        title={post.title || "Sem Título"}
                         content={post.content || ""}
-                        votes={post.upvotes - post.downvotes}
+                        votes={(post.upvotes || 0) - (post.downvotes || 0)}
                         comments={post.comments_count || 0}
                         mediaUrl={post.media_url || undefined}
                         mediaType={post.media_type || undefined}

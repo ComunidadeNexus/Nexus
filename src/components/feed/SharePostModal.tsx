@@ -15,7 +15,10 @@ interface SharePostModalProps {
 }
 
 const SharePostModal = ({ isOpen, onClose, postId, title }: SharePostModalProps) => {
-  const { conversations, isLoading } = useDirectMessages();
+  const { conversations, isLoading } = useDirectMessages({
+    enabled: isOpen,
+    realtime: false,
+  });
   const { user } = useAuth();
   const [sendingTo, setSendingTo] = useState<string | null>(null);
 

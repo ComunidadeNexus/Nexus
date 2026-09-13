@@ -10,9 +10,10 @@ import {
   Flag,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useFeed } from "@/hooks/useFeed";
+import { useFeedActions } from "@/hooks/useFeed";
 import CommentSection from "./CommentSection";
 import SharePostModal from "./SharePostModal";
+import { readSavedPostIds, toggleSavedPost } from "@/lib/savedPosts";
 import { toast } from "sonner";
 import {
   DropdownMenu,
@@ -55,40 +56,34 @@ const PostCard = ({
   mediaType,
   userVote,
 }: PostCardProps) => {
-  const { vote, deletePost } = useFeed();
+  const { vote, deletePost } = useFeedActions();
   const { user } = useAuth();
   const [showComments, setShowComments] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const safeAuthor = typeof author === "string" && author.trim() ? author : "Usuário";
+  const safeTitle = typeof title === "string" ? title : "";
+  const safeContent = typeof content === "string" ? content : "";
+  const safePostId = typeof postId === "string" ? postId : "";
 
-  const [isSaved, setIsSaved] = useState(() => {
-    const saved = JSON.parse(localStorage.getItem("saved_posts") || "[]");
-    return saved.includes(postId);
-  });
+  const [isSaved, setIsSaved] = useState(() => readSavedPostIds().includes(safePostId));
 
   const handleLike = () => {
+    if (!safePostId) return;
     const finalVote = userVote === "upvote" ? null : "upvote";
-    vote({ postId, voteType: finalVote });
+    vote({ postId: safePostId, voteType: finalVote });
   };
 
   const handleSave = () => {
-    const saved = JSON.parse(localStorage.getItem("saved_posts") || "[]");
-    if (isSaved) {
-      const newSaved = saved.filter((id: string) => id !== postId);
-      localStorage.setItem("saved_posts", JSON.stringify(newSaved));
-      setIsSaved(false);
-      toast.success("Post removido dos salvos");
-    } else {
-      saved.push(postId);
-      localStorage.setItem("saved_posts", JSON.stringify(saved));
-      setIsSaved(true);
-      toast.success("Post salvo com sucesso!");
-    }
+    if (!safePostId) return;
+    const { saved } = toggleSavedPost(safePostId);
+    setIsSaved(saved);
+    toast.success(saved ? "Post salvo com sucesso!" : "Post removido dos salvos");
     window.dispatchEvent(new Event("saved_posts_updated"));
   };
 
   const handleDelete = () => {
-    if (deletePost) {
-      deletePost(postId);
+    if (deletePost && safePostId) {
+      deletePost(safePostId);
     } else {
       toast.info("Função de deletar post indisponível no momento.");
     }
@@ -98,7 +93,7 @@ const PostCard = ({
     toast.success("Report enviado ao painel ADM");
   };
 
-  const videoViews = Math.floor((postId.charCodeAt(0) || 1) * 31.4 + 120);
+  const videoViews = Math.floor((safePostId.charCodeAt(0) || 1) * 31.4 + 120);
 
   const isOwner = user && authorId && user.id === authorId;
 
@@ -116,7 +111,7 @@ const PostCard = ({
               <Link to={authorId ? `/perfil/${authorId}` : "#"} className="shrink-0">
                 <Avatar className="w-6 h-6 md:w-8 md:h-8 hover:opacity-80 transition-opacity">
                   <AvatarImage src={authorAvatar || undefined} />
-                  <AvatarFallback>{author[0]?.toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>{safeAuthor[0]?.toUpperCase() || "U"}</AvatarFallback>
                 </Avatar>
               </Link>
               <div className="flex flex-col min-w-0">
@@ -133,7 +128,7 @@ const PostCard = ({
                     to={authorId ? `/perfil/${authorId}` : "#"}
                     className="font-bold hover:underline cursor-pointer text-gray-900 dark:text-gray-100 truncate"
                   >
-                    {author}
+                    {safeAuthor}
                   </Link>
                   {nucleus && nucleus !== "geral" && (
                     <>
@@ -184,10 +179,10 @@ const PostCard = ({
           {/* Título e Texto */}
           <div className="mb-2 md:mb-3">
             <h2 className="text-base md:text-lg font-bold text-gray-900 dark:text-gray-100 mb-1 leading-tight break-words">
-              {title}
+              {safeTitle}
             </h2>
             <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-line line-clamp-4">
-              {content}
+              {safeContent}
             </p>
           </div>
 
@@ -265,14 +260,14 @@ const PostCard = ({
       </div>
 
       {/* Seção de Comentários */}
-      {showComments && <CommentSection postId={postId} />}
+      {showComments && safePostId && <CommentSection postId={safePostId} />}
 
       {/* Modal de Compartilhamento */}
       <SharePostModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        postId={postId}
-        title={title}
+        postId={safePostId}
+        title={safeTitle}
       />
     </div>
   );

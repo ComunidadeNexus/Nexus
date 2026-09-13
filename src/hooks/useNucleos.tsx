@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { slugifyNucleoName, uniquifyNucleoSlug } from "@/lib/nucleoSlug";
 
 export interface Nucleo {
   id: string;
@@ -40,55 +41,69 @@ export interface NucleoRule {
   order_position: number;
 }
 
+export const NUCLEOS_QUERY_KEY = ["nucleos"] as const;
+export const MY_NUCLEOS_QUERY_KEY = ["my-nucleos"] as const;
+
+function isUniqueViolation(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return error.code === "23505" || /duplicate key|unique constraint/i.test(error.message || "");
+}
+
 export const useNucleos = () => {
   const { user } = useAuth();
-  const [nucleos, setNucleos] = useState<Nucleo[]>([]);
-  const [myNucleos, setMyNucleos] = useState<Nucleo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const fetchNucleos = async () => {
-    try {
+  const invalidateNucleos = () => {
+    queryClient.invalidateQueries({ queryKey: NUCLEOS_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: MY_NUCLEOS_QUERY_KEY });
+  };
+
+  const nucleosQuery = useQuery({
+    queryKey: NUCLEOS_QUERY_KEY,
+    queryFn: async (): Promise<Nucleo[]> => {
       const { data, error } = await supabase
         .from("nucleos")
         .select("*")
         .order("members_count", { ascending: false });
 
       if (error) throw error;
-      setNucleos(data || []);
-    } catch (error) {
-      console.error("Error fetching nucleos:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return data || [];
+    },
+  });
 
-  const fetchMyNucleos = async () => {
-    if (!user) return;
+  const myNucleosQuery = useQuery({
+    queryKey: [...MY_NUCLEOS_QUERY_KEY, user?.id ?? null],
+    enabled: Boolean(user),
+    queryFn: async (): Promise<Nucleo[]> => {
+      if (!user) return [];
 
-    try {
       const { data: memberData, error: memberError } = await supabase
         .from("nucleo_members")
         .select("nucleo_id")
         .eq("user_id", user.id);
 
       if (memberError) throw memberError;
+      if (!memberData || memberData.length === 0) return [];
 
-      if (memberData && memberData.length > 0) {
-        const nucleoIds = memberData.map((m) => m.nucleo_id);
-        const { data, error } = await supabase
-          .from("nucleos")
-          .select("*")
-          .in("id", nucleoIds)
-          .order("name");
+      const nucleoIds = memberData.map((m) => m.nucleo_id);
+      const { data, error } = await supabase
+        .from("nucleos")
+        .select("*")
+        .in("id", nucleoIds)
+        .order("name");
 
-        if (error) throw error;
-        setMyNucleos(data || []);
-      } else {
-        setMyNucleos([]);
-      }
-    } catch (error) {
-      console.error("Error fetching my nucleos:", error);
-    }
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const fetchNucleos = async () => {
+    await nucleosQuery.refetch();
+  };
+
+  const fetchMyNucleos = async () => {
+    if (!user) return;
+    await myNucleosQuery.refetch();
   };
 
   const getNucleo = async (slug: string): Promise<Nucleo | null> => {
@@ -105,7 +120,6 @@ export const useNucleos = () => {
 
   const getNucleoMembers = async (nucleoId: string): Promise<NucleoMember[]> => {
     try {
-      // Fetch members
       const { data: membersData, error: membersError } = await supabase
         .from("nucleo_members")
         .select("*")
@@ -113,10 +127,8 @@ export const useNucleos = () => {
         .order("joined_at", { ascending: true });
 
       if (membersError) throw membersError;
-
       if (!membersData || membersData.length === 0) return [];
 
-      // Fetch profiles separately
       const userIds = membersData.map((m) => m.user_id);
       const { data: profilesData } = await supabase
         .from("profiles")
@@ -153,38 +165,69 @@ export const useNucleos = () => {
 
   const createNucleo = async (data: {
     name: string;
-    slug: string;
+    slug?: string;
     description?: string;
     color?: string;
     is_private?: boolean;
     avatar_url?: string;
   }): Promise<Nucleo | null> => {
-    if (!user) return null;
-
-    try {
-      const { data: nucleo, error } = await supabase
-        .from("nucleos")
-        .insert({
-          ...data,
-          owner_id: user.id,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Núcleo criado!",
-        description: `O núcleo "${data.name}" foi criado com sucesso.`,
-      });
-
-      fetchNucleos();
-      fetchMyNucleos();
-      return nucleo;
-    } catch (error: any) {
+    if (!user) {
       toast({
         title: "Erro ao criar núcleo",
-        description: error.message || "Tente novamente mais tarde.",
+        description: "Você precisa estar logado para criar uma comunidade.",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    const name = data.name.trim();
+    if (!name) {
+      toast({
+        title: "Erro ao criar núcleo",
+        description: "O nome da comunidade é obrigatório.",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    try {
+      let lastError: { message?: string } | null = null;
+
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const slug = uniquifyNucleoSlug(data.slug || name, attempt);
+        const { data: nucleo, error } = await supabase
+          .from("nucleos")
+          .insert({
+            name,
+            slug,
+            description: data.description,
+            color: data.color,
+            is_private: data.is_private,
+            avatar_url: data.avatar_url,
+            owner_id: user.id,
+          })
+          .select()
+          .single();
+
+        if (!error && nucleo) {
+          toast({
+            title: "Núcleo criado!",
+            description: `O núcleo "${name}" foi criado com sucesso.`,
+          });
+          invalidateNucleos();
+          return nucleo;
+        }
+
+        lastError = error;
+        if (!isUniqueViolation(error)) break;
+      }
+
+      throw lastError || new Error("Não foi possível criar o núcleo.");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Tente novamente mais tarde.";
+      toast({
+        title: "Erro ao criar núcleo",
+        description: message,
         variant: "destructive",
       });
       return null;
@@ -208,13 +251,13 @@ export const useNucleos = () => {
         description: "Agora você é membro deste núcleo.",
       });
 
-      fetchNucleos();
-      fetchMyNucleos();
+      invalidateNucleos();
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Tente novamente mais tarde.";
       toast({
         title: "Erro ao entrar no núcleo",
-        description: error.message || "Tente novamente mais tarde.",
+        description: message,
         variant: "destructive",
       });
       return false;
@@ -238,13 +281,13 @@ export const useNucleos = () => {
         description: "Você não é mais membro deste núcleo.",
       });
 
-      fetchNucleos();
-      fetchMyNucleos();
+      invalidateNucleos();
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Tente novamente mais tarde.";
       toast({
         title: "Erro ao sair do núcleo",
-        description: error.message || "Tente novamente mais tarde.",
+        description: message,
         variant: "destructive",
       });
       return false;
@@ -252,7 +295,7 @@ export const useNucleos = () => {
   };
 
   const isMember = (nucleoId: string): boolean => {
-    return myNucleos.some((n) => n.id === nucleoId);
+    return (myNucleosQuery.data || []).some((n) => n.id === nucleoId);
   };
 
   const addRule = async (
@@ -275,10 +318,11 @@ export const useNucleos = () => {
       });
 
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Tente novamente mais tarde.";
       toast({
         title: "Erro ao adicionar regra",
-        description: error.message || "Tente novamente mais tarde.",
+        description: message,
         variant: "destructive",
       });
       return false;
@@ -292,31 +336,36 @@ export const useNucleos = () => {
       description?: string;
       avatar_url?: string;
       is_private?: boolean;
+      slug?: string;
     },
   ): Promise<boolean> => {
     if (!user) return false;
 
     try {
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("nucleos")
         .update(data)
         .eq("id", nucleoId)
-        .eq("owner_id", user.id); // Apenas o dono pode atualizar
+        .select("id")
+        .maybeSingle();
 
       if (error) throw error;
+      if (!updated) {
+        throw new Error("Sem permissão para atualizar este núcleo, ou ele não existe mais.");
+      }
 
       toast({
         title: "Comunidade atualizada!",
         description: "As alterações foram salvas com sucesso.",
       });
 
-      fetchNucleos();
-      fetchMyNucleos();
+      invalidateNucleos();
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Tente novamente mais tarde.";
       toast({
         title: "Erro ao atualizar",
-        description: error.message || "Tente novamente mais tarde.",
+        description: message,
         variant: "destructive",
       });
       return false;
@@ -327,46 +376,40 @@ export const useNucleos = () => {
     if (!user) return false;
 
     try {
-      const { error } = await supabase
+      const { data: removed, error } = await supabase
         .from("nucleos")
         .delete()
         .eq("id", nucleoId)
-        .eq("owner_id", user.id); // Apenas o dono pode deletar
+        .select("id")
+        .maybeSingle();
 
       if (error) throw error;
+      if (!removed) {
+        throw new Error("Sem permissão para excluir este núcleo, ou ele não existe mais.");
+      }
 
       toast({
         title: "Comunidade excluída",
         description: "A comunidade foi apagada permanentemente.",
       });
 
-      fetchNucleos();
-      fetchMyNucleos();
+      invalidateNucleos();
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Tente novamente mais tarde.";
       toast({
         title: "Erro ao excluir",
-        description: error.message || "Tente novamente mais tarde.",
+        description: message,
         variant: "destructive",
       });
       return false;
     }
   };
 
-  useEffect(() => {
-    fetchNucleos();
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      fetchMyNucleos();
-    }
-  }, [user]);
-
   return {
-    nucleos,
-    myNucleos,
-    isLoading,
+    nucleos: nucleosQuery.data || [],
+    myNucleos: myNucleosQuery.data || [],
+    isLoading: nucleosQuery.isLoading,
     fetchNucleos,
     fetchMyNucleos,
     getNucleo,
