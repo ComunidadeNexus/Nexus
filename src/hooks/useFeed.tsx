@@ -221,9 +221,11 @@ export const useFeedActions = () => {
     onMutate: async ({ postId, voteType }) => {
       await queryClient.cancelQueries({ queryKey: ["feed-posts"] });
       await queryClient.cancelQueries({ queryKey: ["profile-posts"] });
+      await queryClient.cancelQueries({ queryKey: ["search-posts"] });
       const previous = [
         ...queryClient.getQueriesData<FeedPost[]>({ queryKey: ["feed-posts"] }),
         ...queryClient.getQueriesData<FeedPost[]>({ queryKey: ["profile-posts"] }),
+        ...queryClient.getQueriesData<FeedPost[]>({ queryKey: ["search-posts"] }),
       ];
 
       const patchVotes = (old: FeedPost[] | undefined) => {
@@ -233,6 +235,7 @@ export const useFeedActions = () => {
 
       queryClient.setQueriesData<FeedPost[]>({ queryKey: ["feed-posts"] }, patchVotes);
       queryClient.setQueriesData<FeedPost[]>({ queryKey: ["profile-posts"] }, patchVotes);
+      queryClient.setQueriesData<FeedPost[]>({ queryKey: ["search-posts"] }, patchVotes);
 
       return { previous };
     },
@@ -284,6 +287,7 @@ export const useFeedActions = () => {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
       queryClient.invalidateQueries({ queryKey: ["profile-posts"] });
+      queryClient.invalidateQueries({ queryKey: ["search-posts"] });
     },
   });
 
