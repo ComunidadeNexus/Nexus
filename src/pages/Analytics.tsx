@@ -1,8 +1,6 @@
-import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -12,16 +10,12 @@ import {
   MessageCircle,
   FileText,
   Users,
-  Eye,
-  Crown,
   ArrowUpRight,
   ArrowDownRight,
   Calendar,
-  Sparkles,
+  AlertCircle,
 } from "lucide-react";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -33,9 +27,8 @@ import {
   Bar,
 } from "recharts";
 import { useAnalytics } from "@/hooks/useAnalytics";
-import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/contexts/AuthContext";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const Analytics = () => {
@@ -44,7 +37,7 @@ const Analytics = () => {
   const { user } = useAuth();
 
   const isGlobalAdmin = location.pathname.startsWith("/admin");
-  const { analytics, loading, period, setPeriod } = useAnalytics(isGlobalAdmin);
+  const { analytics, loading, error, period, setPeriod, refetch } = useAnalytics(isGlobalAdmin);
 
   const StatCard = ({
     title,
@@ -139,6 +132,21 @@ const Analytics = () => {
                 </Card>
               ))}
             </div>
+          ) : error ? (
+            <Card className="glass-card">
+              <CardContent className="py-10 flex flex-col items-center text-center gap-3">
+                <AlertCircle className="w-10 h-10 text-destructive" />
+                <div>
+                  <p className="font-semibold text-foreground">
+                    Não foi possível carregar o analytics
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1 max-w-md">{error}</p>
+                </div>
+                <Button type="button" onClick={() => void refetch()}>
+                  Tentar novamente
+                </Button>
+              </CardContent>
+            </Card>
           ) : (
             <>
               {/* Stats Grid */}
