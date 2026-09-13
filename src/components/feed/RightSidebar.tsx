@@ -51,7 +51,7 @@ const RightSidebar = () => {
 
             return (
               <Link
-                to={`/n/${nucleo.slug}`}
+                to={`/nucleo/${nucleo.slug}`}
                 key={nucleo.id}
                 className="flex items-center justify-between group cursor-pointer"
               >

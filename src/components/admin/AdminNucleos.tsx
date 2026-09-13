@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { slugifyNucleoName } from "@/lib/nucleoSlug";
 import {
   Hexagon,
   Search,
@@ -11,10 +13,15 @@ import {
   Users,
   FileText,
   AlertTriangle,
+  Plus,
+  Pencil,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -43,12 +50,24 @@ interface Nucleo {
   created_at: string;
 }
 
+const emptyForm = {
+  name: "",
+  slug: "",
+  description: "",
+  is_private: false,
+};
+
 const AdminNucleos = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [nucleos, setNucleos] = useState<Nucleo[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Nucleo | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchNucleos();
@@ -67,20 +86,133 @@ const AdminNucleos = () => {
     setLoading(false);
   };
 
+  const openCreate = () => {
+    setEditTarget(null);
+    setForm(emptyForm);
+    setDialogOpen(true);
+  };
+
+  const openEdit = (nucleo: Nucleo) => {
+    setEditTarget(nucleo);
+    setForm({
+      name: nucleo.name,
+      slug: nucleo.slug,
+      description: nucleo.description || "",
+      is_private: nucleo.is_private,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleSave = async () => {
+    const name = form.name.trim();
+    if (!name) {
+      toast({ title: "Nome é obrigatório", variant: "destructive" });
+      return;
+    }
+    if (!user) {
+      toast({ title: "Você precisa estar logado", variant: "destructive" });
+      return;
+    }
+
+    const slug = slugifyNucleoName(form.slug || name);
+    setSaving(true);
+    try {
+      if (editTarget) {
+        const { data, error } = await supabase
+          .from("nucleos")
+          .update({
+            name,
+            slug,
+            description: form.description.trim() || null,
+            is_private: form.is_private,
+          })
+          .eq("id", editTarget.id)
+          .select("id")
+          .maybeSingle();
+        if (error) throw error;
+        if (!data) throw new Error("Sem permissão para editar este núcleo.");
+        toast({ title: "Núcleo atualizado!" });
+      } else {
+        const { data, error } = await supabase
+          .from("nucleos")
+          .insert({
+            name,
+            slug,
+            description: form.description.trim() || null,
+            is_private: form.is_private,
+            owner_id: user.id,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        if (!data) throw new Error("Não foi possível criar o núcleo.");
+        toast({ title: "Núcleo criado!" });
+      }
+      setDialogOpen(false);
+      fetchNucleos(search);
+    } catch (error: unknown) {
+      toast({
+        title: "Erro ao salvar",
+        description: error instanceof Error ? error.message : "Tente novamente.",
+        variant: "destructive",
+      });
+    }
+    setSaving(false);
+  };
+
   const toggleVerify = async (id: string, current: boolean) => {
-    await supabase.from("nucleos").update({ is_verified: !current }).eq("id", id);
+    const { data, error } = await supabase
+      .from("nucleos")
+      .update({ is_verified: !current })
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
+    if (error || !data) {
+      toast({
+        title: "Não foi possível atualizar",
+        description: error?.message || "Sem permissão para verificar este núcleo.",
+        variant: "destructive",
+      });
+      return;
+    }
     toast({ title: !current ? "Núcleo verificado!" : "Verificação removida" });
     fetchNucleos(search);
   };
 
   const togglePrivate = async (id: string, current: boolean) => {
-    await supabase.from("nucleos").update({ is_private: !current }).eq("id", id);
+    const { data, error } = await supabase
+      .from("nucleos")
+      .update({ is_private: !current })
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
+    if (error || !data) {
+      toast({
+        title: "Não foi possível atualizar",
+        description: error?.message || "Sem permissão para alterar a privacidade.",
+        variant: "destructive",
+      });
+      return;
+    }
     toast({ title: !current ? "Núcleo privado" : "Núcleo público" });
     fetchNucleos(search);
   };
 
   const handleDelete = async (id: string) => {
-    await supabase.from("nucleos").delete().eq("id", id);
+    const { data, error } = await supabase
+      .from("nucleos")
+      .delete()
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
+    if (error || !data) {
+      toast({
+        title: "Não foi possível deletar",
+        description: error?.message || "Sem permissão para deletar este núcleo.",
+        variant: "destructive",
+      });
+      return;
+    }
     toast({ title: "Núcleo deletado" });
     setDeleteTarget(null);
     fetchNucleos(search);
@@ -88,17 +220,21 @@ const AdminNucleos = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
-          <Hexagon className="w-5 h-5 text-violet-400" />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
+            <Hexagon className="w-5 h-5 text-violet-400" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Núcleos</h1>
+            <p className="text-sm text-muted-foreground">{nucleos.length} núcleos encontrados</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Núcleos</h1>
-          <p className="text-sm text-muted-foreground">{nucleos.length} núcleos encontrados</p>
-        </div>
+        <Button onClick={openCreate} className="bg-violet-600 hover:bg-violet-700 min-h-11">
+          <Plus className="w-4 h-4 mr-2" /> Novo núcleo
+        </Button>
       </div>
 
-      {/* Search */}
       <div className="flex gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -115,7 +251,6 @@ const AdminNucleos = () => {
         </Button>
       </div>
 
-      {/* Table */}
       <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -209,6 +344,15 @@ const AdminNucleos = () => {
                           size="icon"
                           variant="ghost"
                           className="h-8 w-8 hover:bg-white/10"
+                          title="Editar"
+                          onClick={() => openEdit(n)}
+                        >
+                          <Pencil className="w-4 h-4 text-muted-foreground" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 hover:bg-white/10"
                           title={n.is_verified ? "Remover verificação" : "Verificar"}
                           onClick={() => toggleVerify(n.id, n.is_verified)}
                         >
@@ -246,6 +390,75 @@ const AdminNucleos = () => {
           </table>
         </div>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="bg-background/95 backdrop-blur border-white/10 max-h-[90dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editTarget ? "Editar núcleo" : "Novo núcleo"}</DialogTitle>
+            <DialogDescription>
+              {editTarget
+                ? "Atualize nome, slug, descrição e privacidade."
+                : "Cria o núcleo na plataforma. O admin fica como dono."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="nucleo-name">Nome</Label>
+              <Input
+                id="nucleo-name"
+                value={form.name}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  setForm((prev) => ({
+                    ...prev,
+                    name,
+                    slug: editTarget ? prev.slug : slugifyNucleoName(name),
+                  }));
+                }}
+                className="bg-white/5 border-white/10"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nucleo-slug">Slug</Label>
+              <Input
+                id="nucleo-slug"
+                value={form.slug}
+                onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))}
+                className="bg-white/5 border-white/10 font-mono"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nucleo-description">Descrição</Label>
+              <Textarea
+                id="nucleo-description"
+                value={form.description}
+                onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                className="bg-white/5 border-white/10 min-h-[100px]"
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-white/10 px-3 py-2">
+              <Label htmlFor="nucleo-private">Privado</Label>
+              <Switch
+                id="nucleo-private"
+                checked={form.is_private}
+                onCheckedChange={(is_private) => setForm((prev) => ({ ...prev, is_private }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-violet-600 hover:bg-violet-700"
+              disabled={saving}
+              onClick={handleSave}
+            >
+              {saving ? "Salvando..." : editTarget ? "Salvar" : "Criar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="bg-background/95 backdrop-blur border-white/10">

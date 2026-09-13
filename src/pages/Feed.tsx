@@ -4,6 +4,7 @@ import PostCard from "@/components/feed/PostCard";
 import CreatePostModal from "@/components/community/CreatePostModal";
 import { useFeed } from "@/hooks/useFeed";
 import { useCategories } from "@/hooks/useCategories";
+import { displayPostAuthor, displayPostTitle } from "@/lib/feedPosts";
 import { cn } from "@/lib/utils";
 
 const Feed = () => {
@@ -74,14 +75,14 @@ const Feed = () => {
               key={post.id}
               postId={post.id}
               nucleus={post.nucleo?.slug || "geral"}
-              author={post.author?.name || post.author?.username || "Usuário"}
+              author={displayPostAuthor(post)}
               authorId={post.user_id}
               authorAvatar={post.author?.avatar_url}
               timeAgo={new Date(post.created_at).toLocaleDateString()}
-              title={post.title || "Sem Título"}
-              content={post.content}
-              votes={post.upvotes_count - post.downvotes_count}
-              comments={post.comments_count}
+              title={displayPostTitle(post)}
+              content={typeof post.content === "string" ? post.content : ""}
+              votes={(post.upvotes_count ?? 0) - (post.downvotes_count ?? 0)}
+              comments={post.comments_count ?? 0}
               mediaUrl={post.media_url || undefined}
               mediaType={post.media_type || undefined}
               userVote={post.user_vote}

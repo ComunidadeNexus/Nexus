@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { Search, Users, Loader2 } from "lucide-react";
+import { Plus, Search, Users, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import NucleoCard from "@/components/nucleos/NucleoCard";
+import CreateNucleoModal from "@/components/nucleos/CreateNucleoModal";
 import { useNucleos } from "@/hooks/useNucleos";
 
 const Nucleos = () => {
   const { nucleos, isLoading, joinNucleo, leaveNucleo, isMember } = useNucleos();
   const [searchQuery, setSearchQuery] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
 
   const filteredNucleos = nucleos.filter(
     (nucleo) =>
@@ -25,6 +27,14 @@ const Nucleos = () => {
               Encontre e participe dos núcleos (comunidades) já criados
             </p>
           </div>
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="inline-flex items-center justify-center min-h-11 gap-2 px-4 rounded-full font-bold text-white bg-gradient-to-r from-[#00C6FF] to-[#FF007F]"
+          >
+            <Plus className="w-4 h-4" />
+            Criar comunidade
+          </button>
         </div>
 
         {/* Search */}
@@ -63,6 +73,7 @@ const Nucleos = () => {
           </div>
         )}
       </main>
+      <CreateNucleoModal open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   );
 };

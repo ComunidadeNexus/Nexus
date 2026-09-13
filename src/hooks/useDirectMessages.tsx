@@ -31,9 +31,11 @@ interface ChatUser {
   avatar_url: string | null;
 }
 
-export const useDirectMessages = () => {
+export const useDirectMessages = (options?: { enabled?: boolean; realtime?: boolean }) => {
   const { user } = useAuth();
   const userId = user?.id;
+  const enabled = options?.enabled !== false;
+  const realtime = options?.realtime !== false;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -176,13 +178,21 @@ export const useDirectMessages = () => {
   };
 
   useEffect(() => {
+    if (!enabled) {
+      setConversations([]);
+      setIsLoading(false);
+      return;
+    }
+
     fetchConversations();
 
-    if (!userId) return;
+    if (!userId || !realtime) return;
 
-    // Setup realtime subscription for new messages
+    // Unique topic per mount. Reusing "dm-updates" after subscribe() throws
+    // "cannot add postgres_changes callbacks after subscribe()" when several
+    // PostCards / share modals call this hook at once.
     const channel = supabase
-      .channel("dm-updates")
+      .channel(`dm-updates:${userId}:${crypto.randomUUID()}`)
       .on(
         "postgres_changes",
         {
@@ -199,7 +209,7 @@ export const useDirectMessages = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, fetchConversations]);
+  }, [enabled, realtime, userId, fetchConversations]);
 
   return {
     conversations,

@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useNucleos } from "@/hooks/useNucleos";
+import { slugifyNucleoName } from "@/lib/nucleoSlug";
 import { X, Globe, EyeOff, Lock } from "lucide-react";
 import FileUpload from "@/components/upload/FileUpload";
 
@@ -50,6 +52,7 @@ const CreateNucleoModal = ({ open, onOpenChange }: CreateNucleoModalProps) => {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const { createNucleo } = useNucleos();
+  const navigate = useNavigate();
 
   const handleNext = () => setStep((s) => Math.min(s + 1, 3));
   const handleBack = () => setStep((s) => Math.max(s - 1, 1));
@@ -72,10 +75,7 @@ const CreateNucleoModal = ({ open, onOpenChange }: CreateNucleoModalProps) => {
   const handleCreate = async () => {
     if (!name.trim()) return;
 
-    const slug = name
-      .toLowerCase()
-      .replace(/[^a-z0-9-]/g, "-")
-      .replace(/-+/g, "-");
+    const slug = slugifyNucleoName(name);
     const isPrivate = privacy === "private" || privacy === "restricted";
 
     // Anexando metadados na descrição por enquanto
@@ -93,22 +93,17 @@ const CreateNucleoModal = ({ open, onOpenChange }: CreateNucleoModalProps) => {
 
     if (nucleo) {
       handleClose();
+      navigate(`/nucleo/${nucleo.slug}`);
     }
   };
 
-  // Preview dinâmico
-  const generatedSlug = name.trim()
-    ? name
-        .toLowerCase()
-        .replace(/[^a-z0-9-]/g, "-")
-        .replace(/-+/g, "-")
-    : "nomedacomunidade";
+  const generatedSlug = name.trim() ? slugifyNucleoName(name) : "nomedacomunidade";
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && handleClose()}>
-      <DialogContent className="max-w-[750px] p-0 bg-[#121212] border border-gray-800 text-white rounded-2xl shadow-2xl [&>button]:hidden">
+      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-[750px] max-h-[90dvh] p-0 bg-[#121212] border border-gray-800 text-white rounded-2xl shadow-2xl [&>button]:hidden flex flex-col overflow-hidden">
         {/* Header Customizado */}
-        <div className="flex justify-between items-start p-6 pb-2">
+        <div className="flex justify-between items-start p-6 pb-2 shrink-0">
           <div>
             <h2 className="text-2xl font-bold mb-1">
               {step === 1 && "Sobre o que será sua comunidade?"}
@@ -132,8 +127,8 @@ const CreateNucleoModal = ({ open, onOpenChange }: CreateNucleoModalProps) => {
           </button>
         </div>
 
-        {/* Content Area */}
-        <div className="px-6 py-4 min-h-[350px]">
+        {/* Content Area — scroll so Continuar/Criar stay reachable on mobile */}
+        <div className="px-6 py-4 min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {step === 1 && (
             <div className="flex flex-wrap gap-3 mt-4">
               {CATEGORIES.map((cat) => (
@@ -327,8 +322,8 @@ const CreateNucleoModal = ({ open, onOpenChange }: CreateNucleoModalProps) => {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 flex items-center justify-between border-t border-gray-800 bg-[#121212] rounded-b-2xl">
+        {/* Footer stays pinned in the viewport */}
+        <div className="px-6 py-4 flex items-center justify-between border-t border-gray-800 bg-[#121212] rounded-b-2xl shrink-0">
           {/* Indicadores de Passo */}
           <div className="flex gap-1.5">
             {[1, 2, 3].map((i) => (
@@ -344,14 +339,14 @@ const CreateNucleoModal = ({ open, onOpenChange }: CreateNucleoModalProps) => {
             {step === 1 ? (
               <button
                 onClick={handleClose}
-                className="px-6 py-2.5 rounded-full text-sm font-bold bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] transition-colors"
+                className="min-h-11 px-6 py-2.5 rounded-full text-sm font-bold bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] transition-colors"
               >
                 Cancelar
               </button>
             ) : (
               <button
                 onClick={handleBack}
-                className="px-6 py-2.5 rounded-full text-sm font-bold bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] transition-colors"
+                className="min-h-11 px-6 py-2.5 rounded-full text-sm font-bold bg-[#2A2A2A] text-white hover:bg-[#3A3A3A] transition-colors"
               >
                 Voltar
               </button>
@@ -361,7 +356,7 @@ const CreateNucleoModal = ({ open, onOpenChange }: CreateNucleoModalProps) => {
               <button
                 onClick={handleNext}
                 disabled={step === 1 && !selectedCategory}
-                className="px-6 py-2.5 rounded-full text-sm font-bold bg-white text-black hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="min-h-11 px-6 py-2.5 rounded-full text-sm font-bold bg-white text-black hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continuar
               </button>
@@ -369,7 +364,7 @@ const CreateNucleoModal = ({ open, onOpenChange }: CreateNucleoModalProps) => {
               <button
                 onClick={handleCreate}
                 disabled={!name.trim() || isCreating}
-                className="px-6 py-2.5 bg-gradient-to-r from-[#00C6FF] to-[#FF007F] text-white rounded-full text-sm font-bold shadow-md hover:opacity-90 disabled:opacity-50 transition-opacity"
+                className="min-h-11 px-6 py-2.5 bg-gradient-to-r from-[#00C6FF] to-[#FF007F] text-white rounded-full text-sm font-bold shadow-md hover:opacity-90 disabled:opacity-50 transition-opacity"
               >
                 {isCreating ? "Criando..." : "Criar comunidade"}
               </button>
