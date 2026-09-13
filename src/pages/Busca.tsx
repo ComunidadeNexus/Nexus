@@ -109,40 +109,19 @@ const Busca = () => {
   const [activeTab, setActiveTab] = useState("posts");
   const [accountsLoading, setAccountsLoading] = useState(false);
   const [results, setResults] = useState({
-    users: [] as any[],
-    nucleos: [] as any[],
+    users: [] as {
+      user_id: string;
+      username: string | null;
+      name: string | null;
+      avatar_url: string | null;
+    }[],
+    nucleos: [] as {
+      id: string;
+      name: string | null;
+      slug: string | null;
+      description: string | null;
+    }[],
   });
-
-  const searchAccounts = async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
-      setResults({ users: [], nucleos: [] });
-      return;
-    }
-
-    setAccountsLoading(true);
-    try {
-      const { data: users } = await supabase
-        .from("profiles")
-        .select("user_id, username, name, avatar_url, bio")
-        .or(`username.ilike.%${searchQuery}%,name.ilike.%${searchQuery}%`)
-        .limit(20);
-
-      const { data: nucleos } = await supabase
-        .from("nucleos")
-        .select("id, name, slug, description")
-        .or(`name.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`)
-        .limit(20);
-
-      setResults({
-        users: users || [],
-        nucleos: nucleos || [],
-      });
-    } catch (error) {
-      console.error("Erro na busca:", error);
-    } finally {
-      setAccountsLoading(false);
-    }
-  };
 
   const commitSearch = (searchQuery: string) => {
     const trimmed = searchQuery.trim();
@@ -172,8 +151,44 @@ const Busca = () => {
   }, [location.search]);
 
   useEffect(() => {
-    void searchAccounts(searchKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let cancelled = false;
+
+    const searchAccounts = async () => {
+      if (!searchKey.trim()) {
+        setResults({ users: [], nucleos: [] });
+        return;
+      }
+
+      setAccountsLoading(true);
+      try {
+        const { data: users } = await supabase
+          .from("profiles")
+          .select("user_id, username, name, avatar_url, bio")
+          .or(`username.ilike.%${searchKey}%,name.ilike.%${searchKey}%`)
+          .limit(20);
+
+        const { data: nucleos } = await supabase
+          .from("nucleos")
+          .select("id, name, slug, description")
+          .or(`name.ilike.%${searchKey}%,description.ilike.%${searchKey}%`)
+          .limit(20);
+
+        if (cancelled) return;
+        setResults({
+          users: users || [],
+          nucleos: nucleos || [],
+        });
+      } catch (error) {
+        console.error("Erro na busca:", error);
+      } finally {
+        if (!cancelled) setAccountsLoading(false);
+      }
+    };
+
+    void searchAccounts();
+    return () => {
+      cancelled = true;
+    };
   }, [searchKey]);
 
   useEffect(() => {
