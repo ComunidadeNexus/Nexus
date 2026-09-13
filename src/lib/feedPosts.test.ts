@@ -7,6 +7,7 @@ import {
   mapReactionToVote,
   resolvePostTitle,
   sanitizeFeedPosts,
+  votesMapFromReactions,
 } from "./feedPosts";
 
 function assert(condition: unknown, message: string) {
@@ -116,6 +117,20 @@ assert(mapReactionToVote("like") === "upvote", "DB like is an upvote");
 assert(mapReactionToVote("curious") === "downvote", "DB curious is a downvote");
 assert(mapReactionToVote("upvote") === "upvote", "cache upvote stays upvote");
 assert(mapReactionToVote("nope") === null, "unknown reaction is ignored");
+
+const fromReactions = votesMapFromReactions([
+  { post_id: qaRow.id, reaction_type: "like" },
+  { post_id: "other", reaction_type: "curious" },
+  { post_id: "skip", reaction_type: "love" },
+  { post_id: null, reaction_type: "like" },
+]);
+assert(fromReactions[qaRow.id] === "upvote", "search/feed like → upvote");
+assert(fromReactions.other === "downvote", "search/feed curious → downvote");
+assert(fromReactions.skip === undefined, "non-vote reactions are ignored");
+
+const searchMapped = mapFeedPosts([qaRow], { votes: fromReactions });
+assert(searchMapped[0].user_vote === "upvote", "search vote map fills the heart");
+assert(mapFeedPosts([qaRow])[0].user_vote === null, "no vote map leaves the heart empty");
 
 const likedCache = sanitizeFeedPosts([
   {

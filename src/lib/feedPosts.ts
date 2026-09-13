@@ -142,6 +142,21 @@ export function mapReactionToVote(value: unknown): "upvote" | "downvote" | null 
   return null;
 }
 
+/** Map reaction rows (feed / profile / search) onto postId → vote. */
+export function votesMapFromReactions(
+  rows: Array<{ post_id?: string | null; reaction_type?: unknown }> | null | undefined,
+): Record<string, "upvote" | "downvote"> {
+  const votes: Record<string, "upvote" | "downvote"> = {};
+  if (!Array.isArray(rows)) return votes;
+  for (const row of rows) {
+    if (!row || typeof row !== "object") continue;
+    const postId = asString(row.post_id);
+    const vote = mapReactionToVote(row.reaction_type);
+    if (postId && vote) votes[postId] = vote;
+  }
+  return votes;
+}
+
 export function applyVoteToPost(post: FeedPost, voteType: "upvote" | "downvote" | null): FeedPost {
   const oldVote = mapReactionToVote(post.user_vote);
   let newUpvotes = post.upvotes_count;
