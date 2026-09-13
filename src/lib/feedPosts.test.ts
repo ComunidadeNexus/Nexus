@@ -1,4 +1,11 @@
-import { displayPostAuthor, displayPostTitle, mapFeedPost, mapFeedPosts, resolvePostTitle } from "./feedPosts";
+import {
+  displayPostAuthor,
+  displayPostTitle,
+  mapFeedPost,
+  mapFeedPosts,
+  resolvePostTitle,
+  sanitizeFeedPosts,
+} from "./feedPosts";
 
 function assert(condition: unknown, message: string) {
   if (!condition) throw new Error(message);
@@ -39,7 +46,10 @@ const bodyAsTitle = resolvePostTitle({
   content: "Conteúdo de teste funcional mobile para validar curtidas e comentários.",
 });
 assert(bodyAsTitle === null, "missing title must not be invented from content");
-assert(displayPostTitle({ title: null }) === "Sem Título", "null title shows fallback, not the body");
+assert(
+  displayPostTitle({ title: null }) === "Sem Título",
+  "null title shows fallback, not the body",
+);
 
 assert(mapFeedPost({}) === null, "row without id/user_id is dropped");
 assert(mapFeedPosts(null).length === 0, "null rows become an empty list");
@@ -67,5 +77,37 @@ assert(garbage[0].title === null, "non-string title is ignored");
 assert(garbage[0].content === "", "non-string content becomes empty string");
 assert(garbage[0].upvotes_count === 2, "numeric strings are accepted as counts");
 assert(typeof garbage[0].created_at === "string", "invalid dates become a safe ISO string");
+
+const deletedAdminQa = {
+  id: "d2f6b675-b8a1-486b-bd83-815ce51b8be5",
+  user_id: "dadb693d-425d-42a6-ae50-4fb1eeb58c8b",
+  title: "QA Desktop Post",
+  content: "teste QA curtidas/comentarios",
+  author: { name: "", username: null, avatar_url: null },
+};
+
+const optimisticHotCache = [
+  {
+    id: "temp-1",
+    user_id: "user-1",
+    title: "QA Post Test",
+    content: "body",
+    author: { name: "QA", username: null, avatar_url: null },
+    nucleo: { slug: "geral", name: "Geral" },
+    user_vote: null,
+  },
+  null,
+  undefined,
+  { title: "orphan leftover without ids" },
+  deletedAdminQa,
+];
+
+const sanitized = sanitizeFeedPosts(optimisticHotCache);
+assert(sanitized.length === 2, "null holes and id-less leftovers must be dropped");
+assert(sanitized[0].title === "QA Post Test", "optimistic title stays distinct from body");
+assert(sanitized[0].content === "body", "optimistic body stays in content");
+assert(displayPostAuthor(sanitized[0]) === "QA", "cached author survives sanitize");
+assert(displayPostAuthor(sanitized[1]) === "Usuário", "empty author name is safe");
+assert(sanitizeFeedPosts("hot-cache-corrupt").length === 0, "non-array cache becomes []");
 
 console.log("feedPosts tests passed");

@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
   mapFeedPosts,
+  sanitizeFeedPosts,
   type FeedPost,
   type FeedPostAuthor,
   type FeedPostNucleo,
@@ -437,7 +438,7 @@ export const useFeed = (sortBy: "hot" | "new" | "top" = "hot", categorySlug?: st
   });
 
   return {
-    posts: Array.isArray(posts) ? posts : [],
+    posts: sanitizeFeedPosts(posts),
     // Leave the spinner once the query has settled (success, error, or timeout).
     // fetchStatus === "fetching" is the in-flight first load; paused/idle must not spin forever.
     isLoading: !isFetched && !isError && fetchStatus === "fetching",

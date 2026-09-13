@@ -18,6 +18,7 @@ import { Plus, X, Type, Image as ImageIcon, Link as LinkIcon, BarChart2, Hash } 
 import { useNucleos } from "@/hooks/useNucleos";
 import FileUpload from "@/components/upload/FileUpload";
 import { useQueryClient } from "@tanstack/react-query";
+import { sanitizeFeedPosts } from "@/lib/feedPosts";
 import { useCategories } from "@/hooks/useCategories";
 import { DynamicIcon } from "@/components/ui/DynamicIcon";
 
@@ -149,10 +150,9 @@ const CreatePostModal = ({
       };
 
       // Atualização otimista: insere no topo do feed
-      queryClient.setQueriesData({ queryKey: ["feed-posts"] }, (old: any) => {
-        if (!Array.isArray(old)) return old;
-        return [newFeedPost, ...old];
-      });
+      queryClient.setQueriesData({ queryKey: ["feed-posts"] }, (old: unknown) =>
+        sanitizeFeedPosts([newFeedPost, ...(Array.isArray(old) ? old : [])]),
+      );
 
       toast({
         title: "Sucesso!",

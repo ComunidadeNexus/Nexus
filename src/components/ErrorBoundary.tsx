@@ -2,6 +2,7 @@ import React from "react";
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
+  resetKey?: string;
 }
 
 interface ErrorBoundaryState {
@@ -13,6 +14,12 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   static getDerivedStateFromError(): ErrorBoundaryState {
     return { hasError: true };
+  }
+
+  componentDidUpdate(prevProps: ErrorBoundaryProps) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false });
+    }
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
