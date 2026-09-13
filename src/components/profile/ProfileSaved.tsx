@@ -26,7 +26,7 @@ export const ProfileSaved = ({ userId }: { userId: string }) => {
           .select(
             `
             id, user_id, nucleo_id, title, content, media_url, media_type, 
-            upvotes_count, downvotes_count, comments_count, created_at,
+            upvotes, downvotes, comments_count, created_at,
             nucleo:nucleos(slug, name)
           `,
           )
@@ -107,7 +107,10 @@ export const ProfileSaved = ({ userId }: { userId: string }) => {
           })}
           title={post.title || ""}
           content={post.content}
-          votes={post.upvotes_count - post.downvotes_count}
+          votes={
+            (post.upvotes ?? post.upvotes_count ?? 0) -
+            (post.downvotes ?? post.downvotes_count ?? 0)
+          }
           comments={post.comments_count}
           mediaUrl={post.media_url}
           mediaType={post.media_type}

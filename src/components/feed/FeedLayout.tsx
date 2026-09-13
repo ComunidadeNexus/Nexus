@@ -20,11 +20,11 @@ const FeedLayout = ({
       <FeedHeader />
 
       <div
-        className={`flex-1 w-full max-w-[1280px] mx-auto flex justify-center gap-6 pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-8 min-w-0 ${
+        className={`flex-1 w-full max-w-[1280px] mx-auto flex justify-center gap-6 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-8 min-w-0 ${
           flushMobile ? "pt-0 md:pt-6 px-0 md:px-4" : "pt-4 md:pt-6 px-3 sm:px-4"
         }`}
       >
-        <div className="hidden lg:block w-[270px] shrink-0">
+        <div className="hidden md:block w-[270px] shrink-0">
           <LeftSidebar />
         </div>
 

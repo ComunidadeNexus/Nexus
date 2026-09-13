@@ -42,24 +42,24 @@ const AdminConfig = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-white flex items-center gap-2">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <Settings className="w-8 h-8 text-purple-500" />
             Configurações Globais
           </h2>
-          <p className="text-gray-400 mt-1">Gerencie ajustes gerais do sistema.</p>
+          <p className="text-muted-foreground mt-1">Gerencie ajustes gerais do sistema.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="bg-[#1a1f2e] border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-white text-lg">Modo de Manutenção</CardTitle>
+            <CardTitle className="text-foreground text-lg">Modo de Manutenção</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label className="text-gray-300">Ativar Manutenção</Label>
-                <p className="text-sm text-gray-500">Impede acessos não-admin ao site.</p>
+                <Label className="text-foreground">Ativar Manutenção</Label>
+                <p className="text-sm text-muted-foreground">Impede acessos não-admin ao site.</p>
               </div>
               <Switch checked={maintenanceMode} onCheckedChange={setMaintenanceMode} />
             </div>
@@ -69,22 +69,23 @@ const AdminConfig = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-[#1a1f2e] border-gray-800">
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-white text-lg">Multiplicador Global de XP</CardTitle>
+            <CardTitle className="text-foreground text-lg">Multiplicador Global de XP</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-gray-300">Multiplicador Atual</Label>
+              <Label className="text-foreground">Multiplicador Atual</Label>
               <Input
                 type="number"
                 step="0.1"
                 min="0"
                 value={globalXpMultiplier}
                 onChange={(e) => setGlobalXpMultiplier(e.target.value)}
-                className="bg-gray-800 border-gray-700 text-white"
               />
-              <p className="text-sm text-gray-500">Use 2.0 para "XP em dobro", por exemplo.</p>
+              <p className="text-sm text-muted-foreground">
+                Use 2.0 para "XP em dobro", por exemplo.
+              </p>
             </div>
             <Button onClick={handleSaveXp} className="w-full">
               <Save className="w-4 h-4 mr-2" /> Salvar Multiplicador

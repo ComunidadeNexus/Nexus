@@ -31,7 +31,7 @@ const ProfileMainHeader = ({
   const displayName = profile.name || profile.username || "Usuário";
   const handle = profile.username ? `u/${profile.username}` : "u/usuario";
 
-  const { startConversation } = useDirectMessages();
+  const { startConversation } = useDirectMessages({ realtime: false });
   const navigate = useNavigate();
   const [isStartingChat, setIsStartingChat] = useState(false);
 
