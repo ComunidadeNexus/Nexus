@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { activeSubscriptionsCard, premiumAccessCard } from "@/lib/adminMetrics";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -75,7 +76,7 @@ const AdminDashboard = () => {
           bgClass: "bg-orange-500/10",
         },
         {
-          title: "Assinaturas Ativas",
+          ...activeSubscriptionsCard(),
           value: stats.totalSubscriptions,
           icon: CreditCard,
           colorClass: "text-yellow-400",
@@ -105,7 +106,7 @@ const AdminDashboard = () => {
           trend: "up" as const,
         },
         {
-          title: "Usuários Premium",
+          ...premiumAccessCard(),
           value: stats.premiumUsers,
           icon: Crown,
           colorClass: "text-yellow-400",
@@ -147,9 +148,7 @@ const AdminDashboard = () => {
           </div>
           <div>
             <p className="font-semibold text-foreground">Área Premium</p>
-            <p className="text-xs text-muted-foreground">
-              Publicar downloads e conteúdos do cofre
-            </p>
+            <p className="text-xs text-muted-foreground">Publicar downloads e conteúdos do cofre</p>
           </div>
         </button>
         <button

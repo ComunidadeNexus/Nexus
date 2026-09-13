@@ -83,6 +83,8 @@ const AppRoutes = () => {
         <Route index element={<AdminDashboard />} />
         <Route path="membros" element={<AdminMembros />} />
         <Route path="conteudo" element={<AdminConteudo />} />
+        <Route path="moderacao" element={<Navigate to="/admin/conteudo" replace />} />
+        <Route path="moderation" element={<Navigate to="/admin/conteudo" replace />} />
         <Route path="chat" element={<AdminChat />} />
         <Route path="categorias" element={<AdminCategorias />} />
         <Route path="nucleos" element={<AdminNucleos />} />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -6,6 +6,15 @@ import { ptBR } from "date-fns/locale";
 import PostCard from "@/components/feed/PostCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
+import {
+  displayPostAuthor,
+  displayPostTitle,
+  mapFeedPosts,
+  mapReactionToVote,
+  type FeedPost,
+  type FeedPostAuthor,
+  type FeedPostNucleo,
+} from "@/lib/feedPosts";
 
 interface ProfileActivityProps {
   userId: string;
@@ -18,89 +27,74 @@ const SETTINGS_CTA_STYLE = {
   boxSizing: "border-box" as const,
 };
 
+async function loadProfilePosts(userId: string, viewerId: string | null): Promise<FeedPost[]> {
+  const { data, error } = await supabase
+    .from("posts")
+    .select(
+      "id, user_id, nucleo_id, title, content, media_url, media_type, upvotes, downvotes, comments_count, created_at",
+    )
+    .eq("user_id", userId)
+    .eq("is_hidden", false)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (error) throw error;
+
+  const rows = data || [];
+  const profilesMap: Record<string, FeedPostAuthor> = {};
+  const nucleosMap: Record<string, FeedPostNucleo> = {};
+  const votes: Record<string, "upvote" | "downvote"> = {};
+
+  const userIds = [...new Set(rows.map((p) => p.user_id))];
+  if (userIds.length > 0) {
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("user_id, name, username, avatar_url")
+      .in("user_id", userIds);
+    profilesData?.forEach((p) => {
+      profilesMap[p.user_id] = {
+        name: p.name,
+        username: p.username,
+        avatar_url: p.avatar_url,
+      };
+    });
+  }
+
+  const nucleoIds = [...new Set(rows.map((p) => p.nucleo_id).filter((id): id is string => !!id))];
+  if (nucleoIds.length > 0) {
+    const { data: nucleosData } = await supabase
+      .from("nucleos")
+      .select("id, slug, name")
+      .in("id", nucleoIds);
+    nucleosData?.forEach((n) => {
+      nucleosMap[n.id] = { slug: n.slug, name: n.name };
+    });
+  }
+
+  if (viewerId && rows.length > 0) {
+    const { data: reactions } = await supabase
+      .from("reactions")
+      .select("post_id, reaction_type")
+      .eq("user_id", viewerId)
+      .in(
+        "post_id",
+        rows.map((p) => p.id),
+      );
+    reactions?.forEach((r) => {
+      const vote = mapReactionToVote(r.reaction_type);
+      if (r.post_id && vote) votes[r.post_id] = vote;
+    });
+  }
+
+  return mapFeedPosts(rows, { profiles: profilesMap, nucleos: nucleosMap, votes });
+}
+
 const ProfileActivity = ({ userId }: ProfileActivityProps) => {
   const { user } = useAuth();
-  const [posts, setPosts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("posts")
-          .select(
-            `
-            id, user_id, nucleo_id, title, content, media_url, media_type, 
-            upvotes_count, downvotes_count, comments_count, created_at,
-            nucleo:nucleos(slug, name)
-          `,
-          )
-          .eq("user_id", userId)
-          .eq("is_hidden", false)
-          .order("created_at", { ascending: false })
-          .limit(10);
-
-        if (error) throw error;
-
-        const userIds = [...new Set((data || []).map((p) => p.user_id))];
-        const profilesMap: Record<string, any> = {};
-
-        if (userIds.length > 0) {
-          const { data: profilesData } = await supabase
-            .from("profiles")
-            .select("user_id, name, username, avatar_url")
-            .in("user_id", userIds);
-
-          if (profilesData) {
-            profilesData.forEach((p) => {
-              profilesMap[p.user_id] = {
-                name: p.name,
-                username: p.username,
-                avatar_url: p.avatar_url,
-              };
-            });
-          }
-        }
-
-        // Fetch user votes if logged in (skip empty .in() — it can hang the request)
-        const userVotes: Record<string, string> = {};
-        const fetchedPosts = data || [];
-        if (user && fetchedPosts.length > 0) {
-          const { data: reactions } = await supabase
-            .from("reactions")
-            .select("post_id, reaction_type")
-            .eq("user_id", user.id)
-            .in(
-              "post_id",
-              fetchedPosts.map((p) => p.id),
-            );
-
-          if (reactions) {
-            reactions.forEach((r) => {
-              if (r.post_id) {
-                userVotes[r.post_id] = r.reaction_type;
-              }
-            });
-          }
-        }
-
-        const formattedPosts = fetchedPosts.map((post) => ({
-          ...post,
-          author: profilesMap[post.user_id] || { name: null, username: null, avatar_url: null },
-          nucleo: post.nucleo || { slug: "geral", name: "Geral" },
-          user_vote: userVotes[post.id] || null,
-        }));
-
-        setPosts(formattedPosts);
-      } catch (error) {
-        console.error("Error fetching posts:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPosts();
-  }, [userId, user]);
+  const { data: posts = [], isLoading } = useQuery({
+    queryKey: ["profile-posts", userId, user?.id ?? null],
+    queryFn: () => loadProfilePosts(userId, user?.id ?? null),
+  });
 
   if (isLoading) {
     return (
@@ -144,20 +138,20 @@ const ProfileActivity = ({ userId }: ProfileActivityProps) => {
         <PostCard
           key={post.id}
           postId={post.id}
-          nucleus={post.nucleo.name || post.nucleo.slug}
-          author={post.author.name || post.author.username || "Usuário"}
+          nucleus={post.nucleo?.slug || "geral"}
+          author={displayPostAuthor(post)}
           authorId={post.user_id}
-          authorAvatar={post.author.avatar_url}
+          authorAvatar={post.author?.avatar_url}
           timeAgo={formatDistanceToNow(new Date(post.created_at), {
             addSuffix: true,
             locale: ptBR,
           })}
-          title={post.title || ""}
-          content={post.content}
-          votes={post.upvotes_count - post.downvotes_count}
-          comments={post.comments_count}
-          mediaUrl={post.media_url}
-          mediaType={post.media_type}
+          title={displayPostTitle(post)}
+          content={typeof post.content === "string" ? post.content : ""}
+          votes={(post.upvotes_count ?? 0) - (post.downvotes_count ?? 0)}
+          comments={post.comments_count ?? 0}
+          mediaUrl={post.media_url || undefined}
+          mediaType={post.media_type || undefined}
           userVote={post.user_vote}
         />
       ))}

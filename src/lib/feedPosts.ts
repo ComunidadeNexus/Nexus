@@ -135,6 +135,31 @@ export function displayPostAuthor(post: Pick<FeedPost, "author">): string {
   return asTrimmed(post.author?.name) || asTrimmed(post.author?.username) || "Usuário";
 }
 
+/** DB stores like/curious; the UI and cache use upvote/downvote. */
+export function mapReactionToVote(value: unknown): "upvote" | "downvote" | null {
+  if (value === "upvote" || value === "like") return "upvote";
+  if (value === "downvote" || value === "curious") return "downvote";
+  return null;
+}
+
+export function applyVoteToPost(post: FeedPost, voteType: "upvote" | "downvote" | null): FeedPost {
+  const oldVote = mapReactionToVote(post.user_vote);
+  let newUpvotes = post.upvotes_count;
+  let newDownvotes = post.downvotes_count;
+
+  if (oldVote === "upvote") newUpvotes = Math.max(0, newUpvotes - 1);
+  if (oldVote === "downvote") newDownvotes = Math.max(0, newDownvotes - 1);
+  if (voteType === "upvote") newUpvotes += 1;
+  if (voteType === "downvote") newDownvotes += 1;
+
+  return {
+    ...post,
+    user_vote: voteType,
+    upvotes_count: newUpvotes,
+    downvotes_count: newDownvotes,
+  };
+}
+
 function authorFromRow(row: object): FeedPostAuthor | null {
   if (!("author" in row) || !row.author || typeof row.author !== "object") return null;
   const author = row.author as Record<string, unknown>;
@@ -172,10 +197,7 @@ export function sanitizeFeedPosts(value: unknown): FeedPost[] {
     const nucleoId = asString(record.nucleo_id);
     const author = authorFromRow(row);
     const nucleo = nucleoFromRow(row);
-    const vote =
-      record.user_vote === "upvote" || record.user_vote === "downvote"
-        ? record.user_vote
-        : undefined;
+    const vote = mapReactionToVote(record.user_vote) ?? undefined;
 
     const mapped = mapFeedPost(record, {
       profiles: userId && author ? { [userId]: author } : undefined,

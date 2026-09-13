@@ -7,6 +7,8 @@ import { User, Hexagon, FileText, Search as SearchIcon, Loader2 } from "lucide-r
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import PostCard from "@/components/feed/PostCard";
 import { Link } from "react-router-dom";
+import { displayPostAuthor, displayPostTitle, mapFeedPosts, type FeedPost } from "@/lib/feedPosts";
+import { buildPostsSearchOr, POST_SEARCH_COLUMNS } from "@/lib/searchPosts";
 
 const Busca = () => {
   const navigate = useNavigate();
@@ -18,7 +20,7 @@ const Busca = () => {
   const [activeTab, setActiveTab] = useState("posts");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState({
-    posts: [] as any[],
+    posts: [] as FeedPost[],
     users: [] as any[],
     nucleos: [] as any[],
   });
@@ -31,36 +33,67 @@ const Busca = () => {
 
     setLoading(true);
     try {
-      // Search Posts
-      const { data: posts } = await supabase
-        .from("posts")
-        .select(
-          `
-          id, user_id, nucleo_id, title, content, media_url, media_type, 
-          upvotes_count, downvotes_count, comments_count, created_at,
-          profiles:user_id(username, avatar_url),
-          nucleos(name, slug)
-        `,
-        )
-        .textSearch("content", searchQuery, { type: "websearch" })
-        .limit(20);
+      const postsOr = buildPostsSearchOr(searchQuery);
+      let mappedPosts: FeedPost[] = [];
 
-      // Se textSearch não funcionar bem com o título/conteúdo, usamos ilike como fallback
-      let postsResult = posts;
-      if (!posts || posts.length === 0) {
-        const { data: fallbackPosts } = await supabase
+      if (postsOr) {
+        // Flat select — same columns as the feed. Nested embeds + textSearch
+        // were the Posts=0 hole: FTS misses short title tokens, and a join
+        // error skipped the ilike fallback.
+        const { data: postRows, error: postsError } = await supabase
           .from("posts")
-          .select(
-            `
-            id, user_id, nucleo_id, title, content, media_url, media_type, 
-            upvotes_count, downvotes_count, comments_count, created_at,
-            profiles:user_id(username, avatar_url),
-            nucleos(name, slug)
-          `,
-          )
-          .or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`)
+          .select(POST_SEARCH_COLUMNS)
+          .eq("is_hidden", false)
+          .or(postsOr)
+          .order("created_at", { ascending: false })
           .limit(20);
-        postsResult = fallbackPosts;
+
+        if (postsError) {
+          console.error("Erro na busca de posts:", postsError);
+        } else {
+          const rows = postRows || [];
+          const userIds = [...new Set(rows.map((p) => p.user_id).filter(Boolean))];
+          const nucleoIds = [...new Set(rows.map((p) => p.nucleo_id).filter(Boolean))];
+
+          const [{ data: profilesData }, { data: nucleosData }] = await Promise.all([
+            userIds.length
+              ? supabase
+                  .from("profiles")
+                  .select("user_id, name, username, avatar_url")
+                  .in("user_id", userIds)
+              : Promise.resolve({
+                  data: [] as {
+                    user_id: string;
+                    name: string | null;
+                    username: string | null;
+                    avatar_url: string | null;
+                  }[],
+                }),
+            nucleoIds.length
+              ? supabase.from("nucleos").select("id, slug, name").in("id", nucleoIds)
+              : Promise.resolve({
+                  data: [] as { id: string; slug: string | null; name: string | null }[],
+                }),
+          ]);
+
+          const profiles: Record<
+            string,
+            { name: string | null; username: string | null; avatar_url: string | null }
+          > = {};
+          profilesData?.forEach((p) => {
+            profiles[p.user_id] = {
+              name: p.name,
+              username: p.username,
+              avatar_url: p.avatar_url,
+            };
+          });
+          const nucleosMap: Record<string, { slug: string | null; name: string | null }> = {};
+          nucleosData?.forEach((n) => {
+            nucleosMap[n.id] = { slug: n.slug, name: n.name };
+          });
+
+          mappedPosts = mapFeedPosts(rows, { profiles, nucleos: nucleosMap });
+        }
       }
 
       // Search Users
@@ -78,7 +111,7 @@ const Busca = () => {
         .limit(20);
 
       setResults({
-        posts: postsResult || [],
+        posts: mappedPosts,
         users: users || [],
         nucleos: nucleos || [],
       });
@@ -165,18 +198,18 @@ const Busca = () => {
                 <PostCard
                   key={post.id}
                   postId={post.id}
-                  nucleus={post.nucleos?.name || "geral"}
-                  author={post.profiles?.username || "Usuário"}
+                  nucleus={post.nucleo?.slug || "geral"}
+                  author={displayPostAuthor(post)}
                   authorId={post.user_id}
-                  authorAvatar={post.profiles?.avatar_url}
+                  authorAvatar={post.author?.avatar_url}
                   timeAgo={new Date(post.created_at).toLocaleDateString()}
-                  title={post.title || ""}
-                  content={post.content || ""}
-                  votes={post.upvotes_count || 0}
-                  comments={post.comments_count || 0}
-                  mediaUrl={post.media_url}
-                  mediaType={post.media_type}
-                  userVote={null}
+                  title={displayPostTitle(post)}
+                  content={typeof post.content === "string" ? post.content : ""}
+                  votes={(post.upvotes_count ?? 0) - (post.downvotes_count ?? 0)}
+                  comments={post.comments_count ?? 0}
+                  mediaUrl={post.media_url || undefined}
+                  mediaType={post.media_type || undefined}
+                  userVote={post.user_vote}
                 />
               ))
             ) : (

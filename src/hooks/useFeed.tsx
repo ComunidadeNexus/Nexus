@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
+  applyVoteToPost,
   mapFeedPosts,
   sanitizeFeedPosts,
   type FeedPost,
@@ -219,30 +220,19 @@ export const useFeedActions = () => {
   const voteMutation = useMutation({
     onMutate: async ({ postId, voteType }) => {
       await queryClient.cancelQueries({ queryKey: ["feed-posts"] });
-      const previous = queryClient.getQueriesData<FeedPost[]>({ queryKey: ["feed-posts"] });
+      await queryClient.cancelQueries({ queryKey: ["profile-posts"] });
+      const previous = [
+        ...queryClient.getQueriesData<FeedPost[]>({ queryKey: ["feed-posts"] }),
+        ...queryClient.getQueriesData<FeedPost[]>({ queryKey: ["profile-posts"] }),
+      ];
 
-      queryClient.setQueriesData<FeedPost[]>({ queryKey: ["feed-posts"] }, (old) => {
+      const patchVotes = (old: FeedPost[] | undefined) => {
         if (!Array.isArray(old)) return old;
-        return old.map((post) => {
-          if (post.id !== postId) return post;
-          const oldVote = post.user_vote;
-          let newUpvotes = post.upvotes_count;
-          let newDownvotes = post.downvotes_count;
+        return old.map((post) => (post.id === postId ? applyVoteToPost(post, voteType) : post));
+      };
 
-          if (oldVote === "upvote") newUpvotes = Math.max(0, newUpvotes - 1);
-          if (oldVote === "downvote") newDownvotes = Math.max(0, newDownvotes - 1);
-
-          if (voteType === "upvote") newUpvotes++;
-          if (voteType === "downvote") newDownvotes++;
-
-          return {
-            ...post,
-            user_vote: voteType,
-            upvotes_count: newUpvotes,
-            downvotes_count: newDownvotes,
-          };
-        });
-      });
+      queryClient.setQueriesData<FeedPost[]>({ queryKey: ["feed-posts"] }, patchVotes);
+      queryClient.setQueriesData<FeedPost[]>({ queryKey: ["profile-posts"] }, patchVotes);
 
       return { previous };
     },
@@ -293,6 +283,7 @@ export const useFeedActions = () => {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["feed-posts"] });
+      queryClient.invalidateQueries({ queryKey: ["profile-posts"] });
     },
   });
 

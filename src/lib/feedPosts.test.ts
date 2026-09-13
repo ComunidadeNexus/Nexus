@@ -1,8 +1,10 @@
 import {
+  applyVoteToPost,
   displayPostAuthor,
   displayPostTitle,
   mapFeedPost,
   mapFeedPosts,
+  mapReactionToVote,
   resolvePostTitle,
   sanitizeFeedPosts,
 } from "./feedPosts";
@@ -109,5 +111,40 @@ assert(sanitized[0].content === "body", "optimistic body stays in content");
 assert(displayPostAuthor(sanitized[0]) === "QA", "cached author survives sanitize");
 assert(displayPostAuthor(sanitized[1]) === "Usuário", "empty author name is safe");
 assert(sanitizeFeedPosts("hot-cache-corrupt").length === 0, "non-array cache becomes []");
+
+assert(mapReactionToVote("like") === "upvote", "DB like is an upvote");
+assert(mapReactionToVote("curious") === "downvote", "DB curious is a downvote");
+assert(mapReactionToVote("upvote") === "upvote", "cache upvote stays upvote");
+assert(mapReactionToVote("nope") === null, "unknown reaction is ignored");
+
+const likedCache = sanitizeFeedPosts([
+  {
+    id: "liked-1",
+    user_id: "user-1",
+    title: "QA",
+    content: "body",
+    upvotes: 3,
+    author: { name: "QA", username: null, avatar_url: null },
+    user_vote: "like",
+  },
+]);
+assert(likedCache[0].user_vote === "upvote", "sanitize maps leftover like → upvote");
+assert(likedCache[0].upvotes_count === 3, "live upvotes column is preferred over upvotes_count");
+
+const voted = applyVoteToPost(likedCache[0], "upvote");
+assert(
+  voted.upvotes_count === 3 && voted.user_vote === "upvote",
+  "setting upvote on an already-liked post keeps the count",
+);
+const toggledOff = applyVoteToPost(likedCache[0], null);
+assert(
+  toggledOff.upvotes_count === 2 && toggledOff.user_vote === null,
+  "unlike decrements upvotes",
+);
+const fromZero = applyVoteToPost({ ...likedCache[0], user_vote: null, upvotes_count: 0 }, "upvote");
+assert(
+  fromZero.upvotes_count === 1 && fromZero.user_vote === "upvote",
+  "like from zero increments",
+);
 
 console.log("feedPosts tests passed");
