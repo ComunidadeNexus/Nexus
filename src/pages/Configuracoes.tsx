@@ -3,6 +3,8 @@ import { User, Lock, Shield, Bell, LogOut, ChevronRight, Loader2 } from "lucide-
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -28,10 +30,14 @@ const Configuracoes = () => {
   const [categories, setCategories] = useState<ProfileCategoryKey[]>([]);
   const [socialDrafts, setSocialDrafts] = useState(parseSocialLinkDrafts(undefined));
   const [socialErrors, setSocialErrors] = useState<Partial<Record<SocialNetworkKey, string>>>({});
+  const [name, setName] = useState("");
+  const [bio, setBio] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
+    setName(profile.name || "");
+    setBio(profile.bio || "");
     setCategories(sanitizeProfileCategories(profile.profile_categories));
     setSocialDrafts(parseSocialLinkDrafts(profile.social_links));
   }, [profile]);
@@ -59,14 +65,20 @@ const Configuracoes = () => {
       toast.success("Senha atualizada com sucesso!");
       setNewPassword("");
       setConfirmPassword("");
-    } catch (error: any) {
-      toast.error("Erro ao atualizar senha: " + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Tente de novo.";
+      toast.error("Erro ao atualizar senha: " + message);
     } finally {
       setIsUpdatingPassword(false);
     }
   };
 
   const handleSaveProfileSocial = async () => {
+    if (!name.trim()) {
+      toast.error("Nome é obrigatório");
+      return;
+    }
+
     const { links, errors } = validateSocialLinkDrafts(socialDrafts);
     setSocialErrors(errors);
     if (Object.keys(errors).length > 0) {
@@ -76,6 +88,8 @@ const Configuracoes = () => {
 
     setIsSavingProfile(true);
     const { error } = await updateProfile({
+      name: name.trim(),
+      bio: bio.trim() || undefined,
       profile_categories: categories,
       social_links: links,
     });
@@ -85,7 +99,7 @@ const Configuracoes = () => {
       toast.error("Erro ao salvar perfil");
       return;
     }
-    toast.success("Categorias e links atualizados!");
+    toast.success("Perfil atualizado!");
   };
 
   const handleLogout = () => {
@@ -152,8 +166,8 @@ const Configuracoes = () => {
                   Editar Perfil
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Foto, banner e biografia também podem ser editados no seu perfil. Aqui você
-                  escolhe categorias e links sociais.
+                  Categorias e links sociais também podem ser editados no perfil. Foto e banner
+                  ficam no Editar Perfil da página de perfil.
                 </p>
                 {profileLoading ? (
                   <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -162,6 +176,25 @@ const Configuracoes = () => {
                   </div>
                 ) : (
                   <>
+                    <div className="space-y-2">
+                      <Label htmlFor="settings-name">Nome</Label>
+                      <Input
+                        id="settings-name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Seu nome"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="settings-bio">Bio</Label>
+                      <Textarea
+                        id="settings-bio"
+                        value={bio}
+                        onChange={(e) => setBio(e.target.value)}
+                        placeholder="Conte um pouco sobre você..."
+                        rows={3}
+                      />
+                    </div>
                     <ProfileSocialFields
                       categories={categories}
                       onCategoriesChange={setCategories}
@@ -177,7 +210,7 @@ const Configuracoes = () => {
                         onClick={handleSaveProfileSocial}
                         disabled={isSavingProfile}
                       >
-                        {isSavingProfile ? "Salvando..." : "Salvar categorias e links"}
+                        {isSavingProfile ? "Salvando..." : "Salvar perfil"}
                       </Button>
                       <Button
                         variant="outline"

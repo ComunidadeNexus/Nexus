@@ -57,7 +57,7 @@ export default function ProfileSocialFields({
       <div className="space-y-3">
         <Label>Links sociais</Label>
         <p className="text-xs text-gray-500">Apenas URLs https://. Campos vazios não aparecem.</p>
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-x-4">
           {SOCIAL_NETWORKS.map((network) => (
             <div key={network.key} className="space-y-1">
               <label
