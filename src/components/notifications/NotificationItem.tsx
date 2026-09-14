@@ -1,5 +1,5 @@
 import { Heart, MessageCircle, UserPlus, AtSign, Award, TrendingUp, Bell } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/profile/ProfileLink";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Notification } from "@/hooks/useNotifications";
@@ -43,14 +43,6 @@ const NotificationItem = ({ notification, showFull = false }: NotificationItemPr
     }
   };
 
-  const initials =
-    notification.actor?.name
-      ?.split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2) || "U";
-
   return (
     <div
       onClick={handleClick}
@@ -61,10 +53,13 @@ const NotificationItem = ({ notification, showFull = false }: NotificationItemPr
       )}
     >
       <div className="relative">
-        <Avatar className="w-10 h-10">
-          <AvatarImage src={notification.actor?.avatar_url || undefined} />
-          <AvatarFallback className="bg-primary/20 text-sm">{initials}</AvatarFallback>
-        </Avatar>
+        <UserAvatar
+          userId={notification.actor_id}
+          name={notification.actor?.name}
+          avatarUrl={notification.actor?.avatar_url}
+          className="w-10 h-10"
+          fallbackClassName="bg-primary/20 text-sm"
+        />
         <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-background rounded-full flex items-center justify-center">
           {getNotificationIcon(notification.type)}
         </div>

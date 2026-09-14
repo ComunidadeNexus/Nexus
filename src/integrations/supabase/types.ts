@@ -853,6 +853,8 @@ export type Database = {
           karma: number;
           level: number;
           name: string | null;
+          profile_categories: string[];
+          social_links: Json;
           updated_at: string;
           user_id: string;
           username: string | null;
@@ -870,6 +872,8 @@ export type Database = {
           karma?: number;
           level?: number;
           name?: string | null;
+          profile_categories?: string[];
+          social_links?: Json;
           updated_at?: string;
           user_id: string;
           username?: string | null;
@@ -887,6 +891,8 @@ export type Database = {
           karma?: number;
           level?: number;
           name?: string | null;
+          profile_categories?: string[];
+          social_links?: Json;
           updated_at?: string;
           user_id?: string;
           username?: string | null;

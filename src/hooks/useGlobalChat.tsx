@@ -16,6 +16,7 @@ interface ChatMessage {
 interface ChatUser {
   name: string | null;
   avatar_url: string | null;
+  is_verified?: boolean;
 }
 
 export const useGlobalChat = () => {
@@ -48,12 +49,16 @@ export const useGlobalChat = () => {
 
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select("user_id, name, avatar_url")
+        .select("user_id, name, avatar_url, is_verified")
         .in("user_id", userIds);
 
       const usersMap: Record<string, ChatUser> = {};
       (profilesData || []).forEach((p) => {
-        usersMap[p.user_id] = { name: p.name, avatar_url: p.avatar_url };
+        usersMap[p.user_id] = {
+          name: p.name,
+          avatar_url: p.avatar_url,
+          is_verified: p.is_verified,
+        };
       });
       setUsers(usersMap);
     } catch (error) {

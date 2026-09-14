@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { renderMessageContent } from "@/utils/textParser";
+import { UserAvatar, ProfileName } from "@/components/profile/ProfileLink";
 
 const AdminChat = () => {
   const { messages, users, isLoading } = useGlobalChat();
@@ -111,21 +111,19 @@ const AdminChat = () => {
                     >
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          {user?.avatar_url ? (
-                            <img
-                              src={user.avatar_url}
-                              alt=""
-                              className="w-8 h-8 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white">
-                              {user?.name?.charAt(0) || "U"}
-                            </div>
-                          )}
+                          <UserAvatar
+                            userId={msg.user_id}
+                            name={user?.name}
+                            avatarUrl={user?.avatar_url}
+                            className="w-8 h-8"
+                            fallbackClassName="bg-blue-600 text-xs font-bold text-white"
+                          />
                           <div>
-                            <p className="font-semibold text-sm text-foreground">
-                              {user?.name || "Usuário Desconhecido"}
-                            </p>
+                            <ProfileName
+                              userId={msg.user_id}
+                              name={user?.name || "Usuário Desconhecido"}
+                              className="font-semibold text-sm text-foreground"
+                            />
                           </div>
                         </div>
                       </td>

@@ -42,7 +42,7 @@ export const ProfileSaved = ({ userId }: { userId: string }) => {
         if (userIds.length > 0) {
           const { data: profilesData } = await supabase
             .from("profiles")
-            .select("user_id, name, username, avatar_url")
+            .select("user_id, name, username, avatar_url, is_verified")
             .in("user_id", userIds);
 
           if (profilesData) {
@@ -51,6 +51,7 @@ export const ProfileSaved = ({ userId }: { userId: string }) => {
                 name: p.name,
                 username: p.username,
                 avatar_url: p.avatar_url,
+                is_verified: p.is_verified,
               };
             });
           }
@@ -101,6 +102,7 @@ export const ProfileSaved = ({ userId }: { userId: string }) => {
           author={post.author.name || post.author.username || "Usuário"}
           authorId={post.user_id}
           authorAvatar={post.author.avatar_url}
+          authorVerified={post.author.is_verified}
           timeAgo={formatDistanceToNow(new Date(post.created_at), {
             addSuffix: true,
             locale: ptBR,

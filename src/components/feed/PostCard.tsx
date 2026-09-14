@@ -9,7 +9,7 @@ import {
   Trash2,
   Flag,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar, ProfileName } from "@/components/profile/ProfileLink";
 import { useFeedActions } from "@/hooks/useFeed";
 import CommentSection from "./CommentSection";
 import SharePostModal from "./SharePostModal";
@@ -21,7 +21,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +30,7 @@ interface PostCardProps {
   author: string;
   authorId?: string;
   authorAvatar?: string | null;
+  authorVerified?: boolean;
   timeAgo: string;
   title: string;
   content: string;
@@ -47,6 +47,7 @@ const PostCard = ({
   author,
   authorId,
   authorAvatar,
+  authorVerified,
   timeAgo,
   title,
   content,
@@ -108,12 +109,12 @@ const PostCard = ({
           {/* Header do Post — mobile: community · author · time | overflow */}
           <div className="flex items-center justify-between mb-2 md:mb-3">
             <div className="flex items-center gap-2 text-xs min-w-0">
-              <Link to={authorId ? `/perfil/${authorId}` : "#"} className="shrink-0">
-                <Avatar className="w-6 h-6 md:w-8 md:h-8 hover:opacity-80 transition-opacity">
-                  <AvatarImage src={authorAvatar || undefined} />
-                  <AvatarFallback>{safeAuthor[0]?.toUpperCase() || "U"}</AvatarFallback>
-                </Avatar>
-              </Link>
+              <UserAvatar
+                userId={authorId}
+                name={safeAuthor}
+                avatarUrl={authorAvatar}
+                className="w-6 h-6 md:w-8 md:h-8"
+              />
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-1 min-w-0">
                   {nucleus && nucleus !== "geral" && (
@@ -124,12 +125,12 @@ const PostCard = ({
                   {nucleus && nucleus !== "geral" && (
                     <span className="md:hidden text-gray-400">·</span>
                   )}
-                  <Link
-                    to={authorId ? `/perfil/${authorId}` : "#"}
-                    className="font-bold hover:underline cursor-pointer text-gray-900 dark:text-gray-100 truncate"
-                  >
-                    {safeAuthor}
-                  </Link>
+                  <ProfileName
+                    userId={authorId}
+                    name={safeAuthor}
+                    isVerified={authorVerified}
+                    className="font-bold text-gray-900 dark:text-gray-100"
+                  />
                   {nucleus && nucleus !== "geral" && (
                     <>
                       <span className="hidden md:inline text-gray-400">•</span>

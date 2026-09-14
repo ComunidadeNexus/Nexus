@@ -78,6 +78,7 @@ const Feed = () => {
               author={displayPostAuthor(post)}
               authorId={post.user_id}
               authorAvatar={post.author?.avatar_url}
+              authorVerified={post.author?.is_verified}
               timeAgo={new Date(post.created_at).toLocaleDateString()}
               title={displayPostTitle(post)}
               content={typeof post.content === "string" ? post.content : ""}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
-import { useAuth } from "@/contexts/AuthContext";
+import { useFollowers } from "@/hooks/useFollowers";
 import ProfileMainHeader from "@/components/profile/ProfileMainHeader";
 import ProfileSidebarWidget from "@/components/profile/ProfileSidebarWidget";
 import ProfileActivity from "@/components/profile/ProfileActivity";
@@ -15,9 +15,9 @@ import { ProfileSaved } from "@/components/profile/ProfileSaved";
 const Profile = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { profile, badges, stats, isLoading, isOwnProfile, levelProgress, updateProfile, refetch } =
+  const { profile, badges, isLoading, isOwnProfile, levelProgress, updateProfile, refetch } =
     useProfile(userId);
+  const { followersCount, followingCount } = useFollowers(profile?.user_id || userId);
 
   const [activeTab, setActiveTab] = useState("posts");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -41,14 +41,13 @@ const Profile = () => {
 
   return (
     <div className="w-full flex gap-6">
-      {/* Coluna Esquerda: Conteúdo Principal */}
       <div className="flex-1 w-full min-w-0 max-w-[640px]">
         <ProfileMainHeader
           profile={profile}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
           isOwnProfile={isOwnProfile}
           onEditClick={() => setIsEditModalOpen(true)}
+          followersCount={followersCount}
+          followingCount={followingCount}
         />
 
         <div className="mt-4">
@@ -69,7 +68,6 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Coluna Direita: Widget */}
       <div className="hidden lg:block w-[310px] shrink-0">
         <ProfileSidebarWidget
           profile={profile}
@@ -77,17 +75,20 @@ const Profile = () => {
           badges={badges}
           isOwnProfile={isOwnProfile}
           onEditClick={() => setIsEditModalOpen(true)}
+          followersCount={followersCount}
+          followingCount={followingCount}
         />
       </div>
 
-      {/* Modal de Edição de Perfil */}
       {isOwnProfile && (
         <EditProfileModal
           profile={profile}
           open={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
           onUpdate={updateProfile}
-          onRefetch={refetch}
+          onRefetch={() => {
+            void refetch();
+          }}
         />
       )}
     </div>

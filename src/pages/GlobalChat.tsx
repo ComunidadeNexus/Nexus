@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useGlobalChat } from "@/hooks/useGlobalChat";
 import { useAuth } from "@/contexts/AuthContext";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar, ProfileName } from "@/components/profile/ProfileLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Loader2, ImagePlus, X, Smile, SmilePlus } from "lucide-react";
@@ -125,20 +125,16 @@ const GlobalChat = () => {
             messages.map((message) => {
               const profile = getProfile(message.user_id);
               const isOwn = message.user_id === user?.id;
-              const initials =
-                profile?.name
-                  ?.split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2) || "U";
 
               return (
                 <div key={message.id} className={cn("flex gap-3", isOwn && "flex-row-reverse")}>
-                  <Avatar className="w-8 h-8 flex-shrink-0">
-                    <AvatarImage src={profile?.avatar_url || undefined} />
-                    <AvatarFallback className="text-xs bg-primary/20">{initials}</AvatarFallback>
-                  </Avatar>
+                  <UserAvatar
+                    userId={message.user_id}
+                    name={profile?.name}
+                    avatarUrl={profile?.avatar_url}
+                    className="w-8 h-8"
+                    fallbackClassName="text-xs bg-primary/20"
+                  />
                   <div
                     className={cn(
                       "max-w-[min(70%,16rem)] sm:max-w-[70%] min-w-0 space-y-1",
@@ -146,7 +142,12 @@ const GlobalChat = () => {
                     )}
                   >
                     <div className={cn("flex items-center gap-2", isOwn && "flex-row-reverse")}>
-                      <span className="text-sm font-medium">{profile?.name || "Usuário"}</span>
+                      <ProfileName
+                        userId={message.user_id}
+                        name={profile?.name}
+                        isVerified={profile?.is_verified}
+                        className="text-sm font-medium"
+                      />
                       <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(message.created_at), {
                           addSuffix: true,

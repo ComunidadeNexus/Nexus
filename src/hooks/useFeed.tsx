@@ -137,7 +137,7 @@ async function loadFeedPosts({
     if (userIds.length > 0) {
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
-        .select("user_id, name, username, avatar_url")
+        .select("user_id, name, username, avatar_url, is_verified")
         .in("user_id", userIds)
         .abortSignal(signal);
       if (profilesError) {
@@ -149,6 +149,7 @@ async function loadFeedPosts({
             name: p.name,
             username: p.username,
             avatar_url: p.avatar_url,
+            is_verified: p.is_verified,
           };
         });
       }

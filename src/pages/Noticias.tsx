@@ -150,6 +150,7 @@ const Noticias = () => {
                     author={authorName}
                     authorId={post.user_id}
                     authorAvatar={post.profiles?.avatar_url}
+                    authorVerified={post.profiles?.is_verified}
                     timeAgo={timeAgo}
                     title={post.title}
                     content={post.content}

@@ -5,7 +5,7 @@ import SearchBar from "@/components/community/SearchBar";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Hexagon, FileText, Search as SearchIcon, Loader2 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar, ProfileName } from "@/components/profile/ProfileLink";
 import PostCard from "@/components/feed/PostCard";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -70,7 +70,7 @@ async function loadSearchPosts(searchQuery: string, viewerId: string | null): Pr
     userIds.length
       ? supabase
           .from("profiles")
-          .select("user_id, name, username, avatar_url")
+          .select("user_id, name, username, avatar_url, is_verified")
           .in("user_id", userIds)
       : Promise.resolve({
           data: [] as {
@@ -78,6 +78,7 @@ async function loadSearchPosts(searchQuery: string, viewerId: string | null): Pr
             name: string | null;
             username: string | null;
             avatar_url: string | null;
+            is_verified: boolean;
           }[],
         }),
     nucleoIds.length
@@ -111,6 +112,7 @@ async function loadSearchPosts(searchQuery: string, viewerId: string | null): Pr
       name: p.name,
       username: p.username,
       avatar_url: p.avatar_url,
+      is_verified: p.is_verified,
     };
   });
   const nucleos: Record<string, FeedPostNucleo> = {};
@@ -297,6 +299,7 @@ const Busca = () => {
                   author={displayPostAuthor(post)}
                   authorId={post.user_id}
                   authorAvatar={post.author?.avatar_url}
+                  authorVerified={post.author?.is_verified}
                   timeAgo={new Date(post.created_at).toLocaleDateString()}
                   title={displayPostTitle(post)}
                   content={typeof post.content === "string" ? post.content : ""}
@@ -321,15 +324,25 @@ const Busca = () => {
                     to={`/perfil/${account.user_id}`}
                     className="flex items-center gap-4 bg-white dark:bg-[#1A282D] p-4 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-primary transition-colors"
                   >
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={account.avatar_url} />
-                      <AvatarFallback>{account.username?.[0]?.toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div>
+                    <UserAvatar
+                      userId={account.user_id}
+                      name={account.name || account.username}
+                      avatarUrl={account.avatar_url}
+                      link={false}
+                      className="w-12 h-12"
+                    />
+                    <div className="min-w-0">
                       <h4 className="font-bold text-gray-900 dark:text-gray-100">
-                        {account.username}
+                        <ProfileName
+                          userId={account.user_id}
+                          name={account.name || account.username}
+                          link={false}
+                          className="font-bold"
+                        />
                       </h4>
-                      {account.name && <p className="text-sm text-gray-500">{account.name}</p>}
+                      {account.username && (
+                        <p className="text-sm text-gray-500">u/{account.username}</p>
+                      )}
                     </div>
                   </Link>
                 ))}

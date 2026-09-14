@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Crown, Shield, User } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar, ProfileName } from "@/components/profile/ProfileLink";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { NucleoMember } from "@/hooks/useNucleos";
@@ -37,12 +37,20 @@ const NucleoMembers = ({ members, maxDisplay = 10 }: NucleoMembersProps) => {
                 className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
                 onClick={() => navigate(`/perfil/${member.user_id}`)}
               >
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={profile?.avatar_url || undefined} />
-                  <AvatarFallback>{profile?.name?.charAt(0)?.toUpperCase() || "U"}</AvatarFallback>
-                </Avatar>
+                <UserAvatar
+                  userId={member.user_id}
+                  name={profile?.name}
+                  avatarUrl={profile?.avatar_url}
+                  className="h-8 w-8"
+                  link={false}
+                />
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{profile?.name || "Usuário"}</p>
+                  <ProfileName
+                    userId={member.user_id}
+                    name={profile?.name}
+                    link={false}
+                    className="font-medium text-sm"
+                  />
                   {profile?.username && (
                     <p className="text-xs text-muted-foreground">@{profile.username}</p>
                   )}

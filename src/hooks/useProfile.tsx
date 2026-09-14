@@ -1,8 +1,16 @@
-import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import type { Json } from "@/integrations/supabase/types";
+import {
+  profileQueryKeys,
+  sanitizeProfileCategories,
+  sanitizeSocialLinks,
+  type ProfileCategoryKey,
+  type SocialLinks,
+} from "@/lib/profileSocial";
 
-interface Profile {
+export interface Profile {
   id: string;
   user_id: string;
   name: string | null;
@@ -17,6 +25,10 @@ interface Profile {
   karma: number;
   created_at: string;
   updated_at: string;
+  followers_count?: number;
+  following_count?: number;
+  profile_categories: ProfileCategoryKey[];
+  social_links: SocialLinks;
 }
 
 interface Badge {
@@ -41,130 +53,176 @@ interface ProfileStats {
   likesReceived: number;
 }
 
-export const useProfile = (userId?: string) => {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [badges, setBadges] = useState<UserBadge[]>([]);
-  const [stats, setStats] = useState<ProfileStats>({
-    postsCount: 0,
-    commentsCount: 0,
-    likesReceived: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+type ProfileBundle = {
+  profile: Profile;
+  badges: UserBadge[];
+  stats: ProfileStats;
+};
 
-  const targetUserId = userId || user?.id;
-  const isOwnProfile = user?.id === targetUserId;
+function mapProfile(row: {
+  id: string;
+  user_id: string;
+  name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  xp_points: number;
+  level: number;
+  is_verified: boolean;
+  is_banned: boolean;
+  username: string | null;
+  karma: number;
+  created_at: string;
+  updated_at: string;
+  followers_count?: number;
+  following_count?: number;
+  profile_categories?: string[] | null;
+  social_links?: Json | null;
+  banner_url?: string | null;
+}): Profile {
+  return {
+    ...row,
+    profile_categories: sanitizeProfileCategories(row.profile_categories),
+    social_links: sanitizeSocialLinks(row.social_links),
+  };
+}
 
-  const fetchProfile = async () => {
-    if (!targetUserId) {
-      setIsLoading(false);
-      return;
-    }
+async function fetchProfileBundle(targetUserId: string): Promise<ProfileBundle> {
+  const { data: profileData, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("user_id", targetUserId)
+    .single();
 
-    try {
-      setIsLoading(true);
-      setError(null);
+  if (profileError) throw profileError;
 
-      // Fetch profile
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", targetUserId)
-        .single();
+  const { data: badgesData, error: badgesError } = await supabase
+    .from("user_badges")
+    .select(
+      `
+      id,
+      badge_id,
+      earned_at,
+      badges:badge_id (
+        id,
+        name,
+        description,
+        icon,
+        color,
+        xp_reward
+      )
+    `,
+    )
+    .eq("user_id", targetUserId);
 
-      if (profileError) throw profileError;
-      setProfile(profileData);
+  if (badgesError) throw badgesError;
 
-      // Fetch badges
-      const { data: badgesData, error: badgesError } = await supabase
-        .from("user_badges")
-        .select(
-          `
-          id,
-          badge_id,
-          earned_at,
-          badges:badge_id (
-            id,
-            name,
-            description,
-            icon,
-            color,
-            xp_reward
-          )
-        `,
-        )
-        .eq("user_id", targetUserId);
-
-      if (badgesError) throw badgesError;
-
-      const formattedBadges = (badgesData || []).map((ub: any) => ({
+  const formattedBadges: UserBadge[] = (badgesData || []).flatMap((ub) => {
+    const badgeRel = ub.badges as Badge | Badge[] | null;
+    const badge = Array.isArray(badgeRel) ? badgeRel[0] : badgeRel;
+    if (!badge) return [];
+    return [
+      {
         id: ub.id,
         badge_id: ub.badge_id,
         earned_at: ub.earned_at,
-        badge: ub.badges,
-      }));
-      setBadges(formattedBadges);
+        badge,
+      },
+    ];
+  });
 
-      // Fetch stats
-      const [postsResult, commentsResult, likesResult] = await Promise.all([
-        supabase
-          .from("posts")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", targetUserId)
-          .eq("is_hidden", false),
-        supabase
-          .from("comments")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", targetUserId),
-        supabase
-          .from("reactions")
-          .select("post_id")
-          .eq("reaction_type", "like")
-          .in(
-            "post_id",
-            (await supabase.from("posts").select("id").eq("user_id", targetUserId)).data?.map(
-              (p) => p.id,
-            ) || [],
-          ),
-      ]);
+  const [postsResult, commentsResult, likesResult] = await Promise.all([
+    supabase
+      .from("posts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", targetUserId)
+      .eq("is_hidden", false),
+    supabase
+      .from("comments")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", targetUserId),
+    supabase
+      .from("reactions")
+      .select("post_id")
+      .eq("reaction_type", "like")
+      .in(
+        "post_id",
+        (await supabase.from("posts").select("id").eq("user_id", targetUserId)).data?.map(
+          (p) => p.id,
+        ) || [],
+      ),
+  ]);
 
-      setStats({
-        postsCount: postsResult.count || 0,
-        commentsCount: commentsResult.count || 0,
-        likesReceived: likesResult.data?.length || 0,
-      });
-    } catch (err: any) {
-      console.error("Error fetching profile:", err);
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
+  return {
+    profile: mapProfile(profileData),
+    badges: formattedBadges,
+    stats: {
+      postsCount: postsResult.count || 0,
+      commentsCount: commentsResult.count || 0,
+      likesReceived: likesResult.data?.length || 0,
+    },
+  };
+}
+
+export type ProfileUpdates = Partial<
+  Pick<
+    Profile,
+    "name" | "avatar_url" | "banner_url" | "bio" | "profile_categories" | "social_links"
+  >
+>;
+
+export const useProfile = (userId?: string) => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const targetUserId = userId || user?.id;
+  const isOwnProfile = user?.id === targetUserId;
+
+  const query = useQuery({
+    queryKey: profileQueryKeys.detail(targetUserId || ""),
+    queryFn: () => fetchProfileBundle(targetUserId!),
+    enabled: Boolean(targetUserId),
+    staleTime: 30_000,
+  });
+
+  const profile = query.data?.profile ?? null;
+  const badges = query.data?.badges ?? [];
+  const stats = query.data?.stats ?? {
+    postsCount: 0,
+    commentsCount: 0,
+    likesReceived: 0,
   };
 
-  const updateProfile = async (
-    updates: Partial<Pick<Profile, "name" | "avatar_url" | "banner_url" | "bio">>,
-  ) => {
+  const updateProfile = async (updates: ProfileUpdates) => {
     if (!targetUserId || !isOwnProfile) return { error: "Unauthorized" };
 
     try {
-      const { error } = await supabase.from("profiles").update(updates).eq("user_id", targetUserId);
+      const payload: {
+        name?: string | null;
+        avatar_url?: string | null;
+        bio?: string | null;
+        profile_categories?: string[];
+        social_links?: Json;
+      } = {};
+      if (updates.name !== undefined) payload.name = updates.name;
+      if (updates.avatar_url !== undefined) payload.avatar_url = updates.avatar_url;
+      if (updates.bio !== undefined) payload.bio = updates.bio;
+      if (updates.profile_categories !== undefined) {
+        payload.profile_categories = sanitizeProfileCategories(updates.profile_categories);
+      }
+      if (updates.social_links !== undefined) {
+        payload.social_links = sanitizeSocialLinks(updates.social_links);
+      }
 
+      const { error } = await supabase.from("profiles").update(payload).eq("user_id", targetUserId);
       if (error) throw error;
 
-      setProfile((prev) => (prev ? { ...prev, ...updates } : null));
+      await queryClient.invalidateQueries({ queryKey: profileQueryKeys.detail(targetUserId) });
       return { error: null };
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error updating profile:", err);
-      return { error: err.message };
+      return { error: err instanceof Error ? err.message : "Erro ao atualizar perfil" };
     }
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, [targetUserId]);
-
-  // Calculate level progress
   const getLevelProgress = () => {
     if (!profile) return { current: 0, required: 100, percentage: 0 };
 
@@ -186,11 +244,11 @@ export const useProfile = (userId?: string) => {
     profile,
     badges,
     stats,
-    isLoading,
-    error,
+    isLoading: query.isLoading,
+    error: query.error ? (query.error as Error).message : null,
     isOwnProfile,
     updateProfile,
-    refetch: fetchProfile,
+    refetch: query.refetch,
     levelProgress: getLevelProgress(),
   };
 };

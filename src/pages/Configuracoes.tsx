@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { User, Lock, Shield, Bell, LogOut, ChevronRight } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { User, Lock, Shield, Bell, LogOut, ChevronRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,14 +7,34 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useProfile } from "@/hooks/useProfile";
+import ProfileSocialFields from "@/components/profile/ProfileSocialFields";
+import {
+  parseSocialLinkDrafts,
+  sanitizeProfileCategories,
+  validateSocialLinkDrafts,
+  type ProfileCategoryKey,
+  type SocialNetworkKey,
+} from "@/lib/profileSocial";
 
 const Configuracoes = () => {
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
+  const { profile, updateProfile, isLoading: profileLoading } = useProfile();
   const [activeTab, setActiveTab] = useState("profile");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [categories, setCategories] = useState<ProfileCategoryKey[]>([]);
+  const [socialDrafts, setSocialDrafts] = useState(parseSocialLinkDrafts(undefined));
+  const [socialErrors, setSocialErrors] = useState<Partial<Record<SocialNetworkKey, string>>>({});
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  useEffect(() => {
+    if (!profile) return;
+    setCategories(sanitizeProfileCategories(profile.profile_categories));
+    setSocialDrafts(parseSocialLinkDrafts(profile.social_links));
+  }, [profile]);
 
   const handleUpdatePassword = async () => {
     if (!newPassword || !confirmPassword) {
@@ -44,6 +64,28 @@ const Configuracoes = () => {
     } finally {
       setIsUpdatingPassword(false);
     }
+  };
+
+  const handleSaveProfileSocial = async () => {
+    const { links, errors } = validateSocialLinkDrafts(socialDrafts);
+    setSocialErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      toast.error("Corrija os links sociais (apenas https://)");
+      return;
+    }
+
+    setIsSavingProfile(true);
+    const { error } = await updateProfile({
+      profile_categories: categories,
+      social_links: links,
+    });
+    setIsSavingProfile(false);
+
+    if (error) {
+      toast.error("Erro ao salvar perfil");
+      return;
+    }
+    toast.success("Categorias e links atualizados!");
   };
 
   const handleLogout = () => {
@@ -110,14 +152,43 @@ const Configuracoes = () => {
                   Editar Perfil
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  A edição avançada de perfil (foto, banner e biografia) pode ser feita diretamente
-                  no seu Perfil clicando em "Editar Perfil".
+                  Foto, banner e biografia também podem ser editados no seu perfil. Aqui você
+                  escolhe categorias e links sociais.
                 </p>
-                <div className="pt-4">
-                  <Button className="!h-11 !min-h-[44px]" onClick={() => navigate("/perfil")}>
-                    Ir para o Meu Perfil
-                  </Button>
-                </div>
+                {profileLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Carregando perfil...
+                  </div>
+                ) : (
+                  <>
+                    <ProfileSocialFields
+                      categories={categories}
+                      onCategoriesChange={setCategories}
+                      socialDrafts={socialDrafts}
+                      onSocialDraftChange={(key, value) =>
+                        setSocialDrafts((current) => ({ ...current, [key]: value }))
+                      }
+                      socialErrors={socialErrors}
+                    />
+                    <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                      <Button
+                        className="!h-11 !min-h-[44px]"
+                        onClick={handleSaveProfileSocial}
+                        disabled={isSavingProfile}
+                      >
+                        {isSavingProfile ? "Salvando..." : "Salvar categorias e links"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="!h-11 !min-h-[44px]"
+                        onClick={() => navigate("/perfil")}
+                      >
+                        Ir para o Meu Perfil
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

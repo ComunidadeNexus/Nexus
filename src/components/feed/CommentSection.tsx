@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { UserAvatar, ProfileName } from "@/components/profile/ProfileLink";
 import { useComments } from "@/hooks/useComments";
 import GifPicker from "./GifPicker";
 import { SmilePlus, Smile } from "lucide-react";
@@ -15,6 +16,7 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const { comments, isLoading, createComment, isCreating } = useComments(postId);
+  const { user } = useAuth();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,9 +49,12 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
       {/* Formulário de novo comentário */}
       <div className="relative">
         <form onSubmit={handleSubmit} className="flex items-center gap-2 mb-3 md:mb-4">
-          <Avatar className="w-7 h-7 md:w-8 md:h-8 shrink-0">
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
+          <UserAvatar
+            userId={user?.id}
+            name="Você"
+            className="w-7 h-7 md:w-8 md:h-8"
+            fallbackClassName="text-xs"
+          />
 
           <div className="flex-1 relative flex items-center">
             <input
@@ -115,16 +120,19 @@ const CommentSection = ({ postId }: CommentSectionProps) => {
         ) : comments && comments.length > 0 ? (
           comments.map((comment) => (
             <div key={comment.id} className="flex gap-2">
-              <Avatar className="w-7 h-7 md:w-8 md:h-8 shrink-0">
-                <AvatarImage src={comment.author?.avatar_url || undefined} />
-                <AvatarFallback>
-                  {comment.author?.username?.[0]?.toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar
+                userId={comment.user_id}
+                name={comment.author?.name || comment.author?.username}
+                avatarUrl={comment.author?.avatar_url}
+                className="w-7 h-7 md:w-8 md:h-8"
+              />
               <div className="flex flex-col bg-white dark:bg-[#1A282D] border border-gray-100 dark:border-gray-800 rounded-xl rounded-tl-none p-3 shadow-sm max-md:bg-transparent max-md:border-0 max-md:shadow-none max-md:rounded-none max-md:p-0">
-                <span className="text-xs font-bold text-gray-900 dark:text-gray-100 mb-0.5 md:mb-1">
-                  {comment.author?.name || comment.author?.username || "Usuário"}
-                </span>
+                <ProfileName
+                  userId={comment.user_id}
+                  name={comment.author?.name || comment.author?.username}
+                  isVerified={comment.author?.is_verified}
+                  className="text-xs font-bold text-gray-900 dark:text-gray-100 mb-0.5 md:mb-1"
+                />
                 <div className="text-sm text-gray-700 dark:text-gray-300">
                   {renderMessageContent(comment.content)}
                 </div>
