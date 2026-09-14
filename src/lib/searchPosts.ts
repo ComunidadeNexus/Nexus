@@ -29,3 +29,18 @@ export function buildPostsSearchOr(rawQuery: string): string | null {
 
 export const POST_SEARCH_COLUMNS =
   "id, user_id, nucleo_id, title, content, media_url, media_type, upvotes, downvotes, comments_count, created_at";
+
+/** Prefer the live GoTrue session so search does not fetch reactions as a guest. */
+export function resolveSearchViewerId(
+  passedId: string | null | undefined,
+  sessionUserId: string | null | undefined,
+): string | null {
+  if (typeof sessionUserId === "string" && sessionUserId.trim()) return sessionUserId;
+  if (typeof passedId === "string" && passedId.trim()) return passedId;
+  return null;
+}
+
+/** Empty reactions on error must not be cached as "not liked". */
+export function searchReactionsBlocked(viewerId: string | null, error: unknown): boolean {
+  return Boolean(viewerId && error);
+}

@@ -5,8 +5,11 @@ import {
   mapFeedPost,
   mapFeedPosts,
   mapReactionToVote,
+  overlayPostVotes,
   resolvePostTitle,
   sanitizeFeedPosts,
+  votesMapFromCachedPostLists,
+  votesMapFromPosts,
   votesMapFromReactions,
 } from "./feedPosts";
 
@@ -131,6 +134,35 @@ assert(fromReactions.skip === undefined, "non-vote reactions are ignored");
 const searchMapped = mapFeedPosts([qaRow], { votes: fromReactions });
 assert(searchMapped[0].user_vote === "upvote", "search vote map fills the heart");
 assert(mapFeedPosts([qaRow])[0].user_vote === null, "no vote map leaves the heart empty");
+
+const staleSearch = mapFeedPosts([qaRow]);
+assert(staleSearch[0].user_vote === null, "search without votes is an empty heart");
+const fromFeedCache = votesMapFromPosts([{ id: qaRow.id, user_vote: "upvote" }]);
+assert(fromFeedCache[qaRow.id] === "upvote", "feed cache exposes the liked vote");
+const overlaid = overlayPostVotes(staleSearch, fromFeedCache);
+assert(overlaid[0].user_vote === "upvote", "feed cache fills a stale search heart");
+assert(
+  overlayPostVotes(searchMapped, { [qaRow.id]: "downvote" })[0].user_vote === "upvote",
+  "overlay does not replace a vote search already loaded",
+);
+assert(
+  overlayPostVotes(staleSearch, { nope: "upvote" })[0].user_vote === null,
+  "unrelated cache votes do not mark the post liked",
+);
+assert(
+  votesMapFromCachedPostLists([
+    [{ id: "a", user_vote: "upvote" }],
+    [
+      { id: "b", user_vote: "like" },
+      { id: "c", user_vote: null },
+    ],
+  ]).a === "upvote" &&
+    votesMapFromCachedPostLists([
+      [{ id: "a", user_vote: "upvote" }],
+      [{ id: "b", user_vote: "like" }],
+    ]).b === "upvote",
+  "cached feed/profile lists merge into one vote map",
+);
 
 const likedCache = sanitizeFeedPosts([
   {

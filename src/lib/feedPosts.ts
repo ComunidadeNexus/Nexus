@@ -157,6 +157,51 @@ export function votesMapFromReactions(
   return votes;
 }
 
+/** Collect already-known votes from feed/profile cache rows. */
+export function votesMapFromPosts(
+  posts: Array<{ id?: unknown; user_vote?: unknown }> | null | undefined,
+): Record<string, "upvote" | "downvote"> {
+  const votes: Record<string, "upvote" | "downvote"> = {};
+  if (!Array.isArray(posts)) return votes;
+  for (const post of posts) {
+    if (!post || typeof post !== "object") continue;
+    const id = asString(post.id);
+    const vote = mapReactionToVote(post.user_vote);
+    if (id && vote) votes[id] = vote;
+  }
+  return votes;
+}
+
+export function votesMapFromCachedPostLists(
+  lists: Array<Array<{ id?: unknown; user_vote?: unknown }> | null | undefined>,
+): Record<string, "upvote" | "downvote"> {
+  const votes: Record<string, "upvote" | "downvote"> = {};
+  for (const list of lists) {
+    Object.assign(votes, votesMapFromPosts(list));
+  }
+  return votes;
+}
+
+/**
+ * Search can settle before reactions (mobile JWT / initialize race) and cache
+ * empty hearts. Fill from feed/profile cache without overriding a known vote.
+ */
+export function overlayPostVotes(
+  posts: FeedPost[],
+  extraVotes: Record<string, "upvote" | "downvote"> | null | undefined,
+): FeedPost[] {
+  if (!Array.isArray(posts) || posts.length === 0 || !extraVotes) return posts;
+  let changed = false;
+  const next = posts.map((post) => {
+    if (mapReactionToVote(post.user_vote)) return post;
+    const overlay = extraVotes[post.id];
+    if (!overlay) return post;
+    changed = true;
+    return { ...post, user_vote: overlay };
+  });
+  return changed ? next : posts;
+}
+
 export function applyVoteToPost(post: FeedPost, voteType: "upvote" | "downvote" | null): FeedPost {
   const oldVote = mapReactionToVote(post.user_vote);
   let newUpvotes = post.upvotes_count;
