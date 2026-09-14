@@ -1,9 +1,17 @@
 import React, { useState } from "react";
-import { Share, Camera, Eye, Settings, Shield } from "lucide-react";
+import { Share, Camera } from "lucide-react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { ProfileName } from "@/components/profile/ProfileLink";
+import SocialLinksRow from "@/components/profile/SocialLinksRow";
+import {
+  chosenCategoryLabels,
+  formatFollowersLabel,
+  formatFollowingLabel,
+  type ProfileCategoryKey,
+  type SocialLinks,
+} from "@/lib/profileSocial";
 
 interface Badge {
   id: string;
@@ -19,6 +27,7 @@ interface Badge {
 
 interface ProfileSidebarWidgetProps {
   profile: {
+    user_id?: string;
     name: string | null;
     username: string | null;
     level: number;
@@ -26,6 +35,9 @@ interface ProfileSidebarWidgetProps {
     xp_points: number;
     created_at: string;
     banner_url?: string | null;
+    is_verified?: boolean;
+    profile_categories?: ProfileCategoryKey[];
+    social_links?: SocialLinks;
   };
   levelProgress: {
     current: number;
@@ -35,18 +47,20 @@ interface ProfileSidebarWidgetProps {
   badges: Badge[];
   isOwnProfile: boolean;
   onEditClick: () => void;
+  followersCount?: number;
+  followingCount?: number;
 }
 
 const ProfileSidebarWidget = ({
   profile,
-  levelProgress,
   badges,
   isOwnProfile,
-  onEditClick,
+  followersCount = 0,
+  followingCount = 0,
 }: ProfileSidebarWidgetProps) => {
   const displayName = profile.name || profile.username || "Usuário";
   const joinYear = new Date(profile.created_at).getFullYear();
-  const navigate = useNavigate();
+  const categories = chosenCategoryLabels(profile.profile_categories);
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -145,7 +159,14 @@ const ProfileSidebarWidget = ({
         {/* Wrap content inside a pointer-events-auto div to allow interacting with the profile text but letting clicks pass through the padding */}
         <div className="pointer-events-auto">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3 drop-shadow-md">
-            {displayName}
+            <ProfileName
+              userId={profile.user_id}
+              name={displayName}
+              isVerified={profile.is_verified}
+              link={false}
+              className="font-bold"
+              badgeClassName="w-5 h-5"
+            />
           </h2>
 
           <button
@@ -155,9 +176,28 @@ const ProfileSidebarWidget = ({
             <Share className="w-3 h-3" /> Compartilhar
           </button>
 
-          <div className="text-xs text-gray-900 dark:text-gray-200 mb-4 font-bold drop-shadow-md">
-            0 seguidor
+          <div className="text-xs text-gray-900 dark:text-gray-200 mb-4 font-bold drop-shadow-md space-y-1">
+            <div>{formatFollowersLabel(followersCount)}</div>
+            <div>{formatFollowingLabel(followingCount)}</div>
           </div>
+
+          {categories.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-4">
+              {categories.map((category) => (
+                <span
+                  key={category.key}
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary/10 text-primary"
+                >
+                  {category.label}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <SocialLinksRow
+            socialLinks={profile.social_links}
+            className="flex flex-wrap gap-2 mb-4"
+          />
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 gap-y-5 gap-x-2 text-xs mb-6">

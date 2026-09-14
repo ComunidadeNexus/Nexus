@@ -1,11 +1,20 @@
 import React, { useState } from "react";
 import { Camera, Plus, SlidersHorizontal, MessageCircle, Loader2 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import CreatePostModal from "@/components/community/CreatePostModal";
 import ReportProfileModal from "@/components/profile/ReportProfileModal";
+import FollowButton from "@/components/profile/FollowButton";
+import SocialLinksRow from "@/components/profile/SocialLinksRow";
+import { ProfileName, UserAvatar } from "@/components/profile/ProfileLink";
 import { useDirectMessages } from "@/hooks/useDirectMessages";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import {
+  chosenCategoryLabels,
+  formatFollowersLabel,
+  formatFollowingLabel,
+  type ProfileCategoryKey,
+  type SocialLinks,
+} from "@/lib/profileSocial";
 
 interface ProfileMainHeaderProps {
   profile: {
@@ -14,22 +23,26 @@ interface ProfileMainHeaderProps {
     username: string | null;
     avatar_url: string | null;
     bio: string | null;
+    is_verified?: boolean;
+    profile_categories?: ProfileCategoryKey[];
+    social_links?: SocialLinks;
   };
-  activeTab: string;
-  onTabChange: (tab: string) => void;
   isOwnProfile?: boolean;
   onEditClick?: () => void;
+  followersCount?: number;
+  followingCount?: number;
 }
 
 const ProfileMainHeader = ({
   profile,
-  activeTab,
-  onTabChange,
   isOwnProfile,
   onEditClick,
+  followersCount = 0,
+  followingCount = 0,
 }: ProfileMainHeaderProps) => {
   const displayName = profile.name || profile.username || "Usuário";
   const handle = profile.username ? `u/${profile.username}` : "u/usuario";
+  const categories = chosenCategoryLabels(profile.profile_categories);
 
   const { startConversation } = useDirectMessages({ realtime: false });
   const navigate = useNavigate();
@@ -50,40 +63,74 @@ const ProfileMainHeader = ({
 
   return (
     <div className="mb-4 pt-4">
-      {/* Profile Info Row */}
-      <div className="flex items-start sm:items-center justify-between gap-3 mb-6 px-1 min-w-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6 px-1 min-w-0">
         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <div className="relative">
-            <Avatar className="w-16 h-16 bg-white dark:bg-[#1A282D] border-2 border-primary/20">
-              <AvatarImage
-                src={profile.avatar_url || undefined}
-                alt={displayName}
-                className="object-cover"
-              />
-              <AvatarFallback className="text-xl bg-primary/10 text-primary">
-                {displayName.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            {isOwnProfile && (
-              <div className="absolute bottom-0 right-0 bg-primary p-1.5 rounded-full text-white cursor-pointer hover:bg-primary/80 transition-colors border-2 border-white dark:border-[#0B1416]">
+            <UserAvatar
+              userId={profile.user_id}
+              name={displayName}
+              avatarUrl={profile.avatar_url}
+              link={false}
+              className="w-16 h-16 bg-white dark:bg-[#1A282D] border-2 border-primary/20"
+              fallbackClassName="text-xl bg-primary/10 text-primary"
+            />
+            {isOwnProfile && onEditClick && (
+              <button
+                type="button"
+                onClick={onEditClick}
+                className="absolute bottom-0 right-0 bg-primary p-1.5 rounded-full text-white hover:bg-primary/80 transition-colors border-2 border-white dark:border-[#0B1416]"
+                aria-label="Editar foto de perfil"
+              >
                 <Camera className="w-3 h-3" />
-              </div>
+              </button>
             )}
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold gradient-text truncate">{displayName}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold gradient-text">
+              <ProfileName
+                userId={profile.user_id}
+                name={displayName}
+                isVerified={profile.is_verified}
+                link={false}
+                className="font-bold"
+                badgeClassName="w-5 h-5"
+              />
+            </h1>
             <p className="text-sm text-gray-500 font-medium">{handle}</p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500 mt-1">
+              <span className="text-gray-900 dark:text-white font-medium">
+                {formatFollowersLabel(followersCount)}
+              </span>
+              <span className="text-gray-900 dark:text-white font-medium">
+                {formatFollowingLabel(followingCount)}
+              </span>
+            </div>
             {profile.bio && (
               <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 max-w-md">
                 {profile.bio}
               </p>
             )}
+            {categories.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {categories.map((category) => (
+                  <span
+                    key={category.key}
+                    className="inline-flex items-center min-h-8 px-2.5 rounded-full text-xs font-semibold bg-primary/10 text-primary"
+                  >
+                    {category.label}
+                  </span>
+                ))}
+              </div>
+            )}
+            <SocialLinksRow
+              socialLinks={profile.social_links}
+              className="flex flex-wrap gap-2 mt-3"
+            />
           </div>
         </div>
 
-        {/* Action Buttons for Other Profiles */}
         {!isOwnProfile && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
             <button
               onClick={handleMessageClick}
               disabled={isStartingChat}
@@ -96,9 +143,7 @@ const ProfileMainHeader = ({
               )}
               <span className="hidden sm:inline">Mensagem</span>
             </button>
-            <button className="flex items-center gap-2 min-h-11 px-4 sm:px-6 py-2 bg-gradient-to-r from-[#00C6FF] to-[#FF007F] hover:opacity-90 text-white rounded-full font-bold text-sm transition-opacity shadow-md">
-              Seguir
-            </button>
+            <FollowButton userId={profile.user_id} />
             <ReportProfileModal reportedUserId={profile.user_id} reportedUserName={displayName} />
           </div>
         )}
@@ -115,9 +160,6 @@ const ProfileMainHeader = ({
         )}
       </div>
 
-      {/* Tabs Pills (Removed as requested) */}
-
-      {/* Ações (Postar e Filtro) */}
       <div className="flex items-center gap-3 px-2 border-t border-gray-200 dark:border-gray-800 pt-4">
         {isOwnProfile && (
           <CreatePostModal

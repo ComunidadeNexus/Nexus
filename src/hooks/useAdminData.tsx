@@ -430,7 +430,11 @@ export const useAdminData = () => {
 
   const toggleVerifyUser = async (userId: string, isVerified: boolean) => {
     try {
-      await supabase.from("profiles").update({ is_verified: !isVerified }).eq("user_id", userId);
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_verified: !isVerified })
+        .eq("user_id", userId);
+      if (error) throw error;
       toast({ title: !isVerified ? "Usuário verificado!" : "Verificação removida" });
       fetchUsers();
     } catch (err) {

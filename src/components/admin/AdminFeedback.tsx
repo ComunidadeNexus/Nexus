@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar, ProfileName } from "@/components/profile/ProfileLink";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Lightbulb, Loader2 } from "lucide-react";
@@ -78,15 +78,18 @@ export default function AdminFeedback() {
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                   <div className="flex items-start gap-4">
-                    <Avatar>
-                      <AvatarImage src={item.profile?.avatar_url || ""} />
-                      <AvatarFallback>{item.profile?.name?.[0] || "U"}</AvatarFallback>
-                    </Avatar>
+                    <UserAvatar
+                      userId={item.user_id}
+                      name={item.profile?.name}
+                      avatarUrl={item.profile?.avatar_url}
+                    />
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-foreground">
-                          {item.profile?.name || "Usuário Desconhecido"}
-                        </span>
+                        <ProfileName
+                          userId={item.user_id}
+                          name={item.profile?.name || "Usuário Desconhecido"}
+                          className="font-medium text-foreground"
+                        />
                         {item.content.startsWith("[BUG] ") && (
                           <Badge variant="destructive" className="text-[10px] h-5 px-1.5 ml-1">
                             Bug / Erro

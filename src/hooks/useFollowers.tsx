@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { canFollow, profileQueryKeys } from "@/lib/profileSocial";
 
 interface FollowerProfile {
   user_id: string;
@@ -17,214 +18,257 @@ interface Follower {
   profile?: FollowerProfile;
 }
 
+type FollowCounts = {
+  followersCount: number;
+  followingCount: number;
+};
+
+async function fetchFollowCounts(userId: string): Promise<FollowCounts> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("followers_count, following_count")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return {
+    followersCount: data?.followers_count || 0,
+    followingCount: data?.following_count || 0,
+  };
+}
+
+async function fetchIsFollowing(viewerId: string, targetId: string): Promise<boolean> {
+  if (viewerId === targetId) return false;
+  const { data, error } = await supabase
+    .from("followers")
+    .select("id")
+    .eq("follower_id", viewerId)
+    .eq("following_id", targetId)
+    .maybeSingle();
+  if (error) throw error;
+  return !!data;
+}
+
 export const useFollowers = (userId?: string) => {
   const { user } = useAuth();
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followers, setFollowers] = useState<Follower[]>([]);
-  const [following, setFollowing] = useState<Follower[]>([]);
-  const [followersCount, setFollowersCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-
+  const queryClient = useQueryClient();
   const targetUserId = userId;
+  const viewerId = user?.id;
 
-  const checkIfFollowing = useCallback(async () => {
-    if (!user?.id || !targetUserId || user.id === targetUserId) {
-      setIsFollowing(false);
-      return;
+  const statusQuery = useQuery({
+    queryKey: profileQueryKeys.followStatus(targetUserId || "", viewerId || ""),
+    queryFn: () => fetchIsFollowing(viewerId!, targetUserId!),
+    enabled: Boolean(viewerId && targetUserId && viewerId !== targetUserId),
+  });
+
+  const countsQuery = useQuery({
+    queryKey: profileQueryKeys.followCounts(targetUserId || ""),
+    queryFn: () => fetchFollowCounts(targetUserId!),
+    enabled: Boolean(targetUserId),
+  });
+
+  const isFollowing = statusQuery.data === true;
+  const followersCount = countsQuery.data?.followersCount ?? 0;
+  const followingCount = countsQuery.data?.followingCount ?? 0;
+
+  const invalidateFollowCaches = (targetId: string) => {
+    if (viewerId) {
+      void queryClient.invalidateQueries({
+        queryKey: profileQueryKeys.followStatus(targetId, viewerId),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: profileQueryKeys.followCounts(viewerId),
+      });
+      void queryClient.invalidateQueries({ queryKey: profileQueryKeys.detail(viewerId) });
     }
+    void queryClient.invalidateQueries({ queryKey: profileQueryKeys.followCounts(targetId) });
+    void queryClient.invalidateQueries({ queryKey: profileQueryKeys.detail(targetId) });
+  };
 
-    try {
-      const { data, error } = await supabase
+  const followMutation = useMutation({
+    mutationFn: async (targetId: string) => {
+      const guard = canFollow(viewerId, targetId);
+      if (!guard.ok) {
+        throw new Error(guard.reason === "self" ? "Cannot follow yourself" : "Not authenticated");
+      }
+
+      const { data: existing, error: existingError } = await supabase
         .from("followers")
         .select("id")
-        .eq("follower_id", user.id)
-        .eq("following_id", targetUserId)
-        .maybeSingle();
-
-      if (error) throw error;
-      setIsFollowing(!!data);
-    } catch (error) {
-      console.error("Error checking follow status:", error);
-    }
-  }, [user?.id, targetUserId]);
-
-  const fetchFollowCounts = useCallback(async () => {
-    if (!targetUserId) return;
-
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("followers_count, following_count")
-        .eq("user_id", targetUserId)
-        .single();
-
-      if (error) throw error;
-      setFollowersCount(data?.followers_count || 0);
-      setFollowingCount(data?.following_count || 0);
-    } catch (error) {
-      console.error("Error fetching follow counts:", error);
-    }
-  }, [targetUserId]);
-
-  const fetchFollowers = useCallback(async () => {
-    if (!targetUserId) return;
-
-    try {
-      const { data, error } = await supabase
-        .from("followers")
-        .select("*")
-        .eq("following_id", targetUserId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      // Fetch profiles for followers
-      const followerIds = data?.map((f) => f.follower_id) || [];
-      if (followerIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, name, avatar_url, username")
-          .in("user_id", followerIds);
-
-        const profileMap = new Map(profiles?.map((p) => [p.user_id, p]));
-        const followersWithProfiles = data?.map((f) => ({
-          ...f,
-          profile: profileMap.get(f.follower_id),
-        }));
-        setFollowers(followersWithProfiles || []);
-      } else {
-        setFollowers([]);
-      }
-    } catch (error) {
-      console.error("Error fetching followers:", error);
-    }
-  }, [targetUserId]);
-
-  const fetchFollowing = useCallback(async () => {
-    if (!targetUserId) return;
-
-    try {
-      const { data, error } = await supabase
-        .from("followers")
-        .select("*")
-        .eq("follower_id", targetUserId)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      // Fetch profiles for following
-      const followingIds = data?.map((f) => f.following_id) || [];
-      if (followingIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, name, avatar_url, username")
-          .in("user_id", followingIds);
-
-        const profileMap = new Map(profiles?.map((p) => [p.user_id, p]));
-        const followingWithProfiles = data?.map((f) => ({
-          ...f,
-          profile: profileMap.get(f.following_id),
-        }));
-        setFollowing(followingWithProfiles || []);
-      } else {
-        setFollowing([]);
-      }
-    } catch (error) {
-      console.error("Error fetching following:", error);
-    }
-  }, [targetUserId]);
-
-  const follow = async (targetId: string) => {
-    if (!user?.id) return { error: "Not authenticated" };
-    if (user.id === targetId) return { error: "Cannot follow yourself" };
-
-    setIsLoading(true);
-    try {
-      // Check if already following to avoid duplicate
-      const { data: existing } = await supabase
-        .from("followers")
-        .select("id")
-        .eq("follower_id", user.id)
+        .eq("follower_id", viewerId!)
         .eq("following_id", targetId)
         .maybeSingle();
-
-      if (existing) {
-        setIsFollowing(true);
-        return { error: null };
-      }
+      if (existingError) throw existingError;
+      if (existing) return;
 
       const { error } = await supabase.from("followers").insert({
-        follower_id: user.id,
+        follower_id: viewerId!,
         following_id: targetId,
       });
-
       if (error) throw error;
+    },
+    onMutate: async (targetId) => {
+      if (!viewerId) return;
+      await queryClient.cancelQueries({
+        queryKey: profileQueryKeys.followStatus(targetId, viewerId),
+      });
+      await queryClient.cancelQueries({ queryKey: profileQueryKeys.followCounts(targetId) });
+      const previousStatus = queryClient.getQueryData<boolean>(
+        profileQueryKeys.followStatus(targetId, viewerId),
+      );
+      const previousCounts = queryClient.getQueryData<FollowCounts>(
+        profileQueryKeys.followCounts(targetId),
+      );
+      queryClient.setQueryData(profileQueryKeys.followStatus(targetId, viewerId), true);
+      queryClient.setQueryData<FollowCounts>(profileQueryKeys.followCounts(targetId), (old) => ({
+        followersCount: (old?.followersCount ?? 0) + 1,
+        followingCount: old?.followingCount ?? 0,
+      }));
+      return { previousStatus, previousCounts, targetId };
+    },
+    onError: (_error, targetId, context) => {
+      if (!viewerId || !context) return;
+      queryClient.setQueryData(
+        profileQueryKeys.followStatus(targetId, viewerId),
+        context.previousStatus,
+      );
+      queryClient.setQueryData(profileQueryKeys.followCounts(targetId), context.previousCounts);
+    },
+    onSettled: (_data, _error, targetId) => {
+      invalidateFollowCaches(targetId);
+    },
+  });
 
-      setIsFollowing(true);
-      setFollowersCount((prev) => prev + 1);
+  const unfollowMutation = useMutation({
+    mutationFn: async (targetId: string) => {
+      if (!viewerId) throw new Error("Not authenticated");
+      const { error } = await supabase
+        .from("followers")
+        .delete()
+        .eq("follower_id", viewerId)
+        .eq("following_id", targetId);
+      if (error) throw error;
+    },
+    onMutate: async (targetId) => {
+      if (!viewerId) return;
+      await queryClient.cancelQueries({
+        queryKey: profileQueryKeys.followStatus(targetId, viewerId),
+      });
+      await queryClient.cancelQueries({ queryKey: profileQueryKeys.followCounts(targetId) });
+      const previousStatus = queryClient.getQueryData<boolean>(
+        profileQueryKeys.followStatus(targetId, viewerId),
+      );
+      const previousCounts = queryClient.getQueryData<FollowCounts>(
+        profileQueryKeys.followCounts(targetId),
+      );
+      queryClient.setQueryData(profileQueryKeys.followStatus(targetId, viewerId), false);
+      queryClient.setQueryData<FollowCounts>(profileQueryKeys.followCounts(targetId), (old) => ({
+        followersCount: Math.max(0, (old?.followersCount ?? 0) - 1),
+        followingCount: old?.followingCount ?? 0,
+      }));
+      return { previousStatus, previousCounts, targetId };
+    },
+    onError: (_error, targetId, context) => {
+      if (!viewerId || !context) return;
+      queryClient.setQueryData(
+        profileQueryKeys.followStatus(targetId, viewerId),
+        context.previousStatus,
+      );
+      queryClient.setQueryData(profileQueryKeys.followCounts(targetId), context.previousCounts);
+    },
+    onSettled: (_data, _error, targetId) => {
+      invalidateFollowCaches(targetId);
+    },
+  });
+
+  const follow = async (targetId: string) => {
+    const guard = canFollow(viewerId, targetId);
+    if (!guard.ok) {
+      return { error: guard.reason === "self" ? "Cannot follow yourself" : "Not authenticated" };
+    }
+    try {
+      await followMutation.mutateAsync(targetId);
       return { error: null };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Erro ao seguir";
       console.error("Error following user:", error);
-      return { error: error.message };
-    } finally {
-      setIsLoading(false);
+      return { error: message };
     }
   };
 
   const unfollow = async (targetId: string) => {
-    if (!user?.id) return { error: "Not authenticated" };
-
-    setIsLoading(true);
+    if (!viewerId) return { error: "Not authenticated" };
     try {
-      const { error } = await supabase
-        .from("followers")
-        .delete()
-        .eq("follower_id", user.id)
-        .eq("following_id", targetId);
-
-      if (error) throw error;
-
-      setIsFollowing(false);
-      setFollowersCount((prev) => Math.max(0, prev - 1));
+      await unfollowMutation.mutateAsync(targetId);
       return { error: null };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Erro ao deixar de seguir";
       console.error("Error unfollowing user:", error);
-      return { error: error.message };
-    } finally {
-      setIsLoading(false);
+      return { error: message };
     }
   };
 
   const toggleFollow = async (targetId: string) => {
-    if (isFollowing) {
-      return unfollow(targetId);
-    }
+    if (isFollowing) return unfollow(targetId);
     return follow(targetId);
   };
 
-  useEffect(() => {
-    if (targetUserId) {
-      checkIfFollowing();
-      fetchFollowCounts();
-    }
-  }, [targetUserId, checkIfFollowing, fetchFollowCounts]);
+  const fetchFollowers = async (): Promise<Follower[]> => {
+    if (!targetUserId) return [];
+    const { data, error } = await supabase
+      .from("followers")
+      .select("*")
+      .eq("following_id", targetUserId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    const followerIds = data?.map((row) => row.follower_id) || [];
+    if (followerIds.length === 0) return [];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, name, avatar_url, username")
+      .in("user_id", followerIds);
+    const profileMap = new Map(profiles?.map((profile) => [profile.user_id, profile]));
+    return (data || []).map((row) => ({
+      ...row,
+      profile: profileMap.get(row.follower_id),
+    }));
+  };
+
+  const fetchFollowing = async (): Promise<Follower[]> => {
+    if (!targetUserId) return [];
+    const { data, error } = await supabase
+      .from("followers")
+      .select("*")
+      .eq("follower_id", targetUserId)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    const followingIds = data?.map((row) => row.following_id) || [];
+    if (followingIds.length === 0) return [];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, name, avatar_url, username")
+      .in("user_id", followingIds);
+    const profileMap = new Map(profiles?.map((profile) => [profile.user_id, profile]));
+    return (data || []).map((row) => ({
+      ...row,
+      profile: profileMap.get(row.following_id),
+    }));
+  };
 
   return {
     isFollowing,
-    followers,
-    following,
+    followers: [] as Follower[],
+    following: [] as Follower[],
     followersCount,
     followingCount,
-    isLoading,
+    isLoading: followMutation.isPending || unfollowMutation.isPending,
     follow,
     unfollow,
     toggleFollow,
     fetchFollowers,
     fetchFollowing,
     refetch: () => {
-      checkIfFollowing();
-      fetchFollowCounts();
+      void statusQuery.refetch();
+      void countsQuery.refetch();
     },
   };
 };

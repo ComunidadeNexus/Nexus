@@ -6,7 +6,6 @@ import {
   Shield,
   Crown,
   Ban,
-  BadgeCheck,
   Star,
   Coins,
   ChevronDown,
@@ -37,6 +36,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
+import { UserAvatar, ProfileName } from "@/components/profile/ProfileLink";
 
 const ROLE_CONFIG: Record<string, { label: string; className: string }> = {
   admin: { label: "Admin", className: "bg-violet-500/20 text-violet-400 border-violet-500/30" },
@@ -109,7 +110,18 @@ const AdminMembros = () => {
   const exportToCSV = () => {
     if (!users.length) return;
 
-    const headers = ["ID", "Email", "Nome", "Username", "Role", "XP", "Coins", "Nivel", "Status", "Data Cadastro"];
+    const headers = [
+      "ID",
+      "Email",
+      "Nome",
+      "Username",
+      "Role",
+      "XP",
+      "Coins",
+      "Nivel",
+      "Status",
+      "Data Cadastro",
+    ];
     const csvContent = [
       headers.join(","),
       ...users.map((u) =>
@@ -258,19 +270,22 @@ const AdminMembros = () => {
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-xs font-bold text-white overflow-hidden shrink-0">
-                            {user.avatar_url ? (
-                              <img
-                                src={user.avatar_url}
-                                alt=""
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              (user.name || user.username || "?")[0]?.toUpperCase()
-                            )}
-                          </div>
+                          <UserAvatar
+                            userId={user.user_id}
+                            name={user.name || user.username}
+                            avatarUrl={user.avatar_url}
+                            className="w-8 h-8"
+                            fallbackClassName="bg-gradient-to-br from-violet-500 to-purple-700 text-xs font-bold text-white"
+                          />
                           <div>
-                            <p className="font-medium text-foreground">{user.name || "Sem nome"}</p>
+                            <p className="font-medium text-foreground">
+                              <ProfileName
+                                userId={user.user_id}
+                                name={user.name || "Sem nome"}
+                                isVerified={user.is_verified}
+                                className="font-medium"
+                              />
+                            </p>
                             <p className="text-xs text-muted-foreground">@{user.username || "—"}</p>
                             {user.email && (
                               <p className="text-[11px] text-muted-foreground/80 truncate max-w-[180px]">
@@ -278,14 +293,13 @@ const AdminMembros = () => {
                               </p>
                             )}
                           </div>
-                          {user.is_verified && (
-                            <BadgeCheck className="w-4 h-4 text-sky-400 shrink-0" />
-                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap items-center gap-1">
-                          <Badge className={`text-xs ${roleConf.className}`}>{roleConf.label}</Badge>
+                          <Badge className={`text-xs ${roleConf.className}`}>
+                            {roleConf.label}
+                          </Badge>
                           {(user.roles || []).includes("premium") && user.role !== "premium" && (
                             <Badge className="text-xs bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
                               Premium
@@ -349,19 +363,19 @@ const AdminMembros = () => {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-sm font-bold text-white overflow-hidden">
-                    {selectedUser.avatar_url ? (
-                      <img
-                        src={selectedUser.avatar_url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      (selectedUser.name || selectedUser.username || "?")[0]?.toUpperCase()
-                    )}
-                  </div>
+                  <UserAvatar
+                    userId={selectedUser.user_id}
+                    name={selectedUser.name || selectedUser.username}
+                    avatarUrl={selectedUser.avatar_url}
+                    className="w-10 h-10"
+                    fallbackClassName="bg-gradient-to-br from-violet-500 to-purple-700 text-sm font-bold text-white"
+                  />
                   <div>
-                    <p>{selectedUser.name || selectedUser.username || "Sem nome"}</p>
+                    <ProfileName
+                      userId={selectedUser.user_id}
+                      name={selectedUser.name || selectedUser.username || "Sem nome"}
+                      isVerified={selectedUser.is_verified}
+                    />
                     <p className="text-xs text-muted-foreground font-normal">
                       @{selectedUser.username || "—"}
                     </p>
@@ -375,7 +389,9 @@ const AdminMembros = () => {
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-[11px] text-muted-foreground">Email</p>
-                      <p className="text-sm text-foreground truncate">{selectedUser.email || "—"}</p>
+                      <p className="text-sm text-foreground truncate">
+                        {selectedUser.email || "—"}
+                      </p>
                     </div>
                     {selectedUser.email && (
                       <Button
@@ -417,7 +433,8 @@ const AdminMembros = () => {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    A senha antiga não aparece. Digite uma senha nova para este usuário poder entrar.
+                    A senha antiga não aparece. Digite uma senha nova para este usuário poder
+                    entrar.
                   </p>
                   <Input
                     type="password"
@@ -581,24 +598,25 @@ const AdminMembros = () => {
                 </div>
 
                 {/* Ban / Verify */}
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    className={`flex-1 ${
-                      selectedUser.is_verified
-                        ? "border-sky-500/50 text-sky-400 hover:bg-sky-500/10"
-                        : "border-white/10 text-muted-foreground hover:border-sky-500/50 hover:text-sky-400"
-                    }`}
-                    onClick={() =>
+                <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Selo verificado</p>
+                    <p className="text-xs text-muted-foreground">
+                      Apenas admins podem marcar ou desmarcar.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={selectedUser.is_verified}
+                    onCheckedChange={() =>
                       handleAction(() =>
                         toggleVerifyUser(selectedUser.user_id, selectedUser.is_verified),
                       )
                     }
                     disabled={actionLoading}
-                  >
-                    <BadgeCheck className="w-4 h-4 mr-2" />
-                    {selectedUser.is_verified ? "Remover Verificação" : "Verificar"}
-                  </Button>
+                    aria-label="Alternar verificação"
+                  />
+                </div>
+                <div className="flex gap-3">
                   <Button
                     variant="outline"
                     className={`flex-1 ${

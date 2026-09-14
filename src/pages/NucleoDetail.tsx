@@ -241,6 +241,7 @@ const NucleoDetail = () => {
                         author={post.profiles?.name || post.profiles?.username || "Usuário"}
                         authorId={post.user_id}
                         authorAvatar={post.profiles?.avatar_url}
+                        authorVerified={post.profiles?.is_verified}
                         timeAgo={new Date(post.created_at).toLocaleDateString()}
                         title={post.title || "Sem Título"}
                         content={post.content || ""}

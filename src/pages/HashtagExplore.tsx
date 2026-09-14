@@ -134,6 +134,7 @@ const HashtagExplore = () => {
                   author={author?.name || author?.username || "Usuário"}
                   authorId={post.user_id}
                   authorAvatar={author?.avatar_url}
+                  authorVerified={author?.is_verified}
                   timeAgo={new Date(post.created_at).toLocaleDateString()}
                   title={""}
                   content={post.content || ""}

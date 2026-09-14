@@ -49,13 +49,14 @@ async function loadProfilePosts(userId: string, viewerId: string | null): Promis
   if (userIds.length > 0) {
     const { data: profilesData } = await supabase
       .from("profiles")
-      .select("user_id, name, username, avatar_url")
+      .select("user_id, name, username, avatar_url, is_verified")
       .in("user_id", userIds);
     profilesData?.forEach((p) => {
       profilesMap[p.user_id] = {
         name: p.name,
         username: p.username,
         avatar_url: p.avatar_url,
+        is_verified: p.is_verified,
       };
     });
   }
@@ -142,6 +143,7 @@ const ProfileActivity = ({ userId }: ProfileActivityProps) => {
           author={displayPostAuthor(post)}
           authorId={post.user_id}
           authorAvatar={post.author?.avatar_url}
+          authorVerified={post.author?.is_verified}
           timeAgo={formatDistanceToNow(new Date(post.created_at), {
             addSuffix: true,
             locale: ptBR,

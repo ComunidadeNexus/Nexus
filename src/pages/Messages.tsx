@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDirectMessages, useConversation } from "@/hooks/useDirectMessages";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAvatar, ProfileName } from "@/components/profile/ProfileLink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -101,12 +101,13 @@ const Messages = () => {
                         : "hover:bg-gray-100 dark:hover:bg-[#202E33]",
                     )}
                   >
-                    <Avatar className="w-12 h-12 border border-gray-200 dark:border-gray-700">
-                      <AvatarImage src={otherUser?.avatar_url || undefined} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                        {otherUser?.name?.[0]?.toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar
+                      userId={otherUser?.user_id}
+                      name={otherUser?.name}
+                      avatarUrl={otherUser?.avatar_url}
+                      className="w-12 h-12 border border-gray-200 dark:border-gray-700"
+                      fallbackClassName="bg-primary/10 text-primary font-bold"
+                    />
                     <div className="flex-1 min-w-0">
                       <p className="font-bold truncate text-gray-900 dark:text-gray-100">
                         {otherUser?.name || "Usuário"}
@@ -142,15 +143,18 @@ const Messages = () => {
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              <Avatar className="w-10 h-10 border border-gray-200 dark:border-gray-700">
-                <AvatarImage src={selectedConversation?.participants[0]?.avatar_url || undefined} />
-                <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                  {selectedConversation?.participants[0]?.name?.[0]?.toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <span className="font-bold text-gray-900 dark:text-gray-100 text-lg">
-                {selectedConversation?.participants[0]?.name || "Usuário"}
-              </span>
+              <UserAvatar
+                userId={selectedConversation?.participants[0]?.user_id}
+                name={selectedConversation?.participants[0]?.name}
+                avatarUrl={selectedConversation?.participants[0]?.avatar_url}
+                className="w-10 h-10 border border-gray-200 dark:border-gray-700"
+                fallbackClassName="bg-primary/10 text-primary font-bold"
+              />
+              <ProfileName
+                userId={selectedConversation?.participants[0]?.user_id}
+                name={selectedConversation?.participants[0]?.name}
+                className="font-bold text-gray-900 dark:text-gray-100 text-lg"
+              />
             </div>
 
             {/* Messages */}

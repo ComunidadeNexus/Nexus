@@ -13,6 +13,7 @@ export interface Comment {
     name: string | null;
     username: string | null;
     avatar_url: string | null;
+    is_verified?: boolean;
   } | null;
 }
 
@@ -49,7 +50,7 @@ export const useComments = (postId: string) => {
       if (userIds.length > 0) {
         const { data: profilesData } = await supabase
           .from("profiles")
-          .select("user_id, name, username, avatar_url")
+          .select("user_id, name, username, avatar_url, is_verified")
           .in("user_id", userIds);
 
         if (profilesData) {
@@ -58,6 +59,7 @@ export const useComments = (postId: string) => {
               name: p.name,
               username: p.username,
               avatar_url: p.avatar_url,
+              is_verified: p.is_verified,
             };
           });
         }
