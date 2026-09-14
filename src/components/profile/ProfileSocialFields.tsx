@@ -1,9 +1,11 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { NetworkIcon } from "@/components/profile/SocialLinksRow";
 import {
   PROFILE_CATEGORIES,
   SOCIAL_NETWORKS,
+  normalizeSocialLinkDraft,
   toggleProfileCategory,
   type ProfileCategoryKey,
   type SocialNetworkKey,
@@ -26,6 +28,50 @@ export default function ProfileSocialFields({
 }: ProfileSocialFieldsProps) {
   return (
     <div className="space-y-5">
+      <div className="space-y-3">
+        <div>
+          <Label>Suas redes</Label>
+          <p className="text-xs text-gray-500 mt-1">
+            Você mesmo coloca o link. Pode colar a URL ou só o @usuario. O que ficar vazio não
+            aparece no perfil.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-3">
+          {SOCIAL_NETWORKS.map((network) => (
+            <div key={network.key} className="space-y-1">
+              <label
+                htmlFor={`social-${network.key}`}
+                className="text-sm font-medium text-gray-700 dark:text-gray-300 inline-flex items-center gap-2"
+              >
+                <NetworkIcon network={network.key} />
+                {network.label}
+              </label>
+              <Input
+                id={`social-${network.key}`}
+                type="text"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder={network.placeholder}
+                value={socialDrafts[network.key]}
+                onChange={(event) => onSocialDraftChange(network.key, event.target.value)}
+                onBlur={() =>
+                  onSocialDraftChange(
+                    network.key,
+                    normalizeSocialLinkDraft(network.key, socialDrafts[network.key]),
+                  )
+                }
+                className={cn(socialErrors?.[network.key] && "border-red-500")}
+              />
+              {socialErrors?.[network.key] ? (
+                <p className="text-xs text-red-500">{socialErrors[network.key]}</p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="space-y-2">
         <Label>Categorias</Label>
         <p className="text-xs text-gray-500">
@@ -51,35 +97,6 @@ export default function ProfileSocialFields({
               </button>
             );
           })}
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        <Label>Links sociais</Label>
-        <p className="text-xs text-gray-500">Apenas URLs https://. Campos vazios não aparecem.</p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-x-4">
-          {SOCIAL_NETWORKS.map((network) => (
-            <div key={network.key} className="space-y-1">
-              <label
-                htmlFor={`social-${network.key}`}
-                className="text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
-                {network.label}
-              </label>
-              <Input
-                id={`social-${network.key}`}
-                type="url"
-                inputMode="url"
-                placeholder={network.placeholder}
-                value={socialDrafts[network.key]}
-                onChange={(event) => onSocialDraftChange(network.key, event.target.value)}
-                className={cn(socialErrors?.[network.key] && "border-red-500")}
-              />
-              {socialErrors?.[network.key] ? (
-                <p className="text-xs text-red-500">{socialErrors[network.key]}</p>
-              ) : null}
-            </div>
-          ))}
         </div>
       </div>
     </div>

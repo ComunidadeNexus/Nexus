@@ -41,13 +41,85 @@ export const SOCIAL_NETWORK_KEYS = [
 export type SocialNetworkKey = (typeof SOCIAL_NETWORK_KEYS)[number];
 
 export const SOCIAL_NETWORKS: { key: SocialNetworkKey; label: string; placeholder: string }[] = [
-  { key: "instagram", label: "Instagram", placeholder: "https://instagram.com/seuusuario" },
-  { key: "twitter", label: "X / Twitter", placeholder: "https://x.com/seuusuario" },
-  { key: "youtube", label: "YouTube", placeholder: "https://youtube.com/@canal" },
-  { key: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/in/seuusuario" },
-  { key: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@seuusuario" },
-  { key: "website", label: "Website", placeholder: "https://seusite.com" },
+  { key: "instagram", label: "Instagram", placeholder: "@seuusuario ou https://instagram.com/seuusuario" },
+  { key: "twitter", label: "X / Twitter", placeholder: "@seuusuario ou https://x.com/seuusuario" },
+  { key: "youtube", label: "YouTube", placeholder: "@canal ou https://youtube.com/@canal" },
+  { key: "linkedin", label: "LinkedIn", placeholder: "seuusuario ou https://linkedin.com/in/seuusuario" },
+  { key: "tiktok", label: "TikTok", placeholder: "@seuusuario ou https://tiktok.com/@seuusuario" },
+  { key: "website", label: "Site", placeholder: "seusite.com ou https://seusite.com" },
 ];
+
+const SOCIAL_HOSTS: Record<SocialNetworkKey, string[]> = {
+  instagram: ["instagram.com", "www.instagram.com"],
+  twitter: ["x.com", "www.x.com", "twitter.com", "www.twitter.com"],
+  youtube: ["youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"],
+  linkedin: ["linkedin.com", "www.linkedin.com"],
+  tiktok: ["tiktok.com", "www.tiktok.com", "vm.tiktok.com"],
+  website: [],
+};
+
+function hostnameOfLooseUrl(value: string): string | null {
+  try {
+    const withProtocol = /^[a-z][a-z0-9+.-]*:/i.test(value) ? value : `https://${value}`;
+    return new URL(withProtocol).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function matchesKnownHost(value: string, hosts: string[]): boolean {
+  const hostname = hostnameOfLooseUrl(value);
+  if (!hostname) return false;
+  return hosts.some((host) => hostname === host || hostname.endsWith(`.${host}`));
+}
+
+/** Turns @usuario, dominio.com/user or http://... into an https URL the user can save. */
+export function normalizeSocialLinkDraft(key: SocialNetworkKey, raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+
+  let value = trimmed;
+  if (/^http:\/\//i.test(value)) {
+    value = value.replace(/^http:\/\//i, "https://");
+  }
+  if (value.startsWith("//")) {
+    value = `https:${value}`;
+  }
+  if (/^https:\/\//i.test(value)) {
+    return value;
+  }
+
+  if (key === "website") {
+    return `https://${value.replace(/^\/+/, "")}`;
+  }
+
+  if (matchesKnownHost(value, SOCIAL_HOSTS[key])) {
+    return `https://${value.replace(/^\/+/, "")}`;
+  }
+
+  const handle = value.replace(/^@/, "").replace(/^\/+/, "");
+  if (!handle || /\s/.test(handle)) return trimmed;
+
+  switch (key) {
+    case "instagram":
+      return `https://instagram.com/${handle}`;
+    case "twitter":
+      return `https://x.com/${handle}`;
+    case "youtube":
+      return handle.includes("/")
+        ? `https://youtube.com/${handle.replace(/^\/+/, "")}`
+        : `https://youtube.com/@${handle}`;
+    case "linkedin":
+      if (handle.startsWith("in/") || handle.startsWith("company/")) {
+        return `https://linkedin.com/${handle}`;
+      }
+      return `https://linkedin.com/in/${handle}`;
+    case "tiktok":
+      return `https://tiktok.com/@${handle}`;
+    default:
+      return trimmed;
+  }
+}
 
 export type SocialLinks = Partial<Record<SocialNetworkKey, string>>;
 
@@ -140,11 +212,12 @@ export function validateSocialLinkDrafts(drafts: Record<SocialNetworkKey, string
   for (const key of SOCIAL_NETWORK_KEYS) {
     const trimmed = (drafts[key] || "").trim();
     if (!trimmed) continue;
-    if (!isHttpsUrl(trimmed)) {
-      errors[key] = "Use uma URL https:// válida";
+    const normalized = normalizeSocialLinkDraft(key, trimmed);
+    if (!isHttpsUrl(normalized)) {
+      errors[key] = "Cole o link https:// ou o @usuario";
       continue;
     }
-    links[key] = trimmed;
+    links[key] = normalized;
   }
 
   return { links, errors };

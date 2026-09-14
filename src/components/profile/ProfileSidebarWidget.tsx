@@ -223,6 +223,17 @@ const ProfileSidebarWidget = ({
           <SocialLinksRow
             socialLinks={profile.social_links}
             className="flex flex-wrap gap-2 mb-4"
+            emptyState={
+              isOwnProfile ? (
+                <button
+                  type="button"
+                  onClick={onEditClick}
+                  className="mb-4 min-h-11 px-3 rounded-full text-[11px] font-bold bg-primary/10 text-primary hover:bg-primary/20"
+                >
+                  Adicionar Instagram, YouTube e outras redes
+                </button>
+              ) : null
+            }
           />
 
           {/* Stats Grid */}

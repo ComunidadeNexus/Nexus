@@ -166,8 +166,8 @@ const Configuracoes = () => {
                   Editar Perfil
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Categorias e links sociais também podem ser editados no perfil. Foto e banner
-                  ficam no Editar Perfil da página de perfil.
+                  Coloque seus links do Instagram, YouTube, X, LinkedIn, TikTok e site. Você pode
+                  colar a URL ou só o @usuario.
                 </p>
                 {profileLoading ? (
                   <div className="flex items-center gap-2 text-sm text-gray-500">

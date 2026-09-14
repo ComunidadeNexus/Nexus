@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -107,6 +108,9 @@ const EditProfileModal = ({
       <DialogContent className="flex max-h-[min(90dvh,52rem)] w-[calc(100%-1.5rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
         <DialogHeader className="shrink-0 space-y-1 px-6 pb-3 pt-6 text-left">
           <DialogTitle>Editar Perfil</DialogTitle>
+          <DialogDescription>
+            Instagram, YouTube e as outras redes você configura aqui, com o seu link.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-2">

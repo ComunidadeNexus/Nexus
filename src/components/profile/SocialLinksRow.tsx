@@ -1,9 +1,10 @@
+import type { ReactNode } from "react";
 import { Globe } from "lucide-react";
 import { filledSocialLinks, type SocialNetworkKey } from "@/lib/profileSocial";
 
 const iconClass = "w-4 h-4";
 
-function NetworkIcon({ network }: { network: SocialNetworkKey }) {
+export function NetworkIcon({ network }: { network: SocialNetworkKey }) {
   if (network === "instagram") {
     return (
       <svg viewBox="0 0 24 24" className={iconClass} aria-hidden>
@@ -68,12 +69,14 @@ function NetworkIcon({ network }: { network: SocialNetworkKey }) {
 export default function SocialLinksRow({
   socialLinks,
   className,
+  emptyState,
 }: {
   socialLinks: unknown;
   className?: string;
+  emptyState?: ReactNode;
 }) {
   const links = filledSocialLinks(socialLinks);
-  if (links.length === 0) return null;
+  if (links.length === 0) return emptyState ?? null;
 
   return (
     <div className={className ?? "flex flex-wrap items-center gap-2"}>

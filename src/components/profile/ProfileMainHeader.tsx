@@ -135,6 +135,17 @@ const ProfileMainHeader = ({
             <SocialLinksRow
               socialLinks={profile.social_links}
               className="flex flex-wrap gap-2 mt-3"
+              emptyState={
+                isOwnProfile && onEditClick ? (
+                  <button
+                    type="button"
+                    onClick={onEditClick}
+                    className="mt-3 min-h-11 px-3 rounded-full text-xs font-bold bg-primary/10 text-primary hover:bg-primary/20"
+                  >
+                    Adicionar Instagram, YouTube e outras redes
+                  </button>
+                ) : null
+              }
             />
           </div>
         </div>

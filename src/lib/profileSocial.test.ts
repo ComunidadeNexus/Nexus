@@ -6,6 +6,7 @@ import {
   formatFollowingLabel,
   isHttpsUrl,
   PROFILE_CATEGORY_LABELS,
+  normalizeSocialLinkDraft,
   sanitizeProfileCategories,
   sanitizeSocialLinks,
   toggleProfileCategory,
@@ -83,8 +84,36 @@ const validated = validateSocialLinkDrafts({
 });
 assert(validated.links.instagram === "https://instagram.com/ok", "valid instagram kept");
 assert(validated.links.website === "https://nexus.community", "valid website kept");
-assert(validated.errors.twitter === "Use uma URL https:// válida", "invalid twitter flagged");
-assert(validated.links.twitter === undefined, "invalid twitter omitted");
+assert(validated.links.twitter === "https://x.com/nope", "partial twitter url is normalized");
+assert(validated.errors.twitter === undefined, "normalized twitter is valid");
+
+assert(
+  normalizeSocialLinkDraft("instagram", "@nexus") === "https://instagram.com/nexus",
+  "instagram handle becomes url",
+);
+assert(
+  normalizeSocialLinkDraft("youtube", "@canal") === "https://youtube.com/@canal",
+  "youtube handle becomes url",
+);
+assert(
+  normalizeSocialLinkDraft("instagram", "instagram.com/nexus") === "https://instagram.com/nexus",
+  "instagram domain without protocol is filled",
+);
+assert(
+  normalizeSocialLinkDraft("website", "seusite.com") === "https://seusite.com",
+  "website without protocol is filled",
+);
+
+const invalidDraft = validateSocialLinkDrafts({
+  instagram: "nao e um link",
+  twitter: "",
+  youtube: "",
+  linkedin: "",
+  tiktok: "",
+  website: "",
+});
+assert(invalidDraft.errors.instagram !== undefined, "garbage instagram is flagged");
+assert(invalidDraft.links.instagram === undefined, "garbage instagram is not saved");
 
 const filled = filledSocialLinks({
   instagram: "https://instagram.com/ok",
