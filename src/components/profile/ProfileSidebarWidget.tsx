@@ -55,6 +55,7 @@ const ProfileSidebarWidget = ({
   profile,
   badges,
   isOwnProfile,
+  onEditClick,
   followersCount = 0,
   followingCount = 0,
 }: ProfileSidebarWidgetProps) => {
@@ -119,8 +120,9 @@ const ProfileSidebarWidget = ({
         if (updateError) throw updateError;
 
         toast.success("Capa atualizada com sucesso!", { id: toastId });
-      } catch (error: any) {
-        toast.error("Erro ao atualizar a capa: " + error.message, { id: toastId });
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Tente de novo.";
+        toast.error("Erro ao atualizar a capa: " + message, { id: toastId });
       }
     }
     // Esvazia o input para permitir selecionar o mesmo arquivo novamente
@@ -171,10 +173,20 @@ const ProfileSidebarWidget = ({
 
           <button
             onClick={handleShare}
-            className="h-8 rounded-full text-xs font-bold px-3 flex items-center gap-2 bg-gray-100/90 dark:bg-black/40 backdrop-blur-sm border border-gray-200/50 dark:border-white/10 hover:bg-gray-200 dark:hover:bg-black/60 transition-colors mb-4 text-gray-900 dark:text-white"
+            className="h-8 rounded-full text-xs font-bold px-3 flex items-center gap-2 bg-gray-100/90 dark:bg-black/40 backdrop-blur-sm border border-gray-200/50 dark:border-white/10 hover:bg-gray-200 dark:hover:bg-black/60 transition-colors mb-3 text-gray-900 dark:text-white"
           >
             <Share className="w-3 h-3" /> Compartilhar
           </button>
+
+          {isOwnProfile && (
+            <button
+              type="button"
+              onClick={onEditClick}
+              className="h-8 rounded-full text-xs font-bold px-3 flex items-center gap-2 bg-primary/15 text-primary border border-primary/30 hover:bg-primary/25 transition-colors mb-4"
+            >
+              Editar Perfil
+            </button>
+          )}
 
           <div className="text-xs text-gray-900 dark:text-gray-200 mb-4 font-bold drop-shadow-md space-y-1">
             <div>{formatFollowersLabel(followersCount)}</div>

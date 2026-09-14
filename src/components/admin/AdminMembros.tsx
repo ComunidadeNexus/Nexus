@@ -358,10 +358,10 @@ const AdminMembros = () => {
 
       {/* User Management Dialog */}
       <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUserId(null)}>
-        <DialogContent className="max-w-lg bg-background/95 backdrop-blur border-white/10">
+        <DialogContent className="flex max-h-[min(90dvh,52rem)] w-[calc(100%-1.5rem)] max-w-lg flex-col gap-0 overflow-hidden p-0 bg-background/95 backdrop-blur border-white/10">
           {selectedUser && (
             <>
-              <DialogHeader>
+              <DialogHeader className="shrink-0 space-y-1 px-6 pb-3 pt-6 text-left">
                 <DialogTitle className="flex items-center gap-3">
                   <UserAvatar
                     userId={selectedUser.user_id}
@@ -383,262 +383,264 @@ const AdminMembros = () => {
                 </DialogTitle>
               </DialogHeader>
 
-              <div className="space-y-5 py-2">
-                <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
-                  <p className="text-sm font-medium text-foreground">Login</p>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-[11px] text-muted-foreground">Email</p>
-                      <p className="text-sm text-foreground truncate">
-                        {selectedUser.email || "—"}
-                      </p>
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-2">
+                <div className="space-y-5 py-2">
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
+                    <p className="text-sm font-medium text-foreground">Login</p>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-muted-foreground">Email</p>
+                        <p className="text-sm text-foreground truncate">
+                          {selectedUser.email || "—"}
+                        </p>
+                      </div>
+                      {selectedUser.email && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="shrink-0"
+                          onClick={() => copyText(selectedUser.email || "", "Email")}
+                          aria-label="Copiar email"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
-                    {selectedUser.email && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="shrink-0"
-                        onClick={() => copyText(selectedUser.email || "", "Email")}
-                        aria-label="Copiar email"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-[11px] text-muted-foreground">Username</p>
-                      <p className="text-sm text-foreground truncate">
-                        @{selectedUser.username || "—"}
-                      </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-muted-foreground">Username</p>
+                        <p className="text-sm text-foreground truncate">
+                          @{selectedUser.username || "—"}
+                        </p>
+                      </div>
+                      {selectedUser.username && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="shrink-0"
+                          onClick={() => copyText(selectedUser.username || "", "Username")}
+                          aria-label="Copiar username"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
-                    {selectedUser.username && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="shrink-0"
-                        onClick={() => copyText(selectedUser.username || "", "Username")}
-                        aria-label="Copiar username"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
+                    {selectedUser.last_sign_in_at && (
+                      <p className="text-xs text-muted-foreground">
+                        Último acesso:{" "}
+                        {format(new Date(selectedUser.last_sign_in_at), "dd/MM/yyyy HH:mm", {
+                          locale: ptBR,
+                        })}
+                      </p>
                     )}
-                  </div>
-                  {selectedUser.last_sign_in_at && (
                     <p className="text-xs text-muted-foreground">
-                      Último acesso:{" "}
-                      {format(new Date(selectedUser.last_sign_in_at), "dd/MM/yyyy HH:mm", {
-                        locale: ptBR,
-                      })}
+                      A senha antiga não aparece. Digite uma senha nova para este usuário poder
+                      entrar.
                     </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    A senha antiga não aparece. Digite uma senha nova para este usuário poder
-                    entrar.
-                  </p>
-                  <Input
-                    type="password"
-                    placeholder="Senha nova (mín. 6 caracteres)"
-                    autoComplete="new-password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                  />
-                  <Input
-                    type="password"
-                    placeholder="Confirmar senha nova"
-                    autoComplete="new-password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                  />
-                  <Button
-                    variant="outline"
-                    className="w-full border-white/10"
-                    disabled={actionLoading || !newPassword || !confirmPassword}
-                    onClick={() => {
-                      if (newPassword !== confirmPassword) {
-                        toast({ title: "As senhas não coincidem", variant: "destructive" });
-                        return;
-                      }
-                      handleAction(async () => {
-                        const ok = await resetUserPassword(selectedUser.user_id, newPassword);
-                        if (ok) {
-                          setNewPassword("");
-                          setConfirmPassword("");
-                        }
-                      });
-                    }}
-                  >
-                    <KeyRound className="w-4 h-4 mr-2" />
-                    Redefinir senha
-                  </Button>
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: "Nível", value: selectedUser.level },
-                    { label: "XP", value: selectedUser.xp_points },
-                    { label: "Karma", value: selectedUser.karma },
-                    { label: "Seguidores", value: selectedUser.followers_count },
-                    { label: "Seguindo", value: selectedUser.following_count },
-                    { label: "Coins", value: selectedUser.wallet_balance || 0 },
-                  ].map((s) => (
-                    <div key={s.label} className="bg-white/5 rounded-xl p-3 text-center">
-                      <p className="text-lg font-bold text-foreground">{s.value}</p>
-                      <p className="text-xs text-muted-foreground">{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Acesso Premium</label>
-                  {selectedHasPremium ? (
+                    <Input
+                      type="password"
+                      placeholder="Senha nova (mín. 6 caracteres)"
+                      autoComplete="new-password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                    />
+                    <Input
+                      type="password"
+                      placeholder="Confirmar senha nova"
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
                     <Button
-                      className="w-full border-yellow-500/40 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20"
                       variant="outline"
-                      onClick={() => handleAction(() => revokePremium(selectedUser.user_id))}
-                      disabled={actionLoading}
-                    >
-                      <Crown className="w-4 h-4 mr-2" />
-                      Remover acesso Premium
-                    </Button>
-                  ) : (
-                    <Button
-                      className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
-                      onClick={() => handleAction(() => grantPremium(selectedUser.user_id))}
-                      disabled={actionLoading}
-                    >
-                      <Crown className="w-4 h-4 mr-2" />
-                      Dar acesso Premium
-                    </Button>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Libera o cofre em /premium para este usuário, sem precisar assinar.
-                  </p>
-                </div>
-
-                {/* Change Role */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Alterar Role</label>
-                  <div className="flex gap-2 flex-wrap">
-                    {["user", "moderator", "admin"].map((role) => (
-                      <button
-                        key={role}
-                        onClick={() =>
-                          handleAction(() => updateUserRole(selectedUser.user_id, role))
+                      className="w-full border-white/10"
+                      disabled={actionLoading || !newPassword || !confirmPassword}
+                      onClick={() => {
+                        if (newPassword !== confirmPassword) {
+                          toast({ title: "As senhas não coincidem", variant: "destructive" });
+                          return;
                         }
-                        className={`px-3 py-1.5 rounded-lg text-sm border transition-all ${
-                          selectedUser.role === role
-                            ? "bg-violet-500/20 border-violet-500/50 text-violet-400"
-                            : "border-white/10 text-muted-foreground hover:border-white/20 hover:text-foreground"
-                        }`}
-                      >
-                        {ROLE_CONFIG[role]?.label || role}
-                      </button>
+                        handleAction(async () => {
+                          const ok = await resetUserPassword(selectedUser.user_id, newPassword);
+                          if (ok) {
+                            setNewPassword("");
+                            setConfirmPassword("");
+                          }
+                        });
+                      }}
+                    >
+                      <KeyRound className="w-4 h-4 mr-2" />
+                      Redefinir senha
+                    </Button>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: "Nível", value: selectedUser.level },
+                      { label: "XP", value: selectedUser.xp_points },
+                      { label: "Karma", value: selectedUser.karma },
+                      { label: "Seguidores", value: selectedUser.followers_count },
+                      { label: "Seguindo", value: selectedUser.following_count },
+                      { label: "Coins", value: selectedUser.wallet_balance || 0 },
+                    ].map((s) => (
+                      <div key={s.label} className="bg-white/5 rounded-xl p-3 text-center">
+                        <p className="text-lg font-bold text-foreground">{s.value}</p>
+                        <p className="text-xs text-muted-foreground">{s.label}</p>
+                      </div>
                     ))}
                   </div>
-                </div>
 
-                {/* Grant XP */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Conceder XP</label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      value={xpAmount}
-                      onChange={(e) => setXpAmount(e.target.value)}
-                      className="bg-white/5 border-white/10"
-                      placeholder="Quantidade de XP"
-                    />
-                    <Button
-                      onClick={() =>
-                        handleAction(() => grantXP(selectedUser.user_id, Number(xpAmount)))
-                      }
-                      className="bg-emerald-600 hover:bg-emerald-700 shrink-0"
-                      disabled={actionLoading}
-                    >
-                      <Star className="w-4 h-4 mr-1" /> Dar XP
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Credit Coins */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Creditar Coins</label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      value={coinsAmount}
-                      onChange={(e) => setCoinsAmount(e.target.value)}
-                      className="bg-white/5 border-white/10"
-                      placeholder="Coins"
-                    />
-                    <Button
-                      onClick={() =>
-                        handleAction(() =>
-                          creditCoins(
-                            selectedUser.user_id,
-                            Number(coinsAmount),
-                            coinsDesc || "Crédito pelo admin",
-                          ),
-                        )
-                      }
-                      className="bg-amber-600 hover:bg-amber-700 shrink-0"
-                      disabled={actionLoading}
-                    >
-                      <Coins className="w-4 h-4 mr-1" /> Creditar
-                    </Button>
-                  </div>
-                  <Input
-                    value={coinsDesc}
-                    onChange={(e) => setCoinsDesc(e.target.value)}
-                    className="bg-white/5 border-white/10"
-                    placeholder="Motivo (opcional)"
-                  />
-                </div>
-
-                {/* Ban / Verify */}
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Selo verificado</p>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Acesso Premium</label>
+                    {selectedHasPremium ? (
+                      <Button
+                        className="w-full border-yellow-500/40 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20"
+                        variant="outline"
+                        onClick={() => handleAction(() => revokePremium(selectedUser.user_id))}
+                        disabled={actionLoading}
+                      >
+                        <Crown className="w-4 h-4 mr-2" />
+                        Remover acesso Premium
+                      </Button>
+                    ) : (
+                      <Button
+                        className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
+                        onClick={() => handleAction(() => grantPremium(selectedUser.user_id))}
+                        disabled={actionLoading}
+                      >
+                        <Crown className="w-4 h-4 mr-2" />
+                        Dar acesso Premium
+                      </Button>
+                    )}
                     <p className="text-xs text-muted-foreground">
-                      Apenas admins podem marcar ou desmarcar.
+                      Libera o cofre em /premium para este usuário, sem precisar assinar.
                     </p>
                   </div>
-                  <Switch
-                    checked={selectedUser.is_verified}
-                    onCheckedChange={() =>
-                      handleAction(() =>
-                        toggleVerifyUser(selectedUser.user_id, selectedUser.is_verified),
-                      )
-                    }
-                    disabled={actionLoading}
-                    aria-label="Alternar verificação"
-                  />
-                </div>
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    className={`flex-1 ${
-                      selectedUser.is_banned
-                        ? "border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10"
-                        : "border-red-500/50 text-red-400 hover:bg-red-500/10"
-                    }`}
-                    onClick={() =>
-                      handleAction(() =>
-                        toggleBanUser(selectedUser.user_id, selectedUser.is_banned),
-                      )
-                    }
-                    disabled={actionLoading}
-                  >
-                    <Ban className="w-4 h-4 mr-2" />
-                    {selectedUser.is_banned ? "Desbanir" : "Banir Usuário"}
-                  </Button>
+
+                  {/* Change Role */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Alterar Role</label>
+                    <div className="flex gap-2 flex-wrap">
+                      {["user", "moderator", "admin"].map((role) => (
+                        <button
+                          key={role}
+                          onClick={() =>
+                            handleAction(() => updateUserRole(selectedUser.user_id, role))
+                          }
+                          className={`px-3 py-1.5 rounded-lg text-sm border transition-all ${
+                            selectedUser.role === role
+                              ? "bg-violet-500/20 border-violet-500/50 text-violet-400"
+                              : "border-white/10 text-muted-foreground hover:border-white/20 hover:text-foreground"
+                          }`}
+                        >
+                          {ROLE_CONFIG[role]?.label || role}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Grant XP */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Conceder XP</label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        value={xpAmount}
+                        onChange={(e) => setXpAmount(e.target.value)}
+                        className="bg-white/5 border-white/10"
+                        placeholder="Quantidade de XP"
+                      />
+                      <Button
+                        onClick={() =>
+                          handleAction(() => grantXP(selectedUser.user_id, Number(xpAmount)))
+                        }
+                        className="bg-emerald-600 hover:bg-emerald-700 shrink-0"
+                        disabled={actionLoading}
+                      >
+                        <Star className="w-4 h-4 mr-1" /> Dar XP
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Credit Coins */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Creditar Coins</label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        value={coinsAmount}
+                        onChange={(e) => setCoinsAmount(e.target.value)}
+                        className="bg-white/5 border-white/10"
+                        placeholder="Coins"
+                      />
+                      <Button
+                        onClick={() =>
+                          handleAction(() =>
+                            creditCoins(
+                              selectedUser.user_id,
+                              Number(coinsAmount),
+                              coinsDesc || "Crédito pelo admin",
+                            ),
+                          )
+                        }
+                        className="bg-amber-600 hover:bg-amber-700 shrink-0"
+                        disabled={actionLoading}
+                      >
+                        <Coins className="w-4 h-4 mr-1" /> Creditar
+                      </Button>
+                    </div>
+                    <Input
+                      value={coinsDesc}
+                      onChange={(e) => setCoinsDesc(e.target.value)}
+                      className="bg-white/5 border-white/10"
+                      placeholder="Motivo (opcional)"
+                    />
+                  </div>
+
+                  {/* Ban / Verify */}
+                  <div className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Selo verificado</p>
+                      <p className="text-xs text-muted-foreground">
+                        Apenas admins podem marcar ou desmarcar.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={selectedUser.is_verified}
+                      onCheckedChange={() =>
+                        handleAction(() =>
+                          toggleVerifyUser(selectedUser.user_id, selectedUser.is_verified),
+                        )
+                      }
+                      disabled={actionLoading}
+                      aria-label="Alternar verificação"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      variant="outline"
+                      className={`flex-1 ${
+                        selectedUser.is_banned
+                          ? "border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10"
+                          : "border-red-500/50 text-red-400 hover:bg-red-500/10"
+                      }`}
+                      onClick={() =>
+                        handleAction(() =>
+                          toggleBanUser(selectedUser.user_id, selectedUser.is_banned),
+                        )
+                      }
+                      disabled={actionLoading}
+                    >
+                      <Ban className="w-4 h-4 mr-2" />
+                      {selectedUser.is_banned ? "Desbanir" : "Banir Usuário"}
+                    </Button>
+                  </div>
                 </div>
               </div>
 
-              <DialogFooter>
-                <Button variant="ghost" onClick={() => setSelectedUser(null)}>
+              <DialogFooter className="shrink-0 border-t border-white/10 px-6 py-4">
+                <Button variant="ghost" onClick={() => setSelectedUserId(null)}>
                   Fechar
                 </Button>
               </DialogFooter>
