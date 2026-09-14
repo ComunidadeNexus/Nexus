@@ -21,6 +21,7 @@ interface Conversation {
     user_id: string;
     name: string | null;
     avatar_url: string | null;
+    is_verified?: boolean;
   }[];
   lastMessage: DirectMessage | null;
   unreadCount: number;
@@ -29,6 +30,7 @@ interface Conversation {
 interface ChatUser {
   name: string | null;
   avatar_url: string | null;
+  is_verified?: boolean;
 }
 
 export const useDirectMessages = (options?: { enabled?: boolean; realtime?: boolean }) => {
@@ -83,12 +85,12 @@ export const useDirectMessages = (options?: { enabled?: boolean; realtime?: bool
       // Fetch profiles
       let profilesMap = new Map<
         string,
-        { user_id: string; name: string | null; avatar_url: string | null }
+        { user_id: string; name: string | null; avatar_url: string | null; is_verified: boolean }
       >();
       if (allUserIds.length > 0) {
         const { data: profilesData } = await supabase
           .from("profiles")
-          .select("user_id, name, avatar_url")
+          .select("user_id, name, avatar_url, is_verified")
           .in("user_id", allUserIds);
         profilesMap = new Map((profilesData || []).map((p) => [p.user_id, p]));
       }
@@ -131,6 +133,7 @@ export const useDirectMessages = (options?: { enabled?: boolean; realtime?: bool
                 user_id: p.user_id,
                 name: profile?.name || null,
                 avatar_url: profile?.avatar_url || null,
+                is_verified: profile?.is_verified || false,
               };
             });
 
@@ -156,6 +159,9 @@ export const useDirectMessages = (options?: { enabled?: boolean; realtime?: bool
 
   const startConversation = async (otherUserId: string) => {
     if (!user) return { error: "Not authenticated", conversationId: null };
+    if (user.id === otherUserId) {
+      return { error: "Cannot create conversation with yourself", conversationId: null };
+    }
 
     try {
       // Usar função RPC SECURITY DEFINER que contorna o RLS
@@ -225,17 +231,20 @@ export const useConversation = (conversationId: string | null) => {
   const userId = user?.id;
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [users, setUsers] = useState<Record<string, ChatUser>>({});
+  const [otherUser, setOtherUser] = useState<(ChatUser & { user_id: string }) | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchMessages = useCallback(async () => {
     if (!conversationId || !userId) {
       setMessages([]);
+      setOtherUser(null);
       setIsLoading(false);
       return;
     }
 
     try {
       setIsLoading(true);
+      setOtherUser(null);
 
       const { data, error } = await supabase
         .from("direct_messages")
@@ -259,20 +268,41 @@ export const useConversation = (conversationId: string | null) => {
 
       // Fetch user profiles
       const senderIds = [...new Set(nextMessages.map((m) => m.sender_id))];
-      if (senderIds.length === 0) {
+      const { data: otherParticipant } = await supabase
+        .from("conversation_participants")
+        .select("user_id")
+        .eq("conversation_id", conversationId)
+        .neq("user_id", userId)
+        .maybeSingle();
+
+      const profileIds = [...new Set([...senderIds, otherParticipant?.user_id].filter(Boolean))] as string[];
+      if (profileIds.length === 0) {
         return;
       }
 
       const { data: profilesData } = await supabase
         .from("profiles")
-        .select("user_id, name, avatar_url")
-        .in("user_id", senderIds);
+        .select("user_id, name, avatar_url, is_verified")
+        .in("user_id", profileIds);
 
       const usersMap: Record<string, ChatUser> = {};
       (profilesData || []).forEach((p) => {
-        usersMap[p.user_id] = { name: p.name, avatar_url: p.avatar_url };
+        usersMap[p.user_id] = {
+          name: p.name,
+          avatar_url: p.avatar_url,
+          is_verified: p.is_verified,
+        };
       });
       setUsers(usersMap);
+      if (otherParticipant?.user_id) {
+        const profile = usersMap[otherParticipant.user_id];
+        setOtherUser({
+          user_id: otherParticipant.user_id,
+          name: profile?.name ?? null,
+          avatar_url: profile?.avatar_url ?? null,
+          is_verified: profile?.is_verified,
+        });
+      }
     } catch (error) {
       console.error("Error fetching messages:", error);
       setIsLoading(false);
@@ -338,14 +368,18 @@ export const useConversation = (conversationId: string | null) => {
 
           const { data } = await supabase
             .from("profiles")
-            .select("user_id, name, avatar_url")
+            .select("user_id, name, avatar_url, is_verified")
             .eq("user_id", newMessage.sender_id)
             .single();
 
           if (data) {
             setUsers((prev) => ({
               ...prev,
-              [data.user_id]: { name: data.name, avatar_url: data.avatar_url },
+              [data.user_id]: {
+                name: data.name,
+                avatar_url: data.avatar_url,
+                is_verified: data.is_verified,
+              },
             }));
           }
 
@@ -368,8 +402,54 @@ export const useConversation = (conversationId: string | null) => {
   return {
     messages,
     users,
+    otherUser,
     isLoading,
     sendMessage,
     refetch: fetchMessages,
   };
+};
+
+export const useDmUnreadCount = () => {
+  const { user } = useAuth();
+  const userId = user?.id;
+  const [count, setCount] = useState(0);
+
+  const fetchCount = useCallback(async () => {
+    if (!userId) {
+      setCount(0);
+      return;
+    }
+    const { count: unread, error } = await supabase
+      .from("direct_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("is_read", false)
+      .neq("sender_id", userId);
+    if (error) {
+      console.error("Error fetching unread DMs:", error);
+      return;
+    }
+    setCount(unread || 0);
+  }, [userId]);
+
+  useEffect(() => {
+    void fetchCount();
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`dm-unread:${userId}:${crypto.randomUUID()}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "direct_messages" },
+        () => {
+          void fetchCount();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, fetchCount]);
+
+  return count;
 };

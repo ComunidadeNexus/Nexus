@@ -23,6 +23,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import CreateNucleoModal from "../nucleos/CreateNucleoModal";
 import { useCategories } from "@/hooks/useCategories";
+import { useDmUnreadCount } from "@/hooks/useDirectMessages";
 import { DynamicIcon } from "@/components/ui/DynamicIcon";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +46,7 @@ const LeftSidebar = ({
   const [isCreateNucleoOpen, setIsCreateNucleoOpen] = useState(false);
   const location = useLocation();
   const { categories } = useCategories();
+  const dmUnread = useDmUnreadCount();
   const currentCategory = new URLSearchParams(location.search).get("categoria");
   const isHomePath = location.pathname === "/feed" || location.pathname === "/comunidade";
 
@@ -57,6 +59,8 @@ const LeftSidebar = ({
       isActive = currentCategory === linkCategory;
     } else if (pathname === "/feed") {
       isActive = isHomePath && !currentCategory;
+    } else if (pathname === "/mensagens") {
+      isActive = location.pathname.startsWith("/mensagens");
     } else {
       isActive =
         location.pathname === pathname || (pathname === "/feed" && location.pathname === "/");
@@ -200,9 +204,16 @@ const LeftSidebar = ({
                 Ao Vivo (Twitch)
               </span>
             </Link>
-            <Link to="/mensagens" className={getNavItemClass("/mensagens")}>
-              <MessageCircle className="w-5 h-5" />
-              <span>Mensagens</span>
+            <Link to="/mensagens" className={cn(getNavItemClass("/mensagens"), "justify-between")}>
+              <span className="flex items-center gap-3">
+                <MessageCircle className="w-5 h-5" />
+                <span>Mensagens</span>
+              </span>
+              {dmUnread > 0 && (
+                <span className="min-w-5 h-5 px-1.5 rounded-full bg-white text-[#FF007F] text-[10px] font-bold flex items-center justify-center">
+                  {dmUnread > 99 ? "99+" : dmUnread}
+                </span>
+              )}
             </Link>
             <div className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium w-full text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-70">
               <div className="flex items-center gap-3">

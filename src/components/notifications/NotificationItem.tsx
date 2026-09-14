@@ -19,7 +19,8 @@ const getNotificationIcon = (type: Notification["type"]) => {
       return <MessageCircle className="w-4 h-4 text-blue-500" />;
     case "follow":
       return <UserPlus className="w-4 h-4 text-green-500" />;
-    case "mention":
+    case "message":
+      return <MessageCircle className="w-4 h-4 text-primary" />;
       return <AtSign className="w-4 h-4 text-purple-500" />;
     case "badge":
       return <Award className="w-4 h-4 text-yellow-500" />;

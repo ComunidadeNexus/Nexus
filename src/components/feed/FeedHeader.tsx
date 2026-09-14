@@ -30,11 +30,13 @@ import { useTheme } from "@/components/theme/ThemeProvider";
 import CreatePostModal from "@/components/community/CreatePostModal";
 import MobileNavDrawer from "@/components/feed/MobileNavDrawer";
 import { usePwaInstall } from "@/hooks/usePwaInstall";
+import { useDmUnreadCount } from "@/hooks/useDirectMessages";
 
 const FeedHeader = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { isInstalled } = usePwaInstall();
+  const dmUnread = useDmUnreadCount();
   const { profile } = useProfile();
   const navigate = useNavigate();
   const location = useLocation();
@@ -125,11 +127,16 @@ const FeedHeader = () => {
             <button
               type="button"
               onClick={() => navigate("/mensagens")}
-              className="min-h-11 min-w-11 p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-[#2A3B42] rounded-full transition-colors"
+              className="relative min-h-11 min-w-11 p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-[#2A3B42] rounded-full transition-colors"
               title="Mensagens"
               aria-label="Mensagens"
             >
               <MessageCircle className="w-5 h-5" />
+              {dmUnread > 0 && (
+                <span className="absolute top-0.5 right-0.5 min-w-4 h-4 px-1 bg-gradient-to-r from-[#00C6FF] to-[#FF007F] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {dmUnread > 99 ? "99+" : dmUnread}
+                </span>
+              )}
             </button>
 
             <div className="hidden sm:block">

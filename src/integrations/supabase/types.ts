@@ -1204,7 +1204,7 @@ export type Database = {
     Enums: {
       app_role: "user" | "premium" | "moderator" | "admin";
       notification_type:
-        "like" | "comment" | "mention" | "follow" | "badge" | "level_up" | "system";
+        "like" | "comment" | "mention" | "follow" | "badge" | "level_up" | "system" | "message";
       nucleo_role: "owner" | "moderator" | "member";
       plan_interval: "monthly" | "yearly";
       reaction_type: "like" | "love" | "celebrate" | "insightful" | "curious";
@@ -1331,7 +1331,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "premium", "moderator", "admin"],
-      notification_type: ["like", "comment", "mention", "follow", "badge", "level_up", "system"],
+      notification_type: ["like", "comment", "mention", "follow", "badge", "level_up", "system", "message"],
       nucleo_role: ["owner", "moderator", "member"],
       plan_interval: ["monthly", "yearly"],
       reaction_type: ["like", "love", "celebrate", "insightful", "curious"],

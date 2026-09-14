@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export interface Notification {
   id: string;
   user_id: string;
-  type: "like" | "comment" | "follow" | "mention" | "system" | "badge" | "level_up";
+  type: "like" | "comment" | "follow" | "mention" | "system" | "badge" | "level_up" | "message";
   title: string;
   message: string | null;
   actor_id: string | null;

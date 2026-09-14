@@ -21,9 +21,9 @@ const Messages = () => {
   const { conversations, isLoading: conversationsLoading } = useDirectMessages();
   const {
     messages,
-    users,
     isLoading: messagesLoading,
     sendMessage,
+    otherUser,
   } = useConversation(conversationId || null);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -61,6 +61,7 @@ const Messages = () => {
   };
 
   const selectedConversation = conversations.find((c) => c.id === conversationId);
+  const peer = otherUser || selectedConversation?.participants[0];
 
   return (
     <div className="w-full min-w-0 h-[calc(100dvh-8.75rem)] lg:h-[calc(100dvh-6.5rem)] bg-white dark:bg-[#1A282D] rounded-xl border border-gray-200 dark:border-gray-800 flex overflow-hidden shadow-sm">
@@ -89,31 +90,40 @@ const Messages = () => {
           ) : (
             <div className="p-2 space-y-1">
               {conversations.map((conv) => {
-                const otherUser = conv.participants[0];
+                const listPeer = conv.participants[0];
                 return (
                   <button
                     key={conv.id}
                     onClick={() => navigate(`/mensagens/${conv.id}`)}
                     className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors",
+                      "w-full flex items-center gap-3 min-h-11 p-3 rounded-lg text-left transition-colors",
                       conv.id === conversationId
                         ? "bg-white dark:bg-[#2A3B42] shadow-sm"
                         : "hover:bg-gray-100 dark:hover:bg-[#202E33]",
                     )}
                   >
                     <UserAvatar
-                      userId={otherUser?.user_id}
-                      name={otherUser?.name}
-                      avatarUrl={otherUser?.avatar_url}
+                      userId={listPeer?.user_id}
+                      name={listPeer?.name}
+                      avatarUrl={listPeer?.avatar_url}
                       className="w-12 h-12 border border-gray-200 dark:border-gray-700"
                       fallbackClassName="bg-primary/10 text-primary font-bold"
+                      link={false}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold truncate text-gray-900 dark:text-gray-100">
-                        {otherUser?.name || "Usuário"}
-                      </p>
+                      <ProfileName
+                        userId={listPeer?.user_id}
+                        name={listPeer?.name}
+                        isVerified={listPeer?.is_verified}
+                        className="font-bold text-gray-900 dark:text-gray-100"
+                        link={false}
+                      />
                       {conv.lastMessage && (
-                        <p className="text-sm text-gray-500 truncate">{conv.lastMessage.content}</p>
+                        <p className="text-sm text-gray-500 truncate">
+                          {conv.lastMessage.content.includes("[GIF:")
+                            ? "GIF"
+                            : conv.lastMessage.content}
+                        </p>
                       )}
                     </div>
                     {conv.unreadCount > 0 && (
@@ -134,26 +144,28 @@ const Messages = () => {
         {conversationId ? (
           <>
             {/* Header */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3 bg-white dark:bg-[#1A282D]">
+            <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3 bg-white dark:bg-[#1A282D]">
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden text-gray-500"
+                className="md:hidden text-gray-500 min-h-11 min-w-11"
                 onClick={() => navigate("/mensagens")}
+                aria-label="Voltar para conversas"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <UserAvatar
-                userId={selectedConversation?.participants[0]?.user_id}
-                name={selectedConversation?.participants[0]?.name}
-                avatarUrl={selectedConversation?.participants[0]?.avatar_url}
-                className="w-10 h-10 border border-gray-200 dark:border-gray-700"
+                userId={peer?.user_id}
+                name={peer?.name}
+                avatarUrl={peer?.avatar_url}
+                className="w-11 h-11 border border-gray-200 dark:border-gray-700"
                 fallbackClassName="bg-primary/10 text-primary font-bold"
               />
               <ProfileName
-                userId={selectedConversation?.participants[0]?.user_id}
-                name={selectedConversation?.participants[0]?.name}
-                className="font-bold text-gray-900 dark:text-gray-100 text-lg"
+                userId={peer?.user_id}
+                name={peer?.name}
+                isVerified={peer?.is_verified}
+                className="font-bold text-gray-900 dark:text-gray-100 text-lg min-h-11"
               />
             </div>
 
@@ -162,6 +174,11 @@ const Messages = () => {
               {messagesLoading && messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500 px-6 text-center">
+                  <p className="font-medium">Nenhuma mensagem ainda</p>
+                  <p className="text-sm mt-1">Diga olá para {peer?.name || "esta pessoa"}.</p>
                 </div>
               ) : (
                 <div className="space-y-4">

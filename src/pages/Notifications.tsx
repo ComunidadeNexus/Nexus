@@ -11,6 +11,8 @@ const Notifications = () => {
   const handleNotificationClick = (notification: any) => {
     if (notification.post_id) {
       navigate(`/comunidade`);
+    } else if (notification.type === "message") {
+      navigate("/mensagens");
     } else if (notification.type === "follow" && notification.actor_id) {
       navigate(`/perfil/${notification.actor_id}`);
     }
