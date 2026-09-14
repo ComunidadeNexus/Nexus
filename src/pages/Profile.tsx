@@ -8,6 +8,7 @@ import ProfileActivity from "@/components/profile/ProfileActivity";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EditProfileModal from "@/components/profile/EditProfileModal";
+import FollowListDialog from "@/components/profile/FollowListDialog";
 
 import { ProfileComments } from "@/components/profile/ProfileComments";
 import { ProfileSaved } from "@/components/profile/ProfileSaved";
@@ -21,6 +22,13 @@ const Profile = () => {
 
   const [activeTab, setActiveTab] = useState("posts");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [followListOpen, setFollowListOpen] = useState(false);
+  const [followListTab, setFollowListTab] = useState<"followers" | "following">("followers");
+
+  const openFollowList = (tab: "followers" | "following") => {
+    setFollowListTab(tab);
+    setFollowListOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -48,6 +56,7 @@ const Profile = () => {
           onEditClick={() => setIsEditModalOpen(true)}
           followersCount={followersCount}
           followingCount={followingCount}
+          onOpenFollowList={openFollowList}
         />
 
         <div className="mt-4">
@@ -77,6 +86,7 @@ const Profile = () => {
           onEditClick={() => setIsEditModalOpen(true)}
           followersCount={followersCount}
           followingCount={followingCount}
+          onOpenFollowList={openFollowList}
         />
       </div>
 
@@ -91,6 +101,16 @@ const Profile = () => {
           }}
         />
       )}
+
+      <FollowListDialog
+        open={followListOpen}
+        onOpenChange={setFollowListOpen}
+        tab={followListTab}
+        onTabChange={setFollowListTab}
+        userId={profile.user_id}
+        followersCount={followersCount}
+        followingCount={followingCount}
+      />
     </div>
   );
 };

@@ -49,6 +49,7 @@ interface ProfileSidebarWidgetProps {
   onEditClick: () => void;
   followersCount?: number;
   followingCount?: number;
+  onOpenFollowList?: (tab: "followers" | "following") => void;
 }
 
 const ProfileSidebarWidget = ({
@@ -58,6 +59,7 @@ const ProfileSidebarWidget = ({
   onEditClick,
   followersCount = 0,
   followingCount = 0,
+  onOpenFollowList,
 }: ProfileSidebarWidgetProps) => {
   const displayName = profile.name || profile.username || "Usuário";
   const joinYear = new Date(profile.created_at).getFullYear();
@@ -188,9 +190,21 @@ const ProfileSidebarWidget = ({
             </button>
           )}
 
-          <div className="text-xs text-gray-900 dark:text-gray-200 mb-4 font-bold drop-shadow-md space-y-1">
-            <div>{formatFollowersLabel(followersCount)}</div>
-            <div>{formatFollowingLabel(followingCount)}</div>
+          <div className="text-xs text-gray-900 dark:text-gray-200 mb-4 font-bold drop-shadow-md flex flex-col items-start gap-1">
+            <button
+              type="button"
+              className="min-h-11 hover:underline"
+              onClick={() => onOpenFollowList?.("followers")}
+            >
+              {formatFollowersLabel(followersCount)}
+            </button>
+            <button
+              type="button"
+              className="min-h-11 hover:underline"
+              onClick={() => onOpenFollowList?.("following")}
+            >
+              {formatFollowingLabel(followingCount)}
+            </button>
           </div>
 
           {categories.length > 0 && (

@@ -132,7 +132,7 @@ const GlobalChat = () => {
                     userId={message.user_id}
                     name={profile?.name}
                     avatarUrl={profile?.avatar_url}
-                    className="w-8 h-8"
+                    className="w-11 h-11"
                     fallbackClassName="text-xs bg-primary/20"
                   />
                   <div
@@ -146,7 +146,7 @@ const GlobalChat = () => {
                         userId={message.user_id}
                         name={profile?.name}
                         isVerified={profile?.is_verified}
-                        className="text-sm font-medium"
+                        className="text-sm font-medium min-h-11"
                       />
                       <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(message.created_at), {

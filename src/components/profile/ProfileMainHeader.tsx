@@ -31,6 +31,7 @@ interface ProfileMainHeaderProps {
   onEditClick?: () => void;
   followersCount?: number;
   followingCount?: number;
+  onOpenFollowList?: (tab: "followers" | "following") => void;
 }
 
 const ProfileMainHeader = ({
@@ -39,6 +40,7 @@ const ProfileMainHeader = ({
   onEditClick,
   followersCount = 0,
   followingCount = 0,
+  onOpenFollowList,
 }: ProfileMainHeaderProps) => {
   const displayName = profile.name || profile.username || "Usuário";
   const handle = profile.username ? `u/${profile.username}` : "u/usuario";
@@ -98,12 +100,20 @@ const ProfileMainHeader = ({
             </h1>
             <p className="text-sm text-gray-500 font-medium">{handle}</p>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500 mt-1">
-              <span className="text-gray-900 dark:text-white font-medium">
+              <button
+                type="button"
+                className="min-h-11 text-gray-900 dark:text-white font-medium hover:underline"
+                onClick={() => onOpenFollowList?.("followers")}
+              >
                 {formatFollowersLabel(followersCount)}
-              </span>
-              <span className="text-gray-900 dark:text-white font-medium">
+              </button>
+              <button
+                type="button"
+                className="min-h-11 text-gray-900 dark:text-white font-medium hover:underline"
+                onClick={() => onOpenFollowList?.("following")}
+              >
                 {formatFollowingLabel(followingCount)}
-              </span>
+              </button>
             </div>
             {profile.bio && (
               <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 max-w-md">

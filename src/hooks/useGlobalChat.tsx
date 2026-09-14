@@ -143,14 +143,18 @@ export const useGlobalChat = () => {
           // Fetch user profile if not in cache
           const { data } = await supabase
             .from("profiles")
-            .select("user_id, name, avatar_url")
+            .select("user_id, name, avatar_url, is_verified")
             .eq("user_id", newMessage.user_id)
             .single();
 
           if (data) {
             setUsers((prev) => ({
               ...prev,
-              [data.user_id]: { name: data.name, avatar_url: data.avatar_url },
+              [data.user_id]: {
+                name: data.name,
+                avatar_url: data.avatar_url,
+                is_verified: data.is_verified,
+              },
             }));
           }
         },
