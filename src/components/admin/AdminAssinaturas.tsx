@@ -30,6 +30,8 @@ interface Plan {
   is_active: boolean;
   stripe_price_id_monthly: string | null;
   stripe_price_id_yearly: string | null;
+  cakto_offer_id_monthly: string | null;
+  cakto_offer_id_yearly: string | null;
 }
 
 interface Subscription {
@@ -62,6 +64,8 @@ const emptyPlan = {
   is_active: true,
   stripe_price_id_monthly: "",
   stripe_price_id_yearly: "",
+  cakto_offer_id_monthly: "",
+  cakto_offer_id_yearly: "",
 };
 
 const AdminAssinaturas = () => {
@@ -131,6 +135,8 @@ const AdminAssinaturas = () => {
       is_active: p.is_active,
       stripe_price_id_monthly: p.stripe_price_id_monthly || "",
       stripe_price_id_yearly: p.stripe_price_id_yearly || "",
+      cakto_offer_id_monthly: p.cakto_offer_id_monthly || "",
+      cakto_offer_id_yearly: p.cakto_offer_id_yearly || "",
     });
     setFeaturesText(
       Array.isArray(p.features) ? p.features.join("\n") : JSON.stringify(p.features, null, 2),
@@ -154,6 +160,8 @@ const AdminAssinaturas = () => {
         features,
         stripe_price_id_monthly: form.stripe_price_id_monthly || null,
         stripe_price_id_yearly: form.stripe_price_id_yearly || null,
+        cakto_offer_id_monthly: form.cakto_offer_id_monthly || null,
+        cakto_offer_id_yearly: form.cakto_offer_id_yearly || null,
       };
 
       if (form.is_active) {
@@ -513,6 +521,26 @@ const AdminAssinaturas = () => {
                 className="bg-white/5 border-white/10 resize-none h-28 font-mono text-xs"
                 placeholder="Acesso ilimitado&#10;Chat exclusivo&#10;Badge premium"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label>Cakto offer ID mensal</Label>
+                <Input
+                  value={form.cakto_offer_id_monthly}
+                  onChange={(e) => setForm((f) => ({ ...f, cakto_offer_id_monthly: e.target.value }))}
+                  className="bg-white/5 border-white/10"
+                  placeholder="ID da oferta na Cakto"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Cakto offer ID anual</Label>
+                <Input
+                  value={form.cakto_offer_id_yearly}
+                  onChange={(e) => setForm((f) => ({ ...f, cakto_offer_id_yearly: e.target.value }))}
+                  className="bg-white/5 border-white/10"
+                  placeholder="ID da oferta na Cakto"
+                />
+              </div>
             </div>
             <div className="flex items-center justify-between p-3 rounded-xl bg-white/5">
               <div>

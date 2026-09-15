@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { usePublicPlans, type PublicPlan } from "@/hooks/usePublicPlans";
 import { usePremiumAccess } from "@/hooks/usePremiumAccess";
@@ -73,6 +74,24 @@ const Subscription = () => {
     }
 
     setSubscribingTier(plan.id);
+    const offer = isYearly ? plan.cakto_offer_id_yearly : plan.cakto_offer_id_monthly;
+    if (offer) {
+      const { data, error } = await supabase.functions.invoke("cakto-checkout", {
+        body: { plan_id: plan.id, interval: isYearly ? "yearly" : "monthly" },
+      });
+      setSubscribingTier(null);
+      if (error || data?.error || !data?.checkout_url) {
+        toast({
+          title: "Erro ao iniciar assinatura",
+          description: data?.error || error?.message || "Tente novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+      window.location.href = data.checkout_url;
+      return;
+    }
+
     const { error } = await subscribe(checkoutTier(plan), isYearly ? "yearly" : "monthly");
 
     if (error) {

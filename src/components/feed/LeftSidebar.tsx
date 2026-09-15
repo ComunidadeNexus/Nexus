@@ -18,6 +18,8 @@ import {
   Tv,
   BookOpen,
   Smartphone,
+  Store,
+  Package,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +28,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { useDmUnreadCount } from "@/hooks/useDirectMessages";
 import { DynamicIcon } from "@/components/ui/DynamicIcon";
 import { cn } from "@/lib/utils";
+import { useProducer } from "@/hooks/useProducer";
 
 interface LeftSidebarProps {
   variant?: "desktop" | "drawer";
@@ -47,6 +50,7 @@ const LeftSidebar = ({
   const location = useLocation();
   const { categories } = useCategories();
   const dmUnread = useDmUnreadCount();
+  const { isProducer } = useProducer();
   const currentCategory = new URLSearchParams(location.search).get("categoria");
   const isHomePath = location.pathname === "/feed" || location.pathname === "/comunidade";
 
@@ -61,6 +65,10 @@ const LeftSidebar = ({
       isActive = isHomePath && !currentCategory;
     } else if (pathname === "/mensagens") {
       isActive = location.pathname.startsWith("/mensagens");
+    } else if (pathname === "/produtos") {
+      isActive = location.pathname.startsWith("/produtos");
+    } else if (pathname === "/produtor") {
+      isActive = location.pathname.startsWith("/produtor");
     } else {
       isActive =
         location.pathname === pathname || (pathname === "/feed" && location.pathname === "/");
@@ -229,6 +237,21 @@ const LeftSidebar = ({
                 Em breve
               </Badge>
             </div>
+            <Link to="/produtos" className={getNavItemClass("/produtos")}>
+              <Package className="w-5 h-5" />
+              <span>Produtos</span>
+            </Link>
+            {isProducer ? (
+              <Link to="/produtor" className={getNavItemClass("/produtor")}>
+                <Store className="w-5 h-5" />
+                <span>Painel do Produtor</span>
+              </Link>
+            ) : (
+              <Link to="/comecar-a-vender" className={getNavItemClass("/comecar-a-vender")}>
+                <Store className="w-5 h-5" />
+                <span>Começar a vender</span>
+              </Link>
+            )}
             <Link to="/chat" className={getNavItemClass("/chat")}>
               <Globe className="w-5 h-5" />
               <span>Chat Global</span>

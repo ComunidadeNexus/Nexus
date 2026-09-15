@@ -35,6 +35,17 @@ import AoVivo from "./pages/AoVivo";
 import Regras from "./pages/Regras";
 import Sobre from "./pages/Sobre";
 import VerificarIdentidade from "./pages/VerificarIdentidade";
+import ComecarAVender from "./pages/ComecarAVender";
+import Produtos from "./pages/Produtos";
+import ProdutoDetalhe from "./pages/ProdutoDetalhe";
+import ProducerLayout from "./pages/producer/ProducerLayout";
+import ProducerOverview from "./pages/producer/ProducerOverview";
+import ProducerProducts from "./pages/producer/ProducerProducts";
+import ProducerSales from "./pages/producer/ProducerSales";
+import ProducerCustomers from "./pages/producer/ProducerCustomers";
+import ProducerFinance from "./pages/producer/ProducerFinance";
+import ProducerSubscriptions from "./pages/producer/ProducerSubscriptions";
+import ProducerSettings from "./pages/producer/ProducerSettings";
 
 // Admin Imports
 import AdminLayout from "./components/layout/AdminLayout";
@@ -55,6 +66,7 @@ import AdminFeedback from "./components/admin/AdminFeedback";
 import AdminDenuncias from "./components/admin/AdminDenuncias";
 import AdminLogs from "./components/admin/AdminLogs";
 import AdminConfig from "./components/admin/AdminConfig";
+import AdminCakto from "./components/admin/AdminCakto";
 
 const queryClient = new QueryClient();
 
@@ -103,6 +115,7 @@ const AppRoutes = () => {
         <Route path="jogos" element={<AdminJogos />} />
         <Route path="notificacoes" element={<AdminNotificacoes />} />
         <Route path="assinaturas" element={<AdminAssinaturas />} />
+        <Route path="cakto" element={<AdminCakto />} />
         <Route path="premio" element={<AdminPremio />} />
         <Route path="feedback" element={<AdminFeedback />} />
         <Route path="analytics" element={<Analytics />} />
@@ -142,6 +155,18 @@ const AppRoutes = () => {
         <Route path="/games" element={<NexusGames />} />
         <Route path="/ao-vivo" element={<AoVivo />} />
         <Route path="/premium" element={<PremiumArea />} />
+        <Route path="/produtos" element={<Produtos />} />
+        <Route path="/produtos/:productId" element={<ProdutoDetalhe />} />
+        <Route path="/comecar-a-vender" element={<ComecarAVender />} />
+        <Route path="/produtor" element={<ProducerLayout />}>
+          <Route index element={<ProducerOverview />} />
+          <Route path="produtos" element={<ProducerProducts />} />
+          <Route path="vendas" element={<ProducerSales />} />
+          <Route path="clientes" element={<ProducerCustomers />} />
+          <Route path="financeiro" element={<ProducerFinance />} />
+          <Route path="assinaturas" element={<ProducerSubscriptions />} />
+          <Route path="configuracoes" element={<ProducerSettings />} />
+        </Route>
 
         {/* Aliases EN / antigos / acentuados → rotas canônicas */}
         <Route path="/messages" element={<AliasRedirect to="/mensagens" />} />

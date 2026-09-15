@@ -26,6 +26,7 @@ import {
   Settings,
   Gamepad2,
   Crown,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ const navItems = [
   { path: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { path: "/admin/premio", label: "Área Premium", icon: Crown, highlight: true },
   { path: "/admin/assinaturas", label: "Assinaturas", icon: CreditCard },
+  { path: "/admin/cakto", label: "Cakto / Produtores", icon: Wallet },
   { path: "/admin/membros", label: "Membros", icon: Users },
   { path: "/admin/conteudo", label: "Moderação", icon: FileText },
   { path: "/admin/chat", label: "Chat Global", icon: MessageSquare },

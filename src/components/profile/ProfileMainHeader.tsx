@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Camera, Plus, SlidersHorizontal, MessageCircle, Loader2 } from "lucide-react";
+import { Camera, Plus, SlidersHorizontal, MessageCircle, Loader2, Store } from "lucide-react";
 import CreatePostModal from "@/components/community/CreatePostModal";
 import ReportProfileModal from "@/components/profile/ReportProfileModal";
 import FollowButton from "@/components/profile/FollowButton";
@@ -170,7 +170,14 @@ const ProfileMainHeader = ({
         )}
 
         {isOwnProfile && onEditClick && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <button
+              onClick={() => navigate("/comecar-a-vender")}
+              className="flex items-center gap-2 min-h-11 px-5 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-full font-bold text-sm transition-colors"
+            >
+              <Store className="w-4 h-4" />
+              Começar a vender
+            </button>
             <button
               onClick={onEditClick}
               className="flex items-center gap-2 min-h-11 px-5 py-2 bg-gray-100 dark:bg-[#2A3B42] hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-full font-bold text-sm transition-colors shadow-sm"

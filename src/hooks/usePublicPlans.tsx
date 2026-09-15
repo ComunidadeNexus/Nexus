@@ -10,6 +10,8 @@ export interface PublicPlan {
   price_yearly: number;
   features: string[];
   is_active: boolean;
+  cakto_offer_id_monthly: string | null;
+  cakto_offer_id_yearly: string | null;
 }
 
 const parseFeatures = (value: Json): string[] => {
@@ -26,7 +28,7 @@ export const usePublicPlans = () => {
   const fetchPlans = useCallback(async () => {
     const { data, error } = await supabase
       .from("plans")
-      .select("id, name, description, price_monthly, price_yearly, features, is_active")
+      .select("id, name, description, price_monthly, price_yearly, features, is_active, cakto_offer_id_monthly, cakto_offer_id_yearly")
       .eq("is_active", true)
       .gt("price_monthly", 0)
       .order("price_monthly", { ascending: true });
