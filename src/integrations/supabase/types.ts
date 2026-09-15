@@ -1161,6 +1161,10 @@ export type Database = {
         Args: { p_nucleo_id: string };
         Returns: boolean;
       };
+      moderate_chat_message: {
+        Args: { p_message_id: string };
+        Returns: boolean;
+      };
       create_notification: {
         Args: {
           p_actor_id?: string;

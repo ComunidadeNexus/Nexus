@@ -12,25 +12,29 @@ import { UserAvatar, ProfileName } from "@/components/profile/ProfileLink";
 import { renderMessageContent } from "@/utils/textParser";
 
 const AdminChat = () => {
-  const { messages, users, isLoading } = useGlobalChat();
+  const { messages, users, isLoading, refetch } = useGlobalChat();
   const { toast } = useToast();
   const [search, setSearch] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Tem certeza que deseja apagar esta mensagem do chat global?")) return;
 
-    // Marcar como deletado para que suma para os usuários (soft delete)
-    // ou deletar do banco. Como o useGlobalChat filtra por is_deleted = false, o soft delete funciona bem.
-    const { error } = await supabase
-      .from("chat_messages")
-      .update({ is_deleted: true })
-      .eq("id", id);
+    setDeletingId(id);
+    const { error } = await supabase.rpc("moderate_chat_message", { p_message_id: id });
+    setDeletingId(null);
 
     if (error) {
-      toast({ title: "Erro ao excluir mensagem", variant: "destructive" });
-    } else {
-      toast({ title: "Mensagem excluída com sucesso" });
+      toast({
+        title: "Erro ao excluir mensagem",
+        description: error.message || "Sem permissão para moderar esta mensagem.",
+        variant: "destructive",
+      });
+      return;
     }
+
+    toast({ title: "Mensagem excluída com sucesso" });
+    await refetch();
   };
 
   const filteredMessages = messages.filter((m) => {
@@ -154,6 +158,7 @@ const AdminChat = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDelete(msg.id)}
+                          disabled={deletingId === msg.id}
                           className="text-red-400 hover:text-red-300 hover:bg-red-400/10"
                           title="Excluir mensagem"
                         >
