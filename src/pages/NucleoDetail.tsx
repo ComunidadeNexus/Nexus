@@ -56,8 +56,8 @@ const NucleoDetail = () => {
   const [activeTab, setActiveTab] = useState("posts");
 
   const currentMember = members.find((m) => m.user_id === user?.id);
-  const isMember = !!currentMember;
-  const isOwner = currentMember?.role === "owner";
+  const isOwner = Boolean(user && nucleo && user.id === nucleo.owner_id);
+  const isMember = !!currentMember || isOwner;
   const isModerator = currentMember?.role === "moderator" || isOwner;
 
   useEffect(() => {

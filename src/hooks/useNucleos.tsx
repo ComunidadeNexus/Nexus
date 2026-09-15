@@ -210,6 +210,15 @@ export const useNucleos = () => {
           .single();
 
         if (!error && nucleo) {
+          const { error: memberError } = await supabase.from("nucleo_members").insert({
+            nucleo_id: nucleo.id,
+            user_id: user.id,
+            role: "owner",
+          });
+          if (memberError && !isUniqueViolation(memberError)) {
+            console.error("Error adding nucleo owner as member:", memberError);
+          }
+
           toast({
             title: "Núcleo criado!",
             description: `O núcleo "${name}" foi criado com sucesso.`,
@@ -268,11 +277,7 @@ export const useNucleos = () => {
     if (!user) return false;
 
     try {
-      const { error } = await supabase
-        .from("nucleo_members")
-        .delete()
-        .eq("nucleo_id", nucleoId)
-        .eq("user_id", user.id);
+      const { error } = await supabase.rpc("leave_nucleo", { p_nucleo_id: nucleoId });
 
       if (error) throw error;
 
@@ -376,17 +381,9 @@ export const useNucleos = () => {
     if (!user) return false;
 
     try {
-      const { data: removed, error } = await supabase
-        .from("nucleos")
-        .delete()
-        .eq("id", nucleoId)
-        .select("id")
-        .maybeSingle();
+      const { error } = await supabase.rpc("delete_own_nucleo", { p_nucleo_id: nucleoId });
 
       if (error) throw error;
-      if (!removed) {
-        throw new Error("Sem permissão para excluir este núcleo, ou ele não existe mais.");
-      }
 
       toast({
         title: "Comunidade excluída",

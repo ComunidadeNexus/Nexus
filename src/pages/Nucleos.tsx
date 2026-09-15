@@ -6,7 +6,7 @@ import CreateNucleoModal from "@/components/nucleos/CreateNucleoModal";
 import { useNucleos } from "@/hooks/useNucleos";
 
 const Nucleos = () => {
-  const { nucleos, isLoading, joinNucleo, leaveNucleo, isMember } = useNucleos();
+  const { nucleos, isLoading, joinNucleo, leaveNucleo, deleteNucleo, isMember } = useNucleos();
   const [searchQuery, setSearchQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -68,6 +68,7 @@ const Nucleos = () => {
                 isMember={isMember(nucleo.id)}
                 onJoin={joinNucleo}
                 onLeave={leaveNucleo}
+                onDelete={deleteNucleo}
               />
             ))}
           </div>

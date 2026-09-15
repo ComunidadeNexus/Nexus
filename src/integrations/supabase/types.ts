@@ -1153,6 +1153,14 @@ export type Database = {
         Args: { p_other_user_id: string };
         Returns: string;
       };
+      delete_own_nucleo: {
+        Args: { p_nucleo_id: string };
+        Returns: boolean;
+      };
+      leave_nucleo: {
+        Args: { p_nucleo_id: string };
+        Returns: boolean;
+      };
       create_notification: {
         Args: {
           p_actor_id?: string;

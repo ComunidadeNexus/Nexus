@@ -199,16 +199,11 @@ const AdminNucleos = () => {
   };
 
   const handleDelete = async (id: string) => {
-    const { data, error } = await supabase
-      .from("nucleos")
-      .delete()
-      .eq("id", id)
-      .select("id")
-      .maybeSingle();
-    if (error || !data) {
+    const { error } = await supabase.rpc("delete_own_nucleo", { p_nucleo_id: id });
+    if (error) {
       toast({
         title: "Não foi possível deletar",
-        description: error?.message || "Sem permissão para deletar este núcleo.",
+        description: error.message || "Sem permissão para deletar este núcleo.",
         variant: "destructive",
       });
       return;

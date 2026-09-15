@@ -56,54 +56,59 @@ const NucleoHeader = ({
     }
   };
 
+  const openDeleteDialog = () => {
+    window.setTimeout(() => setIsDeleteDialogOpen(true), 0);
+  };
+
   const actionButtons = user ? (
-    isMember ? (
+    isOwner ? (
       <>
-        {isOwner && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Settings className="w-4 h-4 mr-2" />
-                Gerenciar
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-48 bg-[#1A1A1A] border-gray-800 text-white"
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Settings className="w-4 h-4 mr-2" />
+              Gerenciar
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-48 bg-[#1A1A1A] border-gray-800 text-white"
+          >
+            <DropdownMenuItem
+              onSelect={() => setIsEditModalOpen(true)}
+              className="hover:bg-[#2A2A2A] cursor-pointer"
             >
-              <DropdownMenuItem
-                onClick={() => setIsEditModalOpen(true)}
-                className="hover:bg-[#2A2A2A] cursor-pointer"
-              >
-                <Pencil className="w-4 h-4 mr-2" />
-                Editar Comunidade
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setIsDeleteDialogOpen(true)}
-                className="text-red-400 hover:text-red-300 hover:bg-red-900/20 cursor-pointer focus:text-red-400"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Excluir Comunidade
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-        <Button variant="outline" size="sm" onClick={onLeave} disabled={isOwner}>
-          {isOwner ? (
-            <>
-              <Crown className="w-4 h-4 mr-2" />
-              Dono
-            </>
-          ) : isModerator ? (
-            <>
-              <Shield className="w-4 h-4 mr-2" />
-              Moderador
-            </>
-          ) : (
-            "Sair"
-          )}
+              <Pencil className="w-4 h-4 mr-2" />
+              Editar Comunidade
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={(event) => {
+                event.preventDefault();
+                openDeleteDialog();
+              }}
+              className="text-red-400 hover:text-red-300 hover:bg-red-900/20 cursor-pointer focus:text-red-400"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Excluir Comunidade
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button variant="outline" size="sm" disabled>
+          <Crown className="w-4 h-4 mr-2" />
+          Dono
         </Button>
       </>
+    ) : isMember ? (
+      <Button variant="outline" size="sm" onClick={onLeave}>
+        {isModerator ? (
+          <>
+            <Shield className="w-4 h-4 mr-2" />
+            Sair
+          </>
+        ) : (
+          "Sair"
+        )}
+      </Button>
     ) : (
       <Button onClick={onJoin} style={{ backgroundColor: nucleo.color }}>
         Entrar no Núcleo
