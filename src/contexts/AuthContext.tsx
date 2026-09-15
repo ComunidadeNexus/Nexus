@@ -187,7 +187,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           },
         },
       });
-      if (error) throw error;
+      if (error) {
+        const message = error.message || "";
+        if (
+          /já está em uso/i.test(message) ||
+          /duplicate/i.test(message) ||
+          /database error saving new user/i.test(message)
+        ) {
+          throw new Error("Este username já está em uso.");
+        }
+        throw error;
+      }
       noteSuccessfulSignIn();
       endSignedOut();
       return { error: null };

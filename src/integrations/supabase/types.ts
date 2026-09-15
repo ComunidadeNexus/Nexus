@@ -379,6 +379,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      identity_verifications: {
+        Row: {
+          created_at: string;
+          cpf_last4: string;
+          id: string;
+          status: string;
+          user_id: string;
+          verified_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          cpf_last4: string;
+          id?: string;
+          status: string;
+          user_id: string;
+          verified_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          cpf_last4?: string;
+          id?: string;
+          status?: string;
+          user_id?: string;
+          verified_at?: string;
+        };
+        Relationships: [];
+      };
       marketplace_favorites: {
         Row: {
           created_at: string;
@@ -1145,6 +1172,23 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      admin_credit_coins: {
+        Args: { p_amount: number; p_description?: string; p_user_id: string };
+        Returns: boolean;
+      };
+      is_username_available: {
+        Args: { p_username: string };
+        Returns: boolean;
+      };
+      spend_own_coins: {
+        Args: {
+          p_amount: number;
+          p_description?: string;
+          p_reference_id?: string;
+          p_reference_type?: string;
+        };
+        Returns: boolean;
+      };
       calculate_ranking: {
         Args: { created_at: string; post_score: number };
         Returns: number;

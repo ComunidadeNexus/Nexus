@@ -34,6 +34,7 @@ import NexusGames from "./pages/NexusGames";
 import AoVivo from "./pages/AoVivo";
 import Regras from "./pages/Regras";
 import Sobre from "./pages/Sobre";
+import VerificarIdentidade from "./pages/VerificarIdentidade";
 
 // Admin Imports
 import AdminLayout from "./components/layout/AdminLayout";
@@ -75,6 +76,14 @@ const AppRoutes = () => {
       <Route path="/instalar" element={<Install />} />
       <Route path="/regras" element={<Regras />} />
       <Route path="/sobre" element={<Sobre />} />
+      <Route
+        path="/verificar-identidade"
+        element={
+          <ProtectedRoute allowUnverified>
+            <VerificarIdentidade />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/painel" element={<Navigate to="/admin" replace />} />
       <Route path="/painel-admin" element={<Navigate to="/admin" replace />} />
 

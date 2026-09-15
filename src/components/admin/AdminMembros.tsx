@@ -38,6 +38,7 @@ import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { UserAvatar, ProfileName } from "@/components/profile/ProfileLink";
+import { formatIdentityLabel } from "@/lib/identity";
 
 const ROLE_CONFIG: Record<string, { label: string; className: string }> = {
   admin: { label: "Admin", className: "bg-violet-500/20 text-violet-400 border-violet-500/30" },
@@ -116,6 +117,7 @@ const AdminMembros = () => {
       "Nome",
       "Username",
       "Role",
+      "CPF",
       "XP",
       "Coins",
       "Nivel",
@@ -131,6 +133,7 @@ const AdminMembros = () => {
           `"${(u.name || "").replace(/"/g, '""')}"`,
           `"${(u.username || "").replace(/"/g, '""')}"`,
           u.role,
+          `"${formatIdentityLabel(u.cpf_last4, u.identity_status).replace(/"/g, '""')}"`,
           u.xp_points,
           u.wallet_balance || 0,
           u.level,
@@ -233,6 +236,7 @@ const AdminMembros = () => {
                 </th>
                 <th className="text-left px-4 py-3 text-muted-foreground font-medium">Karma</th>
                 <th className="text-left px-4 py-3 text-muted-foreground font-medium">Coins</th>
+                <th className="text-left px-4 py-3 text-muted-foreground font-medium">CPF</th>
                 <th className="text-left px-4 py-3 text-muted-foreground font-medium">Status</th>
                 <th className="text-left px-4 py-3 text-muted-foreground font-medium">Criado em</th>
                 <th className="text-right px-4 py-3 text-muted-foreground font-medium">Ações</th>
@@ -244,7 +248,7 @@ const AdminMembros = () => {
                   .fill(0)
                   .map((_, i) => (
                     <tr key={i} className="border-b border-white/5">
-                      {Array(8)
+                      {Array(9)
                         .fill(0)
                         .map((_, j) => (
                           <td key={j} className="px-4 py-3">
@@ -255,7 +259,7 @@ const AdminMembros = () => {
                   ))
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center text-muted-foreground py-12">
+                  <td colSpan={9} className="text-center text-muted-foreground py-12">
                     Nenhum membro encontrado
                   </td>
                 </tr>
@@ -319,6 +323,9 @@ const AdminMembros = () => {
                           {user.wallet_balance || 0}
                         </span>
                         <span className="text-muted-foreground text-xs ml-1">coins</span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground text-xs">
+                        {formatIdentityLabel(user.cpf_last4, user.identity_status)}
                       </td>
                       <td className="px-4 py-3">
                         {user.is_banned ? (
@@ -424,6 +431,14 @@ const AdminMembros = () => {
                           <Copy className="w-4 h-4" />
                         </Button>
                       )}
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-[11px] text-muted-foreground">CPF</p>
+                        <p className="text-sm text-foreground truncate">
+                          {formatIdentityLabel(selectedUser.cpf_last4, selectedUser.identity_status)}
+                        </p>
+                      </div>
                     </div>
                     {selectedUser.last_sign_in_at && (
                       <p className="text-xs text-muted-foreground">

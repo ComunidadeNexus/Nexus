@@ -10,6 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Zap, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCpf, isValidCpf } from "@/lib/cpf";
+import { submitIdentityCpf } from "@/lib/submitIdentity";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -36,7 +38,9 @@ const signupSchema = loginSchema
     username: z
       .string()
       .min(3, "Mínimo 3 caracteres")
+      .max(24, "Máximo 24 caracteres")
       .regex(/^[a-zA-Z0-9_]+$/, "Apenas letras, números e _"),
+    cpf: z.string().refine(isValidCpf, "CPF inválido"),
     confirmPassword: z.string(),
     termsAccepted: z.literal(true, {
       errorMap: () => ({ message: "Você deve aceitar as Regras da Comunidade" }),
@@ -136,6 +140,7 @@ const Auth = () => {
       password: "",
       name: "",
       username: "",
+      cpf: "",
       confirmPassword: "",
       termsAccepted: undefined,
     },
@@ -163,22 +168,53 @@ const Auth = () => {
 
   const handleSignup = async (data: SignupFormData) => {
     setIsLoading(true);
-    const { error } = await signUp(data.email, data.password, data.name, data.username);
-    setIsLoading(false);
-
-    if (error) {
+    const { data: available, error: availabilityError } = await supabase.rpc(
+      "is_username_available",
+      { p_username: data.username },
+    );
+    if (availabilityError || available === false) {
+      setIsLoading(false);
+      signupForm.setError("username", { message: "Este username já está em uso." });
       toast({
         variant: "destructive",
         title: "Erro ao criar conta",
-        description: error.message,
+        description: "Este username já está em uso.",
       });
-    } else {
-      toast({
-        title: "Conta criada!",
-        description: "Você já pode usar a plataforma.",
-      });
-      navigate("/comunidade");
+      return;
     }
+
+    const { error } = await signUp(data.email, data.password, data.name, data.username);
+    if (error) {
+      setIsLoading(false);
+      const taken = /já está em uso|duplicate|username/i.test(error.message);
+      if (taken) {
+        signupForm.setError("username", { message: "Este username já está em uso." });
+      }
+      toast({
+        variant: "destructive",
+        title: "Erro ao criar conta",
+        description: taken ? "Este username já está em uso." : error.message,
+      });
+      return;
+    }
+
+    const { error: identityError } = await submitIdentityCpf(data.cpf);
+    setIsLoading(false);
+    if (identityError) {
+      toast({
+        variant: "destructive",
+        title: "Conta criada, falta o CPF",
+        description: identityError,
+      });
+      navigate("/verificar-identidade");
+      return;
+    }
+
+    toast({
+      title: "Conta criada!",
+      description: "Identidade verificada. Você já pode usar a plataforma.",
+    });
+    navigate("/comunidade");
   };
 
   const handleForgotPassword = async (data: ForgotPasswordFormData) => {
@@ -470,12 +506,44 @@ const Auth = () => {
                     type="text"
                     placeholder="seunome"
                     className="pl-8"
-                    {...signupForm.register("username")}
+                    {...signupForm.register("username", {
+                      onBlur: async (event) => {
+                        const value = event.target.value.trim();
+                        if (value.length < 3) return;
+                        const { data: available } = await supabase.rpc("is_username_available", {
+                          p_username: value,
+                        });
+                        if (available === false) {
+                          signupForm.setError("username", {
+                            message: "Este username já está em uso.",
+                          });
+                        }
+                      },
+                    })}
                   />
                 </div>
                 {signupForm.formState.errors.username && (
                   <p className="text-sm text-destructive">
                     {signupForm.formState.errors.username.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cpf">CPF</Label>
+                <Input
+                  id="cpf"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  placeholder="000.000.000-00"
+                  value={signupForm.watch("cpf")}
+                  onChange={(e) =>
+                    signupForm.setValue("cpf", formatCpf(e.target.value), { shouldValidate: true })
+                  }
+                />
+                {signupForm.formState.errors.cpf && (
+                  <p className="text-sm text-destructive">
+                    {signupForm.formState.errors.cpf.message}
                   </p>
                 )}
               </div>

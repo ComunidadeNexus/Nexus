@@ -58,18 +58,11 @@ export const useWallet = () => {
       if (error) throw error;
 
       if (!data) {
-        // Create wallet if it doesn't exist
-        const { data: newWallet, error: createError } = await supabase
-          .from("user_wallets")
-          .insert({ user_id: user.id, balance: 0 })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        setWallet(newWallet);
-      } else {
-        setWallet(data);
+        setWallet(null);
+        return;
       }
+
+      setWallet(data);
     } catch (error) {
       console.error("Error fetching wallet:", error);
     }
@@ -122,10 +115,8 @@ export const useWallet = () => {
 
     try {
       // Use atomic SECURITY DEFINER function to prevent race conditions
-      const { data, error } = await supabase.rpc("process_coin_transaction", {
-        p_user_id: user.id,
+      const { data, error } = await supabase.rpc("spend_own_coins", {
         p_amount: amount,
-        p_type: "spend",
         p_description: description,
         p_reference_id: referenceId || null,
         p_reference_type: referenceType || null,
@@ -145,36 +136,8 @@ export const useWallet = () => {
     }
   };
 
-  const addCoins = async (amount: number, type: "reward", description: string) => {
-    if (!user) return { success: false, error: "Não autenticado" };
-
-    // Only 'reward' type is allowed from client - 'purchase' requires server-side payment validation
-    if (type !== "reward") {
-      return { success: false, error: "Tipo de transação inválido" };
-    }
-
-    try {
-      // Use atomic SECURITY DEFINER function to prevent race conditions
-      const { data, error } = await supabase.rpc("process_coin_transaction", {
-        p_user_id: user.id,
-        p_amount: amount,
-        p_type: type,
-        p_description: description,
-        p_reference_id: null,
-        p_reference_type: null,
-      });
-
-      if (error) throw error;
-
-      // Refresh wallet data
-      await fetchWallet();
-      await fetchTransactions();
-
-      return { success: true, error: null };
-    } catch (error: any) {
-      console.error("Error adding coins:", error);
-      return { success: false, error: error.message };
-    }
+  const addCoins = async (_amount: number, _type: "reward", _description: string) => {
+    return { success: false, error: "Créditos só podem ser feitos pelo servidor." };
   };
 
   useEffect(() => {

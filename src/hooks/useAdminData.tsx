@@ -21,6 +21,8 @@ export interface AdminUser {
   wallet_balance?: number;
   email?: string | null;
   last_sign_in_at?: string | null;
+  cpf_last4?: string | null;
+  identity_status?: string | null;
 }
 
 export interface AdminPost {
@@ -218,6 +220,21 @@ export const useAdminData = () => {
         }
       }
 
+      const identityMap: Record<string, { cpf_last4: string; status: string }> = {};
+      if (userIds.length > 0) {
+        const { data: identityData, error: identityError } = await supabase
+          .from("identity_verifications")
+          .select("user_id, cpf_last4, status")
+          .in("user_id", userIds);
+        if (identityError) {
+          console.error("Error fetching member identity:", identityError);
+        } else {
+          identityData?.forEach((row) => {
+            identityMap[row.user_id] = { cpf_last4: row.cpf_last4, status: row.status };
+          });
+        }
+      }
+
       let mapped = (profilesData || []).map((p) => ({
         ...p,
         role: rolesMap[p.user_id] || "user",
@@ -225,6 +242,8 @@ export const useAdminData = () => {
         wallet_balance: walletsMap[p.user_id] || 0,
         email: loginsMap[p.user_id]?.email ?? null,
         last_sign_in_at: loginsMap[p.user_id]?.last_sign_in_at ?? null,
+        cpf_last4: identityMap[p.user_id]?.cpf_last4 ?? null,
+        identity_status: identityMap[p.user_id]?.status ?? null,
       }));
 
       if (filterRole) {
@@ -502,12 +521,13 @@ export const useAdminData = () => {
   // ─── COIN ACTIONS ─────────────────────────────────────────────────────────
   const creditCoins = async (userId: string, amount: number, description: string) => {
     try {
-      await supabase.rpc("process_coin_transaction", {
+      const { data, error } = await supabase.rpc("admin_credit_coins", {
         p_user_id: userId,
         p_amount: amount,
-        p_type: "admin_credit",
         p_description: description || "Crédito manual pelo administrador",
       });
+      if (error) throw error;
+      if (data === false) throw new Error("Não foi possível creditar");
       toast({ title: `${amount} coins creditados!` });
     } catch (err) {
       toast({ title: "Erro ao creditar coins", variant: "destructive" });

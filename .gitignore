@@ -27,3 +27,4 @@ supabase/.temp
 *.njsproj
 *.sln
 *.sw?
+.env*
