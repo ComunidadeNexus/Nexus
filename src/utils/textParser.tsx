@@ -1,10 +1,11 @@
 import React from "react";
 
-export const renderMessageContent = (content: string) => {
+export const renderMessageContent = (content: string | null | undefined) => {
+  const text = content ?? "";
   const gifRegex = /\[GIF:(.*?)\]/g;
-  const parts = content.split(gifRegex);
+  const parts = text.split(gifRegex);
 
-  if (parts.length === 1) return <span className="whitespace-pre-wrap">{content}</span>;
+  if (parts.length === 1) return <span className="whitespace-pre-wrap">{text}</span>;
 
   return (
     <div className="flex flex-col gap-2">

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { MessageSquare, Trash2, Search, Image as ImageIcon } from "lucide-react";
+import { MessageSquare, Trash2, Search } from "lucide-react";
 import { useGlobalChat } from "@/hooks/useGlobalChat";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { UserAvatar, ProfileName } from "@/components/profile/ProfileLink";
+import { renderMessageContent } from "@/utils/textParser";
 
 const AdminChat = () => {
   const { messages, users, isLoading } = useGlobalChat();
@@ -140,7 +141,7 @@ const AdminChat = () => {
                           )}
                           {msg.content && (
                             <div className="text-sm text-gray-300 break-words">
-                              {renderMessageContent(msg.content)}
+                              {renderMessageContent(msg.content || "")}
                             </div>
                           )}
                         </div>
