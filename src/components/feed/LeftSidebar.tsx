@@ -18,7 +18,6 @@ import {
   Tv,
   BookOpen,
   Smartphone,
-  Store,
   Package,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
@@ -28,7 +27,6 @@ import { useCategories } from "@/hooks/useCategories";
 import { useDmUnreadCount } from "@/hooks/useDirectMessages";
 import { DynamicIcon } from "@/components/ui/DynamicIcon";
 import { cn } from "@/lib/utils";
-import { useProducer } from "@/hooks/useProducer";
 
 interface LeftSidebarProps {
   variant?: "desktop" | "drawer";
@@ -50,7 +48,6 @@ const LeftSidebar = ({
   const location = useLocation();
   const { categories } = useCategories();
   const dmUnread = useDmUnreadCount();
-  const { isProducer } = useProducer();
   const currentCategory = new URLSearchParams(location.search).get("categoria");
   const isHomePath = location.pathname === "/feed" || location.pathname === "/comunidade";
 
@@ -65,10 +62,6 @@ const LeftSidebar = ({
       isActive = isHomePath && !currentCategory;
     } else if (pathname === "/mensagens") {
       isActive = location.pathname.startsWith("/mensagens");
-    } else if (pathname === "/produtos") {
-      isActive = location.pathname.startsWith("/produtos");
-    } else if (pathname === "/produtor") {
-      isActive = location.pathname.startsWith("/produtor");
     } else {
       isActive =
         location.pathname === pathname || (pathname === "/feed" && location.pathname === "/");
@@ -237,21 +230,20 @@ const LeftSidebar = ({
                 Em breve
               </Badge>
             </div>
-            <Link to="/produtos" className={getNavItemClass("/produtos")}>
-              <Package className="w-5 h-5" />
-              <span>Produtos</span>
-            </Link>
-            {isProducer ? (
-              <Link to="/produtor" className={getNavItemClass("/produtor")}>
-                <Store className="w-5 h-5" />
-                <span>Painel do Produtor</span>
-              </Link>
-            ) : (
-              <Link to="/comecar-a-vender" className={getNavItemClass("/comecar-a-vender")}>
-                <Store className="w-5 h-5" />
-                <span>Começar a vender</span>
-              </Link>
-            )}
+            <div className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium w-full text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-70">
+              <div className="flex items-center gap-3">
+                <Package className="w-5 h-5" />
+                <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-500">
+                  Produtos
+                </span>
+              </div>
+              <Badge
+                variant="secondary"
+                className="text-[10px] bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 px-1.5 py-0"
+              >
+                Em breve
+              </Badge>
+            </div>
             <Link to="/chat" className={getNavItemClass("/chat")}>
               <Globe className="w-5 h-5" />
               <span>Chat Global</span>

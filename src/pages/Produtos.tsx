@@ -1,42 +1,37 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import type { ProducerProduct } from "@/hooks/useProducer";
+import { Package } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const Produtos = () => {
-  const [products, setProducts] = useState<ProducerProduct[]>([]);
-
-  useEffect(() => {
-    void supabase
-      .from("producer_products")
-      .select("id, producer_id, title, description, price, status, checkout_url, created_at")
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => setProducts((data || []) as ProducerProduct[]));
-  }, []);
+  const navigate = useNavigate();
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">Produtos</h1>
-      {products.length === 0 ? (
-        <p className="text-muted-foreground">Nenhum produto à venda no momento.</p>
-      ) : (
-        <div className="grid gap-4">
-          {products.map((product) => (
-            <Link
-              key={product.id}
-              to={`/produtos/${product.id}`}
-              className="block rounded-xl border border-white/10 bg-white/5 p-4 hover:bg-white/10"
-            >
-              <h2 className="font-semibold">{product.title}</h2>
-              <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{product.description}</p>
-              <p className="text-primary font-medium mt-3">
-                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(product.price))}
-              </p>
-            </Link>
-          ))}
+    <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
+      <div className="glass-card p-12 rounded-2xl flex flex-col items-center text-center max-w-md w-full relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-primary/5 blur-[100px] -z-10" />
+
+        <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+          <Package className="w-10 h-10 text-primary" />
         </div>
-      )}
+
+        <h1 className="text-3xl font-bold gradient-text mb-4">Produtos</h1>
+
+        <p className="text-muted-foreground text-lg mb-8">
+          Estamos preparando a vitrine de produtos da comunidade. Aguarde a próxima atualização!
+        </p>
+
+        <div className="flex items-center gap-2 text-sm font-medium text-primary/80 bg-primary/10 px-4 py-2 rounded-full mb-8">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+          </span>
+          Em breve
+        </div>
+
+        <Button onClick={() => navigate(-1)} variant="outline" className="w-full">
+          Voltar
+        </Button>
+      </div>
     </div>
   );
 };

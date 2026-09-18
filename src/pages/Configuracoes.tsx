@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { User, Lock, Shield, Bell, LogOut, ChevronRight, Loader2, Store } from "lucide-react";
+import { User, Lock, Shield, Bell, LogOut, ChevronRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/useProfile";
 import ProfileSocialFields from "@/components/profile/ProfileSocialFields";
@@ -116,21 +116,6 @@ const Configuracoes = () => {
   return (
     <div className="max-w-4xl mx-auto w-full pb-16 md:pb-0">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Configurações</h1>
-      <Link
-        to="/comecar-a-vender"
-        className="mb-6 flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1A282D] p-4 hover:bg-gray-50 dark:hover:bg-[#2A3B42]"
-      >
-        <span className="flex items-center gap-3">
-          <Store className="w-5 h-5 text-primary" />
-          <span>
-            <span className="block font-medium">Começar a vender</span>
-            <span className="block text-sm text-muted-foreground">
-              Venda cursos, conteúdos e produtos digitais na Nexus.
-            </span>
-          </span>
-        </span>
-        <ChevronRight className="w-4 h-4 text-gray-400" />
-      </Link>
 
       <div className="flex flex-col md:flex-row gap-6">
         {/* Sidebar de Navegação */}

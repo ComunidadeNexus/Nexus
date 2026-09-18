@@ -24,7 +24,7 @@ const ProducerLayout = () => {
     );
   }
 
-  if (!isProducer) return <Navigate to="/comecar-a-vender" replace />;
+  if (!isProducer) return <Navigate to="/marketplace" replace />;
 
   return (
     <div className="max-w-5xl mx-auto py-6 px-4">

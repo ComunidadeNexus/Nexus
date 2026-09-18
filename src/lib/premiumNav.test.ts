@@ -19,6 +19,13 @@ assert(
   sidebar.includes("Em breve") && sidebar.includes("Marketplace"),
   "unrelated coming-soon items stay coming soon",
 );
+assert(
+  /Produtos[\s\S]{0,400}Em breve/.test(sidebar),
+  "feed sidebar must mark Produtos as Em breve",
+);
+assert(!sidebar.includes('to="/produtos"'), "coming-soon Produtos must not be a live sidebar link");
+assert(!sidebar.includes("Começar a vender"), "Começar a vender must leave the user sidebar");
+assert(!sidebar.includes("Painel do Produtor"), "producer panel must leave the user sidebar");
 
 assert(navbar.includes('navigate("/premium")'), "navbar Premium still opens /premium");
 assert(premiumPage.includes("Em breve"), "premium page itself is coming soon");

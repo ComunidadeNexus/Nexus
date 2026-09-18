@@ -35,9 +35,7 @@ import AoVivo from "./pages/AoVivo";
 import Regras from "./pages/Regras";
 import Sobre from "./pages/Sobre";
 import VerificarIdentidade from "./pages/VerificarIdentidade";
-import ComecarAVender from "./pages/ComecarAVender";
 import Produtos from "./pages/Produtos";
-import ProdutoDetalhe from "./pages/ProdutoDetalhe";
 import ProducerLayout from "./pages/producer/ProducerLayout";
 import ProducerOverview from "./pages/producer/ProducerOverview";
 import ProducerProducts from "./pages/producer/ProducerProducts";
@@ -156,8 +154,8 @@ const AppRoutes = () => {
         <Route path="/ao-vivo" element={<AoVivo />} />
         <Route path="/premium" element={<PremiumArea />} />
         <Route path="/produtos" element={<Produtos />} />
-        <Route path="/produtos/:productId" element={<ProdutoDetalhe />} />
-        <Route path="/comecar-a-vender" element={<ComecarAVender />} />
+        <Route path="/produtos/:productId" element={<Navigate to="/produtos" replace />} />
+        <Route path="/comecar-a-vender" element={<Navigate to="/marketplace" replace />} />
         <Route path="/produtor" element={<ProducerLayout />}>
           <Route index element={<ProducerOverview />} />
           <Route path="produtos" element={<ProducerProducts />} />
