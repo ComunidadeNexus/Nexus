@@ -49,6 +49,9 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         // Bundle principal ainda pode passar de 2 MiB; evita falha no generateSW
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+        cacheId: "nexus-pwa-v2",
+        skipWaiting: true,
+        clientsClaim: true,
         cleanupOutdatedCaches: true,
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/steam-api/, /\/auth\/v1\//, /\/rest\/v1\//],

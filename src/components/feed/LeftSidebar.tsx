@@ -10,7 +10,6 @@ import {
   ChevronDown,
   ChevronUp,
   Info,
-  HelpCircle,
   MessageCircle,
   Globe,
   GraduationCap,
@@ -19,6 +18,7 @@ import {
   BookOpen,
   Smartphone,
   Package,
+  type LucideIcon,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +35,23 @@ interface LeftSidebarProps {
   className?: string;
 }
 
+const ComingSoonRow = ({ icon: Icon, label }: { icon: LucideIcon; label: string }) => (
+  <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium w-full text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-70 min-w-0">
+    <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
+      <Icon className="w-5 h-5 shrink-0" />
+      <span className="font-semibold truncate text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-500">
+        {label}
+      </span>
+    </div>
+    <Badge
+      variant="secondary"
+      className="shrink-0 text-[10px] leading-4 bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 px-1.5 py-0"
+    >
+      Em breve
+    </Badge>
+  </div>
+);
+
 const LeftSidebar = ({
   variant = "desktop",
   onNavigate,
@@ -43,13 +60,14 @@ const LeftSidebar = ({
 }: LeftSidebarProps) => {
   const [topicsOpen, setTopicsOpen] = useState(true);
   const [resourcesOpen, setResourcesOpen] = useState(true);
-  const [categoriesOpen, setCategoriesOpen] = useState(true);
+  const [categoriesOpen, setCategoriesOpen] = useState(variant !== "drawer");
   const [isCreateNucleoOpen, setIsCreateNucleoOpen] = useState(false);
   const location = useLocation();
   const { categories } = useCategories();
   const dmUnread = useDmUnreadCount();
   const currentCategory = new URLSearchParams(location.search).get("categoria");
   const isHomePath = location.pathname === "/feed" || location.pathname === "/comunidade";
+  const isDrawer = variant === "drawer";
 
   const getNavItemClass = (path: string) => {
     const [pathname, queryString] = path.split("?");
@@ -91,13 +109,98 @@ const LeftSidebar = ({
     setIsCreateNucleoOpen(true);
   };
 
+  const assuntosSection = (
+    <div className="mb-2">
+      <div className={sectionTitleClass} onClick={() => setCategoriesOpen(!categoriesOpen)}>
+        <span>Assuntos</span>
+        {categoriesOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+      </div>
+      {categoriesOpen && (
+        <div className="flex flex-col gap-0.5 mt-2">
+          {categories.map((category) => (
+            <Link
+              key={category.id}
+              to={`/feed?categoria=${category.slug}`}
+              className={getNavItemClass(`/feed?categoria=${category.slug}`)}
+            >
+              <div className="w-5 flex justify-center text-gray-400">
+                <DynamicIcon name={category.icon} size={16} />
+              </div>
+              <span
+                style={{
+                  color: currentCategory === category.slug ? undefined : category.color,
+                }}
+                className={
+                  currentCategory === category.slug
+                    ? ""
+                    : "font-medium brightness-90 saturate-150 dark:brightness-110"
+                }
+              >
+                {category.name}
+              </span>
+              {category.is_premium_only && <Star className="w-3 h-3 ml-auto text-yellow-500" />}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const plataformaSection = (
+    <div className="mb-2">
+      <div className={sectionTitleClass} onClick={() => setTopicsOpen(!topicsOpen)}>
+        <span>Plataforma</span>
+        {topicsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+      </div>
+
+      {topicsOpen && (
+        <div className="flex flex-col gap-0.5 mt-2">
+          <ComingSoonRow icon={GraduationCap} label="Nexus Academy" />
+          <ComingSoonRow icon={Gamepad2} label="Hub de Games" />
+          <Link to="/ao-vivo" className={getNavItemClass("/ao-vivo")}>
+            <Tv className="w-5 h-5 text-red-500" />
+            <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-600">
+              Ao Vivo (Twitch)
+            </span>
+          </Link>
+          <Link to="/mensagens" className={cn(getNavItemClass("/mensagens"), "justify-between")}>
+            <span className="flex items-center gap-3">
+              <MessageCircle className="w-5 h-5" />
+              <span>Mensagens</span>
+            </span>
+            {dmUnread > 0 && (
+              <span className="min-w-5 h-5 px-1.5 rounded-full bg-white text-[#FF007F] text-[10px] font-bold flex items-center justify-center">
+                {dmUnread > 99 ? "99+" : dmUnread}
+              </span>
+            )}
+          </Link>
+          <ComingSoonRow icon={Briefcase} label="Marketplace" />
+          <ComingSoonRow icon={Package} label="Produtos" />
+          <Link to="/chat" className={getNavItemClass("/chat")}>
+            <Globe className="w-5 h-5" />
+            <span>Chat Global</span>
+          </Link>
+          <ComingSoonRow icon={Star} label="Área Premium" />
+          <button
+            type="button"
+            onClick={handleCreateNucleo}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-[#2A3B42] transition-colors cursor-pointer w-full text-gray-800 dark:text-gray-200 text-left"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Criar Comunidade</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <nav
       aria-label="Navegação principal"
       onClick={handleNavClick}
       className={cn(
-        variant === "drawer"
-          ? "h-full overflow-y-auto custom-scrollbar px-2 pt-12 pb-8"
+        isDrawer
+          ? "h-full overflow-y-auto overflow-x-hidden custom-scrollbar px-2 pt-12 pb-8"
           : "bg-transparent h-[calc(100vh-60px)] sticky top-[60px] overflow-y-auto pb-20 custom-scrollbar pr-2 mt-2",
         className,
       )}
@@ -124,155 +227,19 @@ const LeftSidebar = ({
 
       <div className="h-px bg-gray-200 dark:bg-gray-800 my-2 mx-3"></div>
 
-      {/* Categorias (Assuntos) */}
-      <div className="mb-2">
-        <div className={sectionTitleClass} onClick={() => setCategoriesOpen(!categoriesOpen)}>
-          <span>Assuntos</span>
-          {categoriesOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </div>
-        {categoriesOpen && (
-          <div className="flex flex-col gap-0.5 mt-2">
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                to={`/feed?categoria=${category.slug}`}
-                className={getNavItemClass(`/feed?categoria=${category.slug}`)}
-              >
-                <div className="w-5 flex justify-center text-gray-400">
-                  <DynamicIcon name={category.icon} size={16} />
-                </div>
-                <span
-                  style={{
-                    color: currentCategory === category.slug ? undefined : category.color,
-                  }}
-                  className={
-                    currentCategory === category.slug
-                      ? ""
-                      : "font-medium brightness-90 saturate-150 dark:brightness-110"
-                  }
-                >
-                  {category.name}
-                </span>
-                {category.is_premium_only && <Star className="w-3 h-3 ml-auto text-yellow-500" />}
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="h-px bg-gray-200 dark:bg-gray-800 my-2 mx-3"></div>
-
-      {/* Plataforma */}
-      <div className="mb-2">
-        <div className={sectionTitleClass} onClick={() => setTopicsOpen(!topicsOpen)}>
-          <span>Plataforma</span>
-          {topicsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </div>
-
-        {topicsOpen && (
-          <div className="flex flex-col gap-0.5 mt-2">
-            <div className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium w-full text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-70">
-              <div className="flex items-center gap-3">
-                <GraduationCap className="w-5 h-5" />
-                <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-500">
-                  Nexus Academy
-                </span>
-              </div>
-              <Badge
-                variant="secondary"
-                className="text-[10px] bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 px-1.5 py-0"
-              >
-                Em breve
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium w-full text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-70">
-              <div className="flex items-center gap-3">
-                <Gamepad2 className="w-5 h-5" />
-                <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-500">
-                  Hub de Games
-                </span>
-              </div>
-              <Badge
-                variant="secondary"
-                className="text-[10px] bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 px-1.5 py-0"
-              >
-                Em breve
-              </Badge>
-            </div>
-            <Link to="/ao-vivo" className={getNavItemClass("/ao-vivo")}>
-              <Tv className="w-5 h-5 text-red-500" />
-              <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-600">
-                Ao Vivo (Twitch)
-              </span>
-            </Link>
-            <Link to="/mensagens" className={cn(getNavItemClass("/mensagens"), "justify-between")}>
-              <span className="flex items-center gap-3">
-                <MessageCircle className="w-5 h-5" />
-                <span>Mensagens</span>
-              </span>
-              {dmUnread > 0 && (
-                <span className="min-w-5 h-5 px-1.5 rounded-full bg-white text-[#FF007F] text-[10px] font-bold flex items-center justify-center">
-                  {dmUnread > 99 ? "99+" : dmUnread}
-                </span>
-              )}
-            </Link>
-            <div className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium w-full text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-70">
-              <div className="flex items-center gap-3">
-                <Briefcase className="w-5 h-5" />
-                <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-500">
-                  Marketplace
-                </span>
-              </div>
-              <Badge
-                variant="secondary"
-                className="text-[10px] bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 px-1.5 py-0"
-              >
-                Em breve
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium w-full text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-70">
-              <div className="flex items-center gap-3">
-                <Package className="w-5 h-5" />
-                <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-500">
-                  Produtos
-                </span>
-              </div>
-              <Badge
-                variant="secondary"
-                className="text-[10px] bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 px-1.5 py-0"
-              >
-                Em breve
-              </Badge>
-            </div>
-            <Link to="/chat" className={getNavItemClass("/chat")}>
-              <Globe className="w-5 h-5" />
-              <span>Chat Global</span>
-            </Link>
-            <div className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium w-full text-gray-500 dark:text-gray-400 cursor-not-allowed opacity-70">
-              <div className="flex items-center gap-3">
-                <Star className="w-5 h-5" />
-                <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-500">
-                  Área Premium
-                </span>
-              </div>
-              <Badge
-                variant="secondary"
-                className="text-[10px] bg-yellow-500/20 text-yellow-600 dark:text-yellow-500 px-1.5 py-0"
-              >
-                Em breve
-              </Badge>
-            </div>
-            <button
-              type="button"
-              onClick={handleCreateNucleo}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-[#2A3B42] transition-colors cursor-pointer w-full text-gray-800 dark:text-gray-200 text-left"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Criar Comunidade</span>
-            </button>
-          </div>
-        )}
-      </div>
+      {isDrawer ? (
+        <>
+          {plataformaSection}
+          <div className="h-px bg-gray-200 dark:bg-gray-800 my-2 mx-3"></div>
+          {assuntosSection}
+        </>
+      ) : (
+        <>
+          {assuntosSection}
+          <div className="h-px bg-gray-200 dark:bg-gray-800 my-2 mx-3"></div>
+          {plataformaSection}
+        </>
+      )}
 
       <div className="h-px bg-gray-200 dark:bg-gray-800 my-2 mx-3"></div>
 
