@@ -8,6 +8,8 @@ function assert(condition: unknown, message: string) {
 const sidebar = readFileSync(resolve("src/components/feed/LeftSidebar.tsx"), "utf8");
 const navbar = readFileSync(resolve("src/components/Navbar.tsx"), "utf8");
 const premiumPage = readFileSync(resolve("src/pages/PremiumArea.tsx"), "utf8");
+const marketplacePage = readFileSync(resolve("src/pages/Marketplace.tsx"), "utf8");
+const app = readFileSync(resolve("src/App.tsx"), "utf8");
 
 assert(sidebar.includes("Área Premium"), "feed sidebar still lists Área Premium");
 assert(
@@ -16,8 +18,12 @@ assert(
 );
 assert(!sidebar.includes('to="/premium"'), "coming-soon Premium must not be a live sidebar link");
 assert(
-  sidebar.includes("Em breve") && sidebar.includes('label="Marketplace"'),
-  "unrelated coming-soon items stay coming soon",
+  sidebar.includes("ComingSoonRow") && sidebar.includes('label="Marketplace"'),
+  "non-admin sidebar still marks Marketplace as Em breve",
+);
+assert(
+  sidebar.includes("isAdmin") && sidebar.includes('to="/marketplace"'),
+  "admin sidebar must open the live marketplace preview",
 );
 assert(
   sidebar.includes("ComingSoonRow") && sidebar.includes('label="Produtos"'),
@@ -37,5 +43,12 @@ assert(
 
 assert(navbar.includes('navigate("/premium")'), "navbar Premium still opens /premium");
 assert(premiumPage.includes("Em breve"), "premium page itself is coming soon");
+assert(marketplacePage.includes("Em breve"), "non-admin marketplace page stays coming soon");
+assert(marketplacePage.includes("isAdmin"), "marketplace storefront is admin-gated");
+assert(app.includes("NewListing"), "admins can open the new listing form");
+assert(
+  /path="\/marketplace\/novo"[\s\S]{0,80}<NewListing/.test(app),
+  "creating a listing is mounted for the admin preview",
+);
 
 console.log("premiumNav tests passed");

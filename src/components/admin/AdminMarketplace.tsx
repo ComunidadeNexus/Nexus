@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import { ShoppingBag, Search, Trash2, Eye, Filter, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
 
 const AdminMarketplace = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -86,7 +88,8 @@ const AdminMarketplace = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
           <ShoppingBag className="w-5 h-5 text-orange-400" />
         </div>
@@ -94,6 +97,10 @@ const AdminMarketplace = () => {
           <h1 className="text-2xl font-bold text-foreground">Marketplace</h1>
           <p className="text-sm text-muted-foreground">{listings.length} anúncios carregados</p>
         </div>
+        </div>
+        <Button variant="outline" onClick={() => navigate("/marketplace")}>
+          Abrir vitrine
+        </Button>
       </div>
 
       <div className="flex flex-wrap gap-3">

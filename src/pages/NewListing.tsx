@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -25,8 +25,9 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdmin } from "@/hooks/useAdmin";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, X, Loader2, ImagePlus } from "lucide-react";
+import { ArrowLeft, Loader2, ImagePlus, X } from "lucide-react";
 
 const listingSchema = z.object({
   title: z.string().min(5, "Título deve ter pelo menos 5 caracteres").max(100),
@@ -55,6 +56,7 @@ const conditions = [
 const NewListing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -150,9 +152,21 @@ const NewListing = () => {
     }
   };
 
+  if (adminLoading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/marketplace" replace />;
+  }
+
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <main className="container mx-auto px-4 pt-20 pb-12 max-w-2xl">
+    <div className="w-full pb-8 max-w-2xl">
+      <main className="w-full">
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6"

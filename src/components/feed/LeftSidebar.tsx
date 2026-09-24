@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import CreateNucleoModal from "../nucleos/CreateNucleoModal";
 import { useCategories } from "@/hooks/useCategories";
 import { useDmUnreadCount } from "@/hooks/useDirectMessages";
+import { useAdmin } from "@/hooks/useAdmin";
 import { DynamicIcon } from "@/components/ui/DynamicIcon";
 import { cn } from "@/lib/utils";
 
@@ -68,6 +69,7 @@ const LeftSidebar = ({
   const currentCategory = new URLSearchParams(location.search).get("categoria");
   const isHomePath = location.pathname === "/feed" || location.pathname === "/comunidade";
   const isDrawer = variant === "drawer";
+  const { isAdmin } = useAdmin();
 
   const getNavItemClass = (path: string) => {
     const [pathname, queryString] = path.split("?");
@@ -80,6 +82,8 @@ const LeftSidebar = ({
       isActive = isHomePath && !currentCategory;
     } else if (pathname === "/mensagens") {
       isActive = location.pathname.startsWith("/mensagens");
+    } else if (pathname === "/marketplace") {
+      isActive = location.pathname.startsWith("/marketplace");
     } else {
       isActive =
         location.pathname === pathname || (pathname === "/feed" && location.pathname === "/");
@@ -174,7 +178,22 @@ const LeftSidebar = ({
               </span>
             )}
           </Link>
-          <ComingSoonRow icon={Briefcase} label="Marketplace" />
+          {isAdmin ? (
+            <Link to="/marketplace" className={cn(getNavItemClass("/marketplace"), "justify-between")}>
+              <span className="flex items-center gap-3 min-w-0">
+                <Briefcase className="w-5 h-5 shrink-0" />
+                <span>Marketplace</span>
+              </span>
+              <Badge
+                variant="secondary"
+                className="shrink-0 text-[10px] leading-4 bg-primary/15 text-primary px-1.5 py-0"
+              >
+                interno
+              </Badge>
+            </Link>
+          ) : (
+            <ComingSoonRow icon={Briefcase} label="Marketplace" />
+          )}
           <ComingSoonRow icon={Package} label="Produtos" />
           <Link to="/chat" className={getNavItemClass("/chat")}>
             <Globe className="w-5 h-5" />

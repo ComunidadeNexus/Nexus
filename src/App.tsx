@@ -17,6 +17,7 @@ import Nucleos from "./pages/Nucleos";
 import NucleoDetail from "./pages/NucleoDetail";
 import Notifications from "./pages/Notifications";
 import NewListing from "./pages/NewListing";
+import MarketplaceListing from "./pages/MarketplaceListing";
 import GlobalChat from "./pages/GlobalChat";
 import HashtagExplore from "./pages/HashtagExplore";
 import Subscription from "./pages/Subscription";
@@ -142,6 +143,7 @@ const AppRoutes = () => {
         <Route path="/mensagens/:conversationId" element={<Messages />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/marketplace/novo" element={<NewListing />} />
+        <Route path="/marketplace/:listingId" element={<MarketplaceListing />} />
         <Route path="/nucleos" element={<Nucleos />} />
         <Route path="/nucleo/:slug" element={<NucleoDetail />} />
         <Route path="/notificacoes" element={<Notifications />} />
