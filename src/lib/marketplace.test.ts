@@ -1,4 +1,4 @@
-import { getMarketplaceCategory, MARKETPLACE_CATEGORIES, sortMarketplaceHighlights } from "./marketplace";
+import { getMarketplaceCategory, MARKETPLACE_CATEGORIES, slugifyMarketplaceLabel, sortMarketplaceHighlights } from "./marketplace";
 
 function assert(condition: unknown, message: string) {
   if (!condition) throw new Error(message);
@@ -56,5 +56,9 @@ assert(
   "featured covers are served from local marketplace assets",
 );
 assert(getMarketplaceCategory("digital")?.slug === "gift-cards", "legacy digital maps to gift cards");
+assert(
+  slugifyMarketplaceLabel("Assinaturas e Premium") === "assinaturas-e-premium",
+  "category names become url slugs",
+);
 
 console.log("marketplace catalog tests passed");

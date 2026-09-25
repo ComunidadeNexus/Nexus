@@ -22,6 +22,7 @@ import {
 import { MarketplaceCategoryIcon } from "@/components/marketplace/MarketplaceCategoryIcon";
 import MarketplaceCategoriesDialog from "@/components/marketplace/MarketplaceCategoriesDialog";
 import MarketplaceListingCard from "@/components/marketplace/MarketplaceListingCard";
+import { useMarketplaceCatalog } from "@/hooks/useMarketplaceCatalog";
 
 const SORT_OPTIONS = [
   { value: "popular", label: "Mais vistos" },
@@ -65,12 +66,13 @@ const MarketplaceStorefront = () => {
   const [params, setParams] = useSearchParams();
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState(params.get("q") || "");
+  const { categories } = useMarketplaceCatalog();
 
   const categorySlug = params.get("categoria");
   const itemSlug = params.get("item");
   const sortBy = (params.get("ordenar") as (typeof SORT_OPTIONS)[number]["value"]) || "popular";
-  const category = getMarketplaceCategory(categorySlug);
-  const highlight = getMarketplaceHighlight(categorySlug, itemSlug);
+  const category = getMarketplaceCategory(categorySlug, categories);
+  const highlight = getMarketplaceHighlight(categorySlug, itemSlug, categories);
 
   const { listings, sellers, isLoading } = useMarketplace({
     search: params.get("q") || undefined,
@@ -161,8 +163,12 @@ const MarketplaceStorefront = () => {
       {category && (
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
           <div className="flex items-start gap-3 min-w-0">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#00C6FF] to-[#FF007F] flex items-center justify-center shrink-0">
-              <MarketplaceCategoryIcon name={category.icon} className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gradient-to-br from-[#00C6FF] to-[#FF007F] flex items-center justify-center shrink-0">
+              {category.image ? (
+                <img src={category.image} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <MarketplaceCategoryIcon name={category.icon} className="w-8 h-8 text-white" />
+              )}
             </div>
             <div className="min-w-0">
               <p className="text-xs text-white/45">
@@ -242,6 +248,7 @@ const MarketplaceStorefront = () => {
       <MarketplaceCategoriesDialog
         open={categoriesOpen}
         onOpenChange={setCategoriesOpen}
+        categories={categories}
         activeCategory={category?.slug}
         onPickCategory={pickCategory}
         onPickHighlight={pickHighlight}

@@ -18,6 +18,7 @@ import { MarketplaceCategoryIcon } from "./MarketplaceCategoryIcon";
 type MarketplaceCategoriesDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  categories?: MarketplaceCategory[];
   activeCategory?: string | null;
   onPickCategory: (category: MarketplaceCategory) => void;
   onPickHighlight: (category: MarketplaceCategory, highlight: MarketplaceHighlight) => void;
@@ -26,6 +27,7 @@ type MarketplaceCategoriesDialogProps = {
 const MarketplaceCategoriesDialog = ({
   open,
   onOpenChange,
+  categories = MARKETPLACE_CATEGORIES,
   activeCategory,
   onPickCategory,
   onPickHighlight,
@@ -43,22 +45,27 @@ const MarketplaceCategoriesDialog = ({
   }, [open, activeCategory]);
 
   const selected =
-    MARKETPLACE_CATEGORIES.find((category) => category.slug === selectedSlug) ||
-    MARKETPLACE_CATEGORIES[0];
+    categories.find((category) => category.slug === selectedSlug) ||
+    categories[0];
 
   const highlights = useMemo(() => {
+    if (!selected) return [];
     const needle = query.trim().toLowerCase();
     const items = selected.highlights.filter((item) =>
       needle ? item.label.toLowerCase().includes(needle) : true,
     );
     const sorted = sortMarketplaceHighlights(items, sort);
-    if (sort === "popular" && selected.slug === "jogos" && !needle) {
+    if (
+      sort === "popular" &&
+      !needle &&
+      selected.highlights.some((item) => item.popularOrder != null)
+    ) {
       return sorted.filter((item) => item.popularOrder != null);
     }
     return sorted;
   }, [query, selected, sort]);
 
-  const filteredCategories = MARKETPLACE_CATEGORIES.filter((category) => {
+  const filteredCategories = categories.filter((category) => {
     const needle = query.trim().toLowerCase();
     if (!needle) return true;
     return (
@@ -95,10 +102,18 @@ const MarketplaceCategoriesDialog = ({
                 onClick={() => setSelectedSlug(category.slug)}
                 className="flex flex-col items-center gap-2 min-w-[84px] shrink-0 pb-3 -mb-px"
               >
-                <MarketplaceCategoryIcon
-                  name={category.icon}
-                  className={`w-7 h-7 ${isActive ? "text-[#00C6FF]" : "text-white/55"}`}
-                />
+                {category.image ? (
+                  <img
+                    src={category.image}
+                    alt=""
+                    className="w-7 h-7 rounded-md object-cover"
+                  />
+                ) : (
+                  <MarketplaceCategoryIcon
+                    name={category.icon}
+                    className={`w-7 h-7 ${isActive ? "text-[#00C6FF]" : "text-white/55"}`}
+                  />
+                )}
                 <span
                   className={`text-xs text-center leading-tight ${
                     isActive ? "text-[#00C6FF] font-semibold" : "text-white/60"
@@ -142,7 +157,7 @@ const MarketplaceCategoriesDialog = ({
           <p className="text-xs text-white/40 hidden sm:block">
             {sort === "az"
               ? "Lista todos os jogos em ordem alfabética"
-              : selected.slug === "jogos"
+              : selected?.slug === "jogos"
                 ? `${highlights.length} jogos em alta esta semana`
                 : `${highlights.length} destaques nesta categoria`}
           </p>
@@ -181,7 +196,7 @@ const MarketplaceCategoriesDialog = ({
 
         <button
           type="button"
-          onClick={() => onPickCategory(selected)}
+          onClick={() => selected && onPickCategory(selected)}
           className="mt-5 text-sm text-[#00C6FF] hover:underline ml-auto block"
         >
           Ver todas as categorias →

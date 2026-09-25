@@ -8,6 +8,8 @@ import {
   Monitor,
   Sparkles,
   GraduationCap,
+  ShoppingBag,
+  Tag,
   type LucideIcon,
 } from "lucide-react";
 import type { MarketplaceCategory } from "@/lib/marketplace";
@@ -22,6 +24,8 @@ const ICONS: Record<string, LucideIcon> = {
   Monitor,
   Sparkles,
   GraduationCap,
+  ShoppingBag,
+  Tag,
 };
 
 export function MarketplaceCategoryIcon({

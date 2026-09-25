@@ -2,7 +2,29 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { ShoppingBag, Search, Trash2, Eye, Filter, AlertTriangle } from "lucide-react";
+import { ShoppingBag, Search, Trash2, Eye, Filter, AlertTriangle, Tag } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import AdminMarketplaceCategories from "@/components/admin/AdminMarketplaceCategories";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +71,7 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
 const AdminMarketplace = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [tab, setTab] = useState<"listings" | "categories">("listings");
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -103,6 +126,29 @@ const AdminMarketplace = () => {
         </Button>
       </div>
 
+      <div className="flex gap-2">
+        <Button
+          variant={tab === "listings" ? "default" : "outline"}
+          onClick={() => setTab("listings")}
+          className={tab === "listings" ? "bg-violet-600 hover:bg-violet-700" : ""}
+        >
+          <ShoppingBag className="w-4 h-4 mr-2" />
+          Anúncios
+        </Button>
+        <Button
+          variant={tab === "categories" ? "default" : "outline"}
+          onClick={() => setTab("categories")}
+          className={tab === "categories" ? "bg-violet-600 hover:bg-violet-700" : ""}
+        >
+          <Tag className="w-4 h-4 mr-2" />
+          Categorias da loja
+        </Button>
+      </div>
+
+      {tab === "categories" ? <AdminMarketplaceCategories /> : null}
+
+      {tab === "listings" ? (
+        <>
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-48">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -260,7 +306,9 @@ const AdminMarketplace = () => {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+        </Dialog>
+        </>
+      ) : null}
     </div>
   );
 };

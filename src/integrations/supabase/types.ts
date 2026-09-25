@@ -483,6 +483,95 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_categories: {
+        Row: {
+          created_at: string
+          icon: string
+          id: number
+          image_url: string | null
+          is_active: boolean
+          label: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          id?: number
+          image_url?: string | null
+          is_active?: boolean
+          label: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: number
+          image_url?: string | null
+          is_active?: boolean
+          label?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      marketplace_category_items: {
+        Row: {
+          accent: string
+          category_id: number
+          created_at: string
+          fit: string
+          id: number
+          image_url: string | null
+          is_active: boolean
+          label: string
+          popular_order: number | null
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          accent?: string
+          category_id: number
+          created_at?: string
+          fit?: string
+          id?: number
+          image_url?: string | null
+          is_active?: boolean
+          label: string
+          popular_order?: number | null
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          accent?: string
+          category_id?: number
+          created_at?: string
+          fit?: string
+          id?: number
+          image_url?: string | null
+          is_active?: boolean
+          label?: string
+          popular_order?: number | null
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_category_items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketplace_favorites: {
         Row: {
           created_at: string

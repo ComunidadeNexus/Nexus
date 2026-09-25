@@ -10,20 +10,51 @@ const steamCapsule = (appId: number) =>
 const localCover = (file: string) => `/marketplace/games/${file}`;
 
 export type MarketplaceHighlight = {
+  id?: number;
   slug: string;
   label: string;
   accent: string;
   image?: string;
   fit?: "cover" | "contain";
   popularOrder?: number;
+  sortOrder?: number;
+  isActive?: boolean;
 };
 
 export type MarketplaceCategory = {
+  id?: number;
   slug: string;
   label: string;
   icon: string;
+  image?: string;
+  sortOrder?: number;
+  isActive?: boolean;
   highlights: MarketplaceHighlight[];
 };
+
+export const MARKETPLACE_CATEGORY_ICONS = [
+  "Gamepad2",
+  "Share2",
+  "Gift",
+  "MessageSquare",
+  "Crown",
+  "Mail",
+  "Monitor",
+  "Sparkles",
+  "GraduationCap",
+  "ShoppingBag",
+  "Tag",
+] as const;
+
+export function slugifyMarketplaceLabel(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
 
 const game = (
   slug: string,
@@ -224,14 +255,21 @@ export function normalizeMarketplaceCategory(slug: string | null | undefined) {
   return LEGACY_CATEGORY_MAP[slug] ?? slug;
 }
 
-export function getMarketplaceCategory(slug: string | null | undefined) {
+export function getMarketplaceCategory(
+  slug: string | null | undefined,
+  catalog: MarketplaceCategory[] = MARKETPLACE_CATEGORIES,
+) {
   const normalized = normalizeMarketplaceCategory(slug);
   if (!normalized) return null;
-  return MARKETPLACE_CATEGORIES.find((category) => category.slug === normalized) ?? null;
+  return catalog.find((category) => category.slug === normalized) ?? null;
 }
 
-export function getMarketplaceHighlight(categorySlug: string | null, itemSlug: string | null) {
-  const category = getMarketplaceCategory(categorySlug);
+export function getMarketplaceHighlight(
+  categorySlug: string | null,
+  itemSlug: string | null,
+  catalog: MarketplaceCategory[] = MARKETPLACE_CATEGORIES,
+) {
+  const category = getMarketplaceCategory(categorySlug, catalog);
   if (!category || !itemSlug) return null;
   return category.highlights.find((item) => item.slug === itemSlug) ?? null;
 }
@@ -254,6 +292,10 @@ export function sortMarketplaceHighlights(
 export const LISTING_CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
   MARKETPLACE_CATEGORIES.map((category) => [category.slug, category.label]),
 );
+
+export function listingCategoryLabels(catalog: MarketplaceCategory[] = MARKETPLACE_CATEGORIES) {
+  return Object.fromEntries(catalog.map((category) => [category.slug, category.label]));
+}
 
 export function formatListingPrice(price: number) {
   if (price <= 0) return "Grátis";

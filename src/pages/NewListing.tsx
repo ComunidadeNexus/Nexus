@@ -28,7 +28,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, ImagePlus, X } from "lucide-react";
-import { MARKETPLACE_CATEGORIES, getMarketplaceCategory } from "@/lib/marketplace";
+import { getMarketplaceCategory } from "@/lib/marketplace";
+import { useMarketplaceCatalog } from "@/hooks/useMarketplaceCatalog";
 
 const listingSchema = z.object({
   title: z.string().min(5, "Título deve ter pelo menos 5 caracteres").max(100),
@@ -53,6 +54,7 @@ const NewListing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
+  const { categories } = useMarketplaceCatalog();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -70,7 +72,7 @@ const NewListing = () => {
       is_negotiable: false,
     },
   });
-  const selectedCategory = getMarketplaceCategory(form.watch("category"));
+  const selectedCategory = getMarketplaceCategory(form.watch("category"), categories);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -288,7 +290,7 @@ const NewListing = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {MARKETPLACE_CATEGORIES.map((cat) => (
+                          {categories.map((cat) => (
                             <SelectItem key={cat.slug} value={cat.slug}>
                               {cat.label}
                             </SelectItem>
