@@ -28,24 +28,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, ImagePlus, X } from "lucide-react";
+import { MARKETPLACE_CATEGORIES, getMarketplaceCategory } from "@/lib/marketplace";
 
 const listingSchema = z.object({
   title: z.string().min(5, "Título deve ter pelo menos 5 caracteres").max(100),
   description: z.string().min(20, "Descrição deve ter pelo menos 20 caracteres").max(2000),
   price: z.coerce.number().min(0, "Preço deve ser positivo"),
   category: z.string().min(1, "Selecione uma categoria"),
+  subcategory: z.string().optional(),
   condition: z.string().optional(),
   location: z.string().optional(),
   is_negotiable: z.boolean().default(false),
 });
 
 type ListingFormData = z.infer<typeof listingSchema>;
-
-const categories = [
-  { value: "produto", label: "Produto Físico" },
-  { value: "servico", label: "Serviço" },
-  { value: "digital", label: "Produto Digital" },
-];
 
 const conditions = [
   { value: "novo", label: "Novo" },
@@ -68,11 +64,13 @@ const NewListing = () => {
       description: "",
       price: 0,
       category: "",
+      subcategory: "",
       condition: "",
       location: "",
       is_negotiable: false,
     },
   });
+  const selectedCategory = getMarketplaceCategory(form.watch("category"));
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -131,6 +129,7 @@ const NewListing = () => {
           description: data.description,
           price: data.price,
           category: data.category,
+          subcategory: data.subcategory || null,
           condition: data.condition || null,
           location: data.location || null,
           is_negotiable: data.is_negotiable,
@@ -270,21 +269,27 @@ const NewListing = () => {
                   )}
                 />
 
-                <FormField
+                  <FormField
                   control={form.control}
                   name="category"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Categoria</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          form.setValue("subcategory", "");
+                        }}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {categories.map((cat) => (
-                            <SelectItem key={cat.value} value={cat.value}>
+                          {MARKETPLACE_CATEGORIES.map((cat) => (
+                            <SelectItem key={cat.slug} value={cat.slug}>
                               {cat.label}
                             </SelectItem>
                           ))}
@@ -295,6 +300,33 @@ const NewListing = () => {
                   )}
                 />
               </div>
+
+              {selectedCategory && selectedCategory.highlights.length > 0 && (
+                <FormField
+                  control={form.control}
+                  name="subcategory"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Item / jogo</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Opcional" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {selectedCategory.highlights.map((item) => (
+                            <SelectItem key={item.slug} value={item.slug}>
+                              {item.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField

@@ -2,11 +2,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-export type ListingCategory = "produto" | "servico" | "digital";
+export type ListingCategory = string;
 export type ListingCondition = "novo" | "usado" | "recondicionado";
 export type ListingStatus = "active" | "sold" | "paused" | "deleted";
 
-interface MarketplaceListing {
+export interface MarketplaceListing {
   id: string;
   user_id: string;
   title: string;
@@ -14,6 +14,7 @@ interface MarketplaceListing {
   price: number;
   currency: string;
   category: string;
+  subcategory: string | null;
   condition: string | null;
   images: string[];
   location: string | null;
@@ -25,7 +26,8 @@ interface MarketplaceListing {
 }
 
 interface ListingFilters {
-  category?: ListingCategory;
+  category?: string;
+  subcategory?: string;
   minPrice?: number;
   maxPrice?: number;
   search?: string;
@@ -54,6 +56,10 @@ export const useMarketplace = (filters?: ListingFilters) => {
 
       if (filters?.category) {
         query = query.eq("category", filters.category);
+      }
+
+      if (filters?.subcategory) {
+        query = query.eq("subcategory", filters.subcategory);
       }
 
       if (filters?.minPrice !== undefined) {
@@ -89,6 +95,7 @@ export const useMarketplace = (filters?: ListingFilters) => {
       // Parse images JSON
       const formattedListings: MarketplaceListing[] = (data || []).map((listing) => ({
         ...listing,
+        subcategory: listing.subcategory ?? null,
         images: Array.isArray(listing.images)
           ? (listing.images as unknown as string[]).map((img) => String(img))
           : [],
@@ -257,6 +264,7 @@ export const useMarketplace = (filters?: ListingFilters) => {
   }, [
     user,
     filters?.category,
+    filters?.subcategory,
     filters?.minPrice,
     filters?.maxPrice,
     filters?.search,
@@ -299,6 +307,7 @@ export const useMyListings = () => {
 
       const formattedListings: MarketplaceListing[] = (data || []).map((listing) => ({
         ...listing,
+        subcategory: listing.subcategory ?? null,
         images: Array.isArray(listing.images)
           ? (listing.images as unknown as string[]).map((img) => String(img))
           : [],

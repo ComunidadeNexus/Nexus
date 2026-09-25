@@ -45,6 +45,8 @@ assert(navbar.includes('navigate("/premium")'), "navbar Premium still opens /pre
 assert(premiumPage.includes("Em breve"), "premium page itself is coming soon");
 assert(marketplacePage.includes("Em breve"), "non-admin marketplace page stays coming soon");
 assert(marketplacePage.includes("isAdmin"), "marketplace storefront is admin-gated");
+assert(marketplacePage.includes("Categorias"), "storefront opens the categories panel");
+assert(marketplacePage.includes("MarketplaceCategoriesDialog"), "categories dialog is wired");
 assert(app.includes("NewListing"), "admins can open the new listing form");
 assert(
   /path="\/marketplace\/novo"[\s\S]{0,80}<NewListing/.test(app),

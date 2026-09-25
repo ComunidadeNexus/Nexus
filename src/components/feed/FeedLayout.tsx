@@ -7,12 +7,14 @@ import BottomNavigation from "@/components/BottomNavigation";
 interface FeedLayoutProps {
   children: React.ReactNode;
   hideRightSidebar?: boolean;
+  hideLeftSidebar?: boolean;
   flushMobile?: boolean;
 }
 
 const FeedLayout = ({
   children,
   hideRightSidebar = false,
+  hideLeftSidebar = false,
   flushMobile = false,
 }: FeedLayoutProps) => {
   return (
@@ -24,12 +26,16 @@ const FeedLayout = ({
           flushMobile ? "pt-0 md:pt-6 px-0 md:px-4" : "pt-4 md:pt-6 px-3 sm:px-4"
         }`}
       >
-        <div className="hidden md:block w-[270px] shrink-0">
-          <LeftSidebar />
-        </div>
+        {!hideLeftSidebar && (
+          <div className="hidden md:block w-[270px] shrink-0">
+            <LeftSidebar />
+          </div>
+        )}
 
         <main
-          className={`flex-1 w-full min-w-0 ${hideRightSidebar ? "max-w-[1000px]" : "max-w-[640px]"}`}
+          className={`flex-1 w-full min-w-0 ${
+            hideLeftSidebar ? "max-w-[1180px]" : hideRightSidebar ? "max-w-[1000px]" : "max-w-[640px]"
+          }`}
         >
           {children}
         </main>

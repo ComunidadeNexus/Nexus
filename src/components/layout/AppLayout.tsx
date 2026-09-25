@@ -4,16 +4,18 @@ import FeedLayout from "@/components/feed/FeedLayout";
 import { FloatingHelpButtons } from "./FloatingHelpButtons";
 import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 
-const HIDE_FAB_PREFIXES = ["/chat", "/mensagens", "/ao-vivo"];
+const HIDE_FAB_PREFIXES = ["/chat", "/mensagens", "/ao-vivo", "/marketplace"];
 
 const AppLayout = () => {
   const location = useLocation();
+  const isMarketplace = location.pathname.startsWith("/marketplace");
   const hideRightSidebar =
     location.pathname !== "/feed" &&
     location.pathname !== "/comunidade" &&
     location.pathname !== "/popular";
 
   const flushMobile =
+    isMarketplace ||
     location.pathname === "/feed" ||
     location.pathname === "/comunidade" ||
     location.pathname === "/popular" ||
@@ -25,7 +27,11 @@ const AppLayout = () => {
 
   return (
     <>
-      <FeedLayout hideRightSidebar={hideRightSidebar} flushMobile={flushMobile}>
+      <FeedLayout
+        hideRightSidebar={hideRightSidebar}
+        hideLeftSidebar={isMarketplace}
+        flushMobile={flushMobile}
+      >
         <Outlet />
       </FeedLayout>
       {!hideFabs && <FloatingHelpButtons />}
