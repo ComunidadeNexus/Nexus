@@ -4,10 +4,18 @@ export const LISTING_CONDITION_LABELS: Record<string, string> = {
   recondicionado: "Recondicionado",
 };
 
+const steamCapsule = (appId: number) =>
+  `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/capsule_616x353.jpg`;
+
+const localCover = (file: string) => `/marketplace/games/${file}`;
+
 export type MarketplaceHighlight = {
   slug: string;
   label: string;
   accent: string;
+  image?: string;
+  fit?: "cover" | "contain";
+  popularOrder?: number;
 };
 
 export type MarketplaceCategory = {
@@ -17,20 +25,107 @@ export type MarketplaceCategory = {
   highlights: MarketplaceHighlight[];
 };
 
+const game = (
+  slug: string,
+  label: string,
+  accent: string,
+  image: string,
+  extra: Partial<MarketplaceHighlight> = {},
+): MarketplaceHighlight => ({
+  slug,
+  label,
+  accent,
+  image,
+  fit: extra.fit ?? "cover",
+  popularOrder: extra.popularOrder,
+});
+
 export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
   {
     slug: "jogos",
     label: "Jogos",
     icon: "Gamepad2",
     highlights: [
-      { slug: "steam", label: "Steam", accent: "from-[#1b2838] to-[#00C6FF]" },
-      { slug: "valorant", label: "Valorant", accent: "from-[#ff4655] to-[#0f1923]" },
-      { slug: "lol", label: "League of Legends", accent: "from-[#0bc4e9] to-[#c8aa6e]" },
-      { slug: "fortnite", label: "Fortnite", accent: "from-[#9d4edd] to-[#00C6FF]" },
-      { slug: "minecraft", label: "Minecraft", accent: "from-[#5d9c41] to-[#3b6d2a]" },
-      { slug: "roblox", label: "Roblox", accent: "from-[#e2231a] to-[#111]" },
-      { slug: "gta", label: "GTA", accent: "from-[#2b6cb0] to-[#1a365d]" },
-      { slug: "freefire", label: "Free Fire", accent: "from-[#ff7a18] to-[#ff007f]" },
+      game("albion", "Albion Online", "from-[#1a2a12] to-[#6b8f3a]", localCover("albion.jpg"), {
+        popularOrder: 1,
+      }),
+      game(
+        "clash-of-clans",
+        "Clash Of Clans",
+        "from-[#1a3d0a] to-[#7ac142]",
+        localCover("clash-of-clans.jpg"),
+        { fit: "contain", popularOrder: 2 },
+      ),
+      game("diablo-iv", "Diablo IV", "from-[#1a0505] to-[#7a1515]", localCover("diablo-iv.jpg"), {
+        popularOrder: 3,
+      }),
+      game("arc-raiders", "Arc Raiders", "from-[#2a1808] to-[#c45a12]", localCover("arc-raiders.jpg"), {
+        popularOrder: 4,
+      }),
+      game("poe2", "Path of Exile 2", "from-[#140808] to-[#6b1d1d]", localCover("poe2.jpg"), {
+        popularOrder: 5,
+      }),
+      game(
+        "minecraft",
+        "Minecraft",
+        "from-[#3b6d2a] to-[#5d9c41]",
+        localCover("minecraft.jpg"),
+        { popularOrder: 6 },
+      ),
+      game("poe", "Path Of Exile", "from-[#1b1208] to-[#8a6a2a]", localCover("poe.jpg"), {
+        popularOrder: 7,
+      }),
+      game(
+        "roblox",
+        "Roblox",
+        "from-[#111] to-[#e2231a]",
+        localCover("roblox.svg"),
+        { fit: "contain", popularOrder: 8 },
+      ),
+      game(
+        "steam",
+        "STEAM",
+        "from-[#0b1c2d] to-[#1b2838]",
+        localCover("steam.svg"),
+        { fit: "contain", popularOrder: 9 },
+      ),
+      game(
+        "valorant",
+        "Valorant",
+        "from-[#0f1923] to-[#ff4655]",
+        localCover("valorant.jpg"),
+        { popularOrder: 10 },
+      ),
+      game(
+        "lol",
+        "League of Legends",
+        "from-[#091428] to-[#c8aa6e]",
+        localCover("lol.png"),
+        { fit: "contain", popularOrder: 11 },
+      ),
+      game(
+        "fortnite",
+        "Fortnite",
+        "from-[#0b1030] to-[#5b4dff]",
+        localCover("fortnite.svg"),
+        { fit: "contain", popularOrder: 12 },
+      ),
+      game("cs2", "Counter-Strike 2", "from-[#111] to-[#de9b35]", steamCapsule(730)),
+      game("gta-v", "Grand Theft Auto V", "from-[#102010] to-[#4aa03a]", steamCapsule(271590)),
+      game("dota-2", "Dota 2", "from-[#111] to-[#c23c2a]", steamCapsule(570)),
+      game("apex", "Apex Legends", "from-[#111] to-[#da292a]", steamCapsule(1172470)),
+      game("elden-ring", "Elden Ring", "from-[#1a1408] to-[#c9a227]", steamCapsule(1245620)),
+      game("bg3", "Baldur's Gate 3", "from-[#1a1008] to-[#8a5a20]", steamCapsule(1086940)),
+      game("palworld", "Palworld", "from-[#0a2030] to-[#3db7e4]", steamCapsule(1623730)),
+      game("rust", "Rust", "from-[#2a1a10] to-[#8b4513]", steamCapsule(252490)),
+      game("pubg", "PUBG", "from-[#1a1a12] to-[#c4a35a]", steamCapsule(578080)),
+      game("the-finals", "THE FINALS", "from-[#111] to-[#ef4444]", steamCapsule(2073850)),
+      game("cyberpunk", "Cyberpunk 2077", "from-[#111] to-[#fcee0a]", steamCapsule(1091500)),
+      game("rdr2", "Red Dead Redemption 2", "from-[#1a0808] to-[#8b1e1e]", steamCapsule(1174180)),
+      game("dbd", "Dead by Daylight", "from-[#111] to-[#a11]", steamCapsule(381210)),
+      game("warzone", "Call of Duty", "from-[#111] to-[#4b5563]", steamCapsule(1938090)),
+      game("fc-25", "EA Sports FC", "from-[#052e16] to-[#16a34a]", steamCapsule(2669320)),
+      game("warframe", "Warframe", "from-[#111] to-[#00C6FF]", steamCapsule(230410)),
     ],
   },
   {
@@ -139,6 +234,21 @@ export function getMarketplaceHighlight(categorySlug: string | null, itemSlug: s
   const category = getMarketplaceCategory(categorySlug);
   if (!category || !itemSlug) return null;
   return category.highlights.find((item) => item.slug === itemSlug) ?? null;
+}
+
+export function sortMarketplaceHighlights(
+  items: MarketplaceHighlight[],
+  sort: "popular" | "az",
+) {
+  if (sort === "az") {
+    return [...items].sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+  }
+  return [...items].sort((a, b) => {
+    const aRank = a.popularOrder ?? Number.MAX_SAFE_INTEGER;
+    const bRank = b.popularOrder ?? Number.MAX_SAFE_INTEGER;
+    if (aRank !== bRank) return aRank - bRank;
+    return a.label.localeCompare(b.label, "pt-BR");
+  });
 }
 
 export const LISTING_CATEGORY_LABELS: Record<string, string> = Object.fromEntries(

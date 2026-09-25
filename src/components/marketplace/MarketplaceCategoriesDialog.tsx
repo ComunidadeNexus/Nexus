@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import {
   Dialog,
@@ -9,6 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   MARKETPLACE_CATEGORIES,
+  sortMarketplaceHighlights,
   type MarketplaceCategory,
   type MarketplaceHighlight,
 } from "@/lib/marketplace";
@@ -31,10 +32,18 @@ const MarketplaceCategoriesDialog = ({
 }: MarketplaceCategoriesDialogProps) => {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<"popular" | "az">("popular");
-  const [hoveredSlug, setHoveredSlug] = useState<string | null>(null);
+  const [selectedSlug, setSelectedSlug] = useState(activeCategory || "jogos");
+
+  useEffect(() => {
+    if (open) {
+      setSelectedSlug(activeCategory || "jogos");
+      setQuery("");
+      setSort("popular");
+    }
+  }, [open, activeCategory]);
 
   const selected =
-    MARKETPLACE_CATEGORIES.find((category) => category.slug === (hoveredSlug || activeCategory)) ||
+    MARKETPLACE_CATEGORIES.find((category) => category.slug === selectedSlug) ||
     MARKETPLACE_CATEGORIES[0];
 
   const highlights = useMemo(() => {
@@ -42,10 +51,11 @@ const MarketplaceCategoriesDialog = ({
     const items = selected.highlights.filter((item) =>
       needle ? item.label.toLowerCase().includes(needle) : true,
     );
-    if (sort === "az") {
-      return [...items].sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+    const sorted = sortMarketplaceHighlights(items, sort);
+    if (sort === "popular" && selected.slug === "jogos" && !needle) {
+      return sorted.filter((item) => item.popularOrder != null);
     }
-    return items;
+    return sorted;
   }, [query, selected, sort]);
 
   const filteredCategories = MARKETPLACE_CATEGORIES.filter((category) => {
@@ -59,7 +69,7 @@ const MarketplaceCategoriesDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[960px] w-[calc(100vw-1.5rem)] p-4 sm:p-6 bg-[#0b1018] border-white/10 text-white overflow-y-auto max-h-[90vh]">
+      <DialogContent className="max-w-[1100px] w-[calc(100vw-1.5rem)] p-4 sm:p-6 bg-[#0b1018] border-white/10 text-white overflow-y-auto max-h-[90vh]">
         <DialogTitle className="sr-only">Categorias do Marketplace</DialogTitle>
         <DialogDescription className="sr-only">
           Busque um jogo, serviço ou categoria para filtrar os anúncios.
@@ -75,34 +85,30 @@ const MarketplaceCategoriesDialog = ({
           />
         </div>
 
-        <div className="flex gap-4 overflow-x-auto pb-4 mb-4 scrollbar-thin">
+        <div className="flex gap-5 overflow-x-auto pb-3 mb-5 border-b border-white/10">
           {filteredCategories.map((category) => {
             const isActive = selected.slug === category.slug;
             return (
               <button
                 key={category.slug}
                 type="button"
-                onMouseEnter={() => setHoveredSlug(category.slug)}
-                onFocus={() => setHoveredSlug(category.slug)}
-                onClick={() => onPickCategory(category)}
-                className="flex flex-col items-center gap-2 min-w-[92px] shrink-0"
+                onClick={() => setSelectedSlug(category.slug)}
+                className="flex flex-col items-center gap-2 min-w-[84px] shrink-0 pb-3 -mb-px"
               >
-                <span
-                  className={`w-14 h-14 rounded-2xl border flex items-center justify-center ${
-                    isActive
-                      ? "border-[#00C6FF] text-[#00C6FF] bg-[#00C6FF]/10"
-                      : "border-white/10 text-white/70 bg-white/5"
-                  }`}
-                >
-                  <MarketplaceCategoryIcon name={category.icon} className="w-6 h-6" />
-                </span>
+                <MarketplaceCategoryIcon
+                  name={category.icon}
+                  className={`w-7 h-7 ${isActive ? "text-[#00C6FF]" : "text-white/55"}`}
+                />
                 <span
                   className={`text-xs text-center leading-tight ${
-                    isActive ? "text-[#00C6FF] font-semibold" : "text-white/70"
+                    isActive ? "text-[#00C6FF] font-semibold" : "text-white/60"
                   }`}
                 >
                   {category.label}
                 </span>
+                <span
+                  className={`h-0.5 w-10 rounded-full ${isActive ? "bg-[#00C6FF]" : "bg-transparent"}`}
+                />
               </button>
             );
           })}
@@ -135,12 +141,14 @@ const MarketplaceCategoriesDialog = ({
           </div>
           <p className="text-xs text-white/40 hidden sm:block">
             {sort === "az"
-              ? "Lista em ordem alfabética"
-              : `${highlights.length} destaques nesta categoria`}
+              ? "Lista todos os jogos em ordem alfabética"
+              : selected.slug === "jogos"
+                ? `${highlights.length} jogos em alta esta semana`
+                : `${highlights.length} destaques nesta categoria`}
           </p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-x-3 gap-y-5">
           {highlights.map((item) => (
             <button
               key={item.slug}
@@ -149,11 +157,22 @@ const MarketplaceCategoriesDialog = ({
               className="group text-left"
             >
               <div
-                className={`aspect-[16/10] rounded-xl bg-gradient-to-br ${item.accent} border border-white/10 flex items-end p-2`}
+                className={`aspect-[16/10] rounded-xl overflow-hidden border border-white/10 bg-gradient-to-br ${item.accent} ${
+                  item.fit === "contain" ? "p-3.5 flex items-center justify-center" : ""
+                }`}
               >
-                <span className="text-xs font-bold text-white drop-shadow">{item.label}</span>
+                {item.image ? (
+                  <img
+                    src={item.image}
+                    alt={item.label}
+                    loading="lazy"
+                    className={`w-full h-full ${item.fit === "contain" ? "object-contain max-h-full" : "object-cover group-hover:scale-[1.04] transition-transform"}`}
+                  />
+                ) : (
+                  <span className="text-xs font-bold text-white drop-shadow p-2">{item.label}</span>
+                )}
               </div>
-              <p className="mt-1.5 text-xs text-white/70 group-hover:text-white truncate">
+              <p className="mt-1.5 text-xs text-white/80 group-hover:text-white truncate text-center">
                 {item.label}
               </p>
             </button>
@@ -165,7 +184,7 @@ const MarketplaceCategoriesDialog = ({
           onClick={() => onPickCategory(selected)}
           className="mt-5 text-sm text-[#00C6FF] hover:underline ml-auto block"
         >
-          Ver toda a categoria →
+          Ver todas as categorias →
         </button>
       </DialogContent>
     </Dialog>
