@@ -9,6 +9,7 @@ const sidebar = readFileSync(resolve("src/components/feed/LeftSidebar.tsx"), "ut
 const navbar = readFileSync(resolve("src/components/Navbar.tsx"), "utf8");
 const premiumPage = readFileSync(resolve("src/pages/PremiumArea.tsx"), "utf8");
 const marketplacePage = readFileSync(resolve("src/pages/Marketplace.tsx"), "utf8");
+const appLayout = readFileSync(resolve("src/components/layout/AppLayout.tsx"), "utf8");
 const adminMarketplace = readFileSync(resolve("src/components/admin/AdminMarketplace.tsx"), "utf8");
 const app = readFileSync(resolve("src/App.tsx"), "utf8");
 
@@ -48,6 +49,10 @@ assert(marketplacePage.includes("Em breve"), "non-admin marketplace page stays c
 assert(marketplacePage.includes("isAdmin"), "marketplace storefront is admin-gated");
 assert(marketplacePage.includes("Categorias"), "storefront opens the categories panel");
 assert(marketplacePage.includes("MarketplaceCategoriesDialog"), "categories dialog is wired");
+assert(
+  !appLayout.includes("hideLeftSidebar={isMarketplace}"),
+  "marketplace must keep the left community sidebar",
+);
 assert(
   adminMarketplace.includes("Categorias da loja") &&
     adminMarketplace.includes("AdminMarketplaceCategories"),

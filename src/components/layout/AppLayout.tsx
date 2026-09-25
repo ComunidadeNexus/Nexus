@@ -29,7 +29,6 @@ const AppLayout = () => {
     <>
       <FeedLayout
         hideRightSidebar={hideRightSidebar}
-        hideLeftSidebar={isMarketplace}
         flushMobile={flushMobile}
       >
         <Outlet />
