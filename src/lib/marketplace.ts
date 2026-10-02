@@ -8,6 +8,7 @@ const steamCapsule = (appId: number) =>
   `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/capsule_616x353.jpg`;
 
 const localCover = (file: string) => `/marketplace/games/${file}`;
+const brandCover = (file: string) => `/marketplace/brands/${file}`;
 
 export type MarketplaceHighlight = {
   id?: number;
@@ -70,6 +71,15 @@ const game = (
   fit: extra.fit ?? "cover",
   popularOrder: extra.popularOrder,
 });
+
+const tile = (
+  slug: string,
+  label: string,
+  accent: string,
+  file: string,
+  extra: Partial<MarketplaceHighlight> = {},
+): MarketplaceHighlight =>
+  game(slug, label, accent, brandCover(file), { fit: extra.fit ?? "contain", ...extra });
 
 export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
   {
@@ -164,10 +174,10 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
     label: "Redes Sociais",
     icon: "Share2",
     highlights: [
-      { slug: "instagram", label: "Instagram", accent: "from-[#f58529] to-[#dd2a7b]" },
-      { slug: "tiktok", label: "TikTok", accent: "from-[#25f4ee] to-[#fe2c55]" },
-      { slug: "youtube", label: "YouTube", accent: "from-[#ff0000] to-[#282828]" },
-      { slug: "x", label: "X / Twitter", accent: "from-[#111] to-[#00C6FF]" },
+      tile("instagram", "Instagram", "from-[#f58529] to-[#dd2a7b]", "instagram.svg"),
+      tile("tiktok", "TikTok", "from-[#25f4ee] to-[#fe2c55]", "tiktok.svg"),
+      tile("youtube", "YouTube", "from-[#ff0000] to-[#282828]", "youtube.svg"),
+      tile("x", "X / Twitter", "from-[#111] to-[#00C6FF]", "x.svg"),
     ],
   },
   {
@@ -175,10 +185,10 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
     label: "Gift Cards",
     icon: "Gift",
     highlights: [
-      { slug: "google-play", label: "Google Play", accent: "from-[#34a853] to-[#4285f4]" },
-      { slug: "apple", label: "Apple", accent: "from-[#555] to-[#111]" },
-      { slug: "playstation", label: "PlayStation", accent: "from-[#003087] to-[#0070d1]" },
-      { slug: "xbox", label: "Xbox", accent: "from-[#107c10] to-[#0b3d0b]" },
+      tile("google-play", "Google Play", "from-[#34a853] to-[#4285f4]", "google-play.svg"),
+      tile("apple", "Apple", "from-[#555] to-[#111]", "apple.svg"),
+      tile("playstation", "PlayStation", "from-[#003087] to-[#0070d1]", "playstation.svg"),
+      tile("xbox", "Xbox", "from-[#107c10] to-[#0b3d0b]", "xbox.svg"),
     ],
   },
   {
@@ -186,9 +196,9 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
     label: "Discord",
     icon: "MessageSquare",
     highlights: [
-      { slug: "nitro", label: "Nitro", accent: "from-[#5865f2] to-[#00C6FF]" },
-      { slug: "servidor", label: "Servidor", accent: "from-[#5865f2] to-[#111]" },
-      { slug: "boost", label: "Boost", accent: "from-[#f47fff] to-[#5865f2]" },
+      tile("nitro", "Nitro", "from-[#5865f2] to-[#00C6FF]", "discord.svg"),
+      tile("servidor", "Servidor", "from-[#5865f2] to-[#111]", "discord.svg"),
+      tile("boost", "Boost", "from-[#f47fff] to-[#5865f2]", "discord.svg"),
     ],
   },
   {
@@ -196,11 +206,11 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
     label: "Assinaturas e Premium",
     icon: "Crown",
     highlights: [
-      { slug: "spotify", label: "Spotify", accent: "from-[#1db954] to-[#191414]" },
-      { slug: "netflix", label: "Netflix", accent: "from-[#e50914] to-[#221f1f]" },
-      { slug: "prime", label: "Prime Video", accent: "from-[#00a8e1] to-[#232f3e]" },
-      { slug: "crunchyroll", label: "Crunchyroll", accent: "from-[#f47521] to-[#111]" },
-      { slug: "youtube-premium", label: "YouTube Premium", accent: "from-[#ff0000] to-[#282828]" },
+      tile("spotify", "Spotify", "from-[#1db954] to-[#191414]", "spotify.svg"),
+      tile("netflix", "Netflix", "from-[#e50914] to-[#221f1f]", "netflix.svg"),
+      tile("prime", "Prime Video", "from-[#00a8e1] to-[#232f3e]", "prime.svg"),
+      tile("crunchyroll", "Crunchyroll", "from-[#f47521] to-[#111]", "crunchyroll.svg"),
+      tile("youtube-premium", "YouTube Premium", "from-[#ff0000] to-[#282828]", "youtube.svg"),
     ],
   },
   {
@@ -208,8 +218,8 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
     label: "Emails",
     icon: "Mail",
     highlights: [
-      { slug: "gmail", label: "Gmail", accent: "from-[#ea4335] to-[#34a853]" },
-      { slug: "outlook", label: "Outlook", accent: "from-[#0078d4] to-[#00C6FF]" },
+      tile("gmail", "Gmail", "from-[#ea4335] to-[#34a853]", "gmail.svg"),
+      tile("outlook", "Outlook", "from-[#0078d4] to-[#00C6FF]", "outlook.svg"),
     ],
   },
   {
@@ -217,9 +227,9 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
     label: "Licenças e Softwares",
     icon: "Monitor",
     highlights: [
-      { slug: "windows", label: "Windows", accent: "from-[#00adef] to-[#0078d7]" },
-      { slug: "office", label: "Office", accent: "from-[#d83b01] to-[#eb3c00]" },
-      { slug: "adobe", label: "Adobe", accent: "from-[#ff0000] to-[#111]" },
+      tile("windows", "Windows", "from-[#00adef] to-[#0078d7]", "windows.svg"),
+      tile("office", "Office", "from-[#d83b01] to-[#eb3c00]", "office.svg"),
+      tile("adobe", "Adobe", "from-[#ff0000] to-[#111]", "adobe.svg"),
     ],
   },
   {
@@ -227,9 +237,9 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
     label: "Serviços Digitais",
     icon: "Sparkles",
     highlights: [
-      { slug: "design", label: "Design", accent: "from-[#00C6FF] to-[#FF007F]" },
-      { slug: "dev", label: "Programação", accent: "from-[#00C6FF] to-[#111]" },
-      { slug: "edicao", label: "Edição", accent: "from-[#FF007F] to-[#111]" },
+      tile("design", "Design", "from-[#00C6FF] to-[#FF007F]", "design.jpg", { fit: "cover" }),
+      tile("dev", "Programação", "from-[#00C6FF] to-[#111]", "dev.jpg", { fit: "cover" }),
+      tile("edicao", "Edição", "from-[#FF007F] to-[#111]", "edicao.svg"),
     ],
   },
   {
@@ -237,9 +247,9 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
     label: "Cursos e Treinamentos",
     icon: "GraduationCap",
     highlights: [
-      { slug: "tech", label: "Tecnologia", accent: "from-[#00C6FF] to-[#111]" },
-      { slug: "games", label: "Games", accent: "from-[#FF007F] to-[#111]" },
-      { slug: "criacao", label: "Criação", accent: "from-[#00C6FF] to-[#FF007F]" },
+      tile("tech", "Tecnologia", "from-[#00C6FF] to-[#111]", "tech.jpg", { fit: "cover" }),
+      tile("games", "Games", "from-[#FF007F] to-[#111]", "games.jpg", { fit: "cover" }),
+      tile("criacao", "Criação", "from-[#00C6FF] to-[#FF007F]", "criacao.jpg", { fit: "cover" }),
     ],
   },
 ];

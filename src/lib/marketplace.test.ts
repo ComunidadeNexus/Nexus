@@ -27,6 +27,12 @@ assert(
   "every game tile has a cover image",
 );
 assert(
+  MARKETPLACE_CATEGORIES.every((category) =>
+    category.highlights.every((item) => Boolean(item.image)),
+  ),
+  "every category tile has a cover image",
+);
+assert(
   JSON.stringify(
     sortMarketplaceHighlights(
       getMarketplaceCategory("jogos")?.highlights.filter((item) => item.popularOrder != null) || [],
