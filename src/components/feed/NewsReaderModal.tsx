@@ -2,6 +2,7 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Globe, ExternalLink, CalendarDays } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { stripHtml } from "@/lib/sanitizeHtml";
 
 interface NewsReaderModalProps {
   isOpen: boolean;
@@ -42,14 +43,15 @@ const NewsReaderModal = ({ isOpen, onClose, news }: NewsReaderModalProps) => {
               <img
                 src={news.imageUrl}
                 alt={news.title}
+                loading="lazy"
+                decoding="async"
                 className="w-full max-h-[400px] object-cover rounded-xl mb-6 shadow-sm"
               />
             )}
 
-            <div
-              className="text-base leading-relaxed space-y-4"
-              dangerouslySetInnerHTML={{ __html: news.content }}
-            />
+            <div className="text-base leading-relaxed space-y-4 whitespace-pre-wrap">
+              {stripHtml(news.content)}
+            </div>
 
             <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 flex justify-center">
               <a

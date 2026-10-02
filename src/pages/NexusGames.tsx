@@ -224,12 +224,9 @@ const NexusGames = () => {
                       {newsItem.title}
                     </h3>
 
-                    <p
-                      className="text-sm text-muted-foreground line-clamp-4 flex-grow mb-4"
-                      dangerouslySetInnerHTML={{
-                        __html: newsItem.contents.replace(/<[^>]*>?/gm, ""),
-                      }}
-                    />
+                    <p className="text-sm text-muted-foreground line-clamp-4 flex-grow mb-4">
+                      {newsItem.contents.replace(/<[^>]*>?/gm, "")}
+                    </p>
 
                     <a
                       href={newsItem.url}

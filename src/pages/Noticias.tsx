@@ -7,6 +7,7 @@ import NewsReaderModal from "@/components/feed/NewsReaderModal";
 import RightSidebar from "@/components/feed/RightSidebar";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { stripHtml } from "@/lib/sanitizeHtml";
 
 const Noticias = () => {
   const [feedItems, setFeedItems] = useState<any[]>([]);
@@ -63,8 +64,8 @@ const Noticias = () => {
               }
 
               // Strip HTML from description for the summary
-              const cleanDesc =
-                item.description.replace(/<[^>]*>?/gm, "").substring(0, 150) + "...";
+              const cleanDesc = `${stripHtml(item.description).substring(0, 150)}...`;
+              const cleanContent = stripHtml(item.content || item.description);
 
               newFeed.push({
                 type: "external",
@@ -72,7 +73,7 @@ const Noticias = () => {
                 data: {
                   title: item.title,
                   description: cleanDesc,
-                  content: item.content || item.description, // HTML Completo
+                  content: cleanContent,
                   url: item.link,
                   imageUrl: imageUrl,
                   source: rssData.feed.title || "G1 Tecnologia",

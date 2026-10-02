@@ -1,3 +1,5 @@
+import { lazy, Suspense, type ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,66 +12,78 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import AliasRedirect from "@/components/AliasRedirect";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Profile from "./pages/Profile";
-import Messages from "./pages/Messages";
-import Marketplace from "./pages/Marketplace";
-import Nucleos from "./pages/Nucleos";
-import NucleoDetail from "./pages/NucleoDetail";
-import Notifications from "./pages/Notifications";
-import NewListing from "./pages/NewListing";
-import MarketplaceListing from "./pages/MarketplaceListing";
-import GlobalChat from "./pages/GlobalChat";
-import HashtagExplore from "./pages/HashtagExplore";
-import Subscription from "./pages/Subscription";
-import PremiumArea from "./pages/PremiumArea";
-import Install from "./pages/Install";
-import Analytics from "./pages/Analytics";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Configuracoes from "./pages/Configuracoes";
-import Busca from "./pages/Busca";
 import NotFound from "./pages/NotFound";
 import Feed from "./pages/Feed";
-import Noticias from "./pages/Noticias";
-import NexusAcademy from "./pages/NexusAcademy";
-import NexusGames from "./pages/NexusGames";
-import AoVivo from "./pages/AoVivo";
-import Regras from "./pages/Regras";
-import Sobre from "./pages/Sobre";
-import VerificarIdentidade from "./pages/VerificarIdentidade";
-import Produtos from "./pages/Produtos";
-import ProducerLayout from "./pages/producer/ProducerLayout";
-import ProducerOverview from "./pages/producer/ProducerOverview";
-import ProducerProducts from "./pages/producer/ProducerProducts";
-import ProducerSales from "./pages/producer/ProducerSales";
-import ProducerCustomers from "./pages/producer/ProducerCustomers";
-import ProducerFinance from "./pages/producer/ProducerFinance";
-import ProducerSubscriptions from "./pages/producer/ProducerSubscriptions";
-import ProducerSettings from "./pages/producer/ProducerSettings";
-
-// Admin Imports
 import AdminLayout from "./components/layout/AdminLayout";
-import AdminDashboard from "./components/admin/AdminDashboard";
-import AdminMembros from "./components/admin/AdminMembros";
-import AdminConteudo from "./components/admin/AdminConteudo";
-import AdminCategorias from "./components/admin/AdminCategorias";
-import AdminNucleos from "./components/admin/AdminNucleos";
-import AdminMarketplace from "./components/admin/AdminMarketplace";
-import AdminGamificacao from "./components/admin/AdminGamificacao";
-import AdminCoins from "./components/admin/AdminCoins";
-import AdminJogos from "./components/admin/AdminJogos";
-import AdminChat from "./components/admin/AdminChat";
-import AdminNotificacoes from "./components/admin/AdminNotificacoes";
-import AdminAssinaturas from "./components/admin/AdminAssinaturas";
-import AdminPremio from "./components/admin/AdminPremio";
-import AdminFeedback from "./components/admin/AdminFeedback";
-import AdminDenuncias from "./components/admin/AdminDenuncias";
-import AdminLogs from "./components/admin/AdminLogs";
-import AdminConfig from "./components/admin/AdminConfig";
-import AdminCakto from "./components/admin/AdminCakto";
 
-const queryClient = new QueryClient();
+const Profile = lazy(() => import("./pages/Profile"));
+const Messages = lazy(() => import("./pages/Messages"));
+const Marketplace = lazy(() => import("./pages/Marketplace"));
+const Nucleos = lazy(() => import("./pages/Nucleos"));
+const NucleoDetail = lazy(() => import("./pages/NucleoDetail"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const NewListing = lazy(() => import("./pages/NewListing"));
+const MarketplaceListing = lazy(() => import("./pages/MarketplaceListing"));
+const GlobalChat = lazy(() => import("./pages/GlobalChat"));
+const HashtagExplore = lazy(() => import("./pages/HashtagExplore"));
+const Subscription = lazy(() => import("./pages/Subscription"));
+const PremiumArea = lazy(() => import("./pages/PremiumArea"));
+const Install = lazy(() => import("./pages/Install"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const Configuracoes = lazy(() => import("./pages/Configuracoes"));
+const Busca = lazy(() => import("./pages/Busca"));
+const Noticias = lazy(() => import("./pages/Noticias"));
+const NexusAcademy = lazy(() => import("./pages/NexusAcademy"));
+const NexusGames = lazy(() => import("./pages/NexusGames"));
+const AoVivo = lazy(() => import("./pages/AoVivo"));
+const Regras = lazy(() => import("./pages/Regras"));
+const Sobre = lazy(() => import("./pages/Sobre"));
+const VerificarIdentidade = lazy(() => import("./pages/VerificarIdentidade"));
+const Produtos = lazy(() => import("./pages/Produtos"));
+const ProducerLayout = lazy(() => import("./pages/producer/ProducerLayout"));
+const ProducerOverview = lazy(() => import("./pages/producer/ProducerOverview"));
+const ProducerProducts = lazy(() => import("./pages/producer/ProducerProducts"));
+const ProducerSales = lazy(() => import("./pages/producer/ProducerSales"));
+const ProducerCustomers = lazy(() => import("./pages/producer/ProducerCustomers"));
+const ProducerFinance = lazy(() => import("./pages/producer/ProducerFinance"));
+const ProducerSubscriptions = lazy(() => import("./pages/producer/ProducerSubscriptions"));
+const ProducerSettings = lazy(() => import("./pages/producer/ProducerSettings"));
+const AdminDashboard = lazy(() => import("./components/admin/AdminDashboard"));
+const AdminMembros = lazy(() => import("./components/admin/AdminMembros"));
+const AdminConteudo = lazy(() => import("./components/admin/AdminConteudo"));
+const AdminCategorias = lazy(() => import("./components/admin/AdminCategorias"));
+const AdminNucleos = lazy(() => import("./components/admin/AdminNucleos"));
+const AdminMarketplace = lazy(() => import("./components/admin/AdminMarketplace"));
+const AdminGamificacao = lazy(() => import("./components/admin/AdminGamificacao"));
+const AdminCoins = lazy(() => import("./components/admin/AdminCoins"));
+const AdminJogos = lazy(() => import("./components/admin/AdminJogos"));
+const AdminChat = lazy(() => import("./components/admin/AdminChat"));
+const AdminNotificacoes = lazy(() => import("./components/admin/AdminNotificacoes"));
+const AdminAssinaturas = lazy(() => import("./components/admin/AdminAssinaturas"));
+const AdminPremio = lazy(() => import("./components/admin/AdminPremio"));
+const AdminFeedback = lazy(() => import("./components/admin/AdminFeedback"));
+const AdminDenuncias = lazy(() => import("./components/admin/AdminDenuncias"));
+const AdminLogs = lazy(() => import("./components/admin/AdminLogs"));
+const AdminConfig = lazy(() => import("./components/admin/AdminConfig"));
+const AdminCakto = lazy(() => import("./components/admin/AdminCakto"));
 
-const RoutedErrorBoundary = ({ children }: { children: React.ReactNode }) => {
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 20_000,
+      retry: 1,
+    },
+  },
+});
+
+const PageFallback = () => (
+  <div className="min-h-[50vh] flex items-center justify-center">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" aria-label="Carregando" />
+  </div>
+);
+
+const RoutedErrorBoundary = ({ children }: { children: ReactNode }) => {
   const { pathname, search } = useLocation();
   return <ErrorBoundary resetKey={`${pathname}${search}`}>{children}</ErrorBoundary>;
 };
@@ -201,7 +215,9 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <RoutedErrorBoundary>
-              <AppRoutes />
+              <Suspense fallback={<PageFallback />}>
+                <AppRoutes />
+              </Suspense>
             </RoutedErrorBoundary>
           </AuthProvider>
         </BrowserRouter>

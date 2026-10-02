@@ -6,7 +6,7 @@ function assert(condition: unknown, message: string) {
 }
 
 const sidebar = readFileSync(resolve("src/components/feed/LeftSidebar.tsx"), "utf8");
-const navbar = readFileSync(resolve("src/components/Navbar.tsx"), "utf8");
+const header = readFileSync(resolve("src/components/feed/FeedHeader.tsx"), "utf8");
 const premiumPage = readFileSync(resolve("src/pages/PremiumArea.tsx"), "utf8");
 const marketplacePage = readFileSync(resolve("src/pages/Marketplace.tsx"), "utf8");
 const appLayout = readFileSync(resolve("src/components/layout/AppLayout.tsx"), "utf8");
@@ -43,7 +43,8 @@ assert(
   "mobile drawer must show Plataforma before Assuntos",
 );
 
-assert(navbar.includes('navigate("/premium")'), "navbar Premium still opens /premium");
+assert(!header.includes('navigate("/premium")'), "header must not open live Premium");
+assert(!header.includes('to="/premium"'), "header must not link to live Premium");
 assert(premiumPage.includes("Em breve"), "premium page itself is coming soon");
 assert(marketplacePage.includes("Em breve"), "non-admin marketplace page stays coming soon");
 assert(marketplacePage.includes("isAdmin"), "marketplace storefront is admin-gated");
@@ -59,6 +60,7 @@ assert(
   "admin marketplace must configure storefront categories",
 );
 assert(app.includes("NewListing"), "admins can open the new listing form");
+assert(app.includes("lazy(() => import"), "heavy pages are code-split");
 assert(
   /path="\/marketplace\/novo"[\s\S]{0,80}<NewListing/.test(app),
   "creating a listing is mounted for the admin preview",

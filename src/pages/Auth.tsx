@@ -606,7 +606,7 @@ const Auth = () => {
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
                     Eu concordo com as{" "}
-                    <a href="/regras" target="_blank" className="text-primary hover:underline">
+                    <a href="/regras" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
                       Regras da Comunidade
                     </a>
                   </label>
