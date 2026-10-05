@@ -26,7 +26,7 @@ interface AuthContextType {
     password: string,
     name: string,
     username: string,
-  ) => Promise<{ error: Error | null }>;
+  ) => Promise<{ error: Error | null; session: Session | null }>;
   signInWithOAuth: (provider: "google" | "discord" | "github") => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
@@ -176,11 +176,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, name: string, username: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const redirectTo = `${window.location.origin}/auth`;
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: redirectTo,
           data: {
             name,
             username,
@@ -198,11 +199,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         throw error;
       }
-      noteSuccessfulSignIn();
-      endSignedOut();
-      return { error: null };
+      if (data.session) {
+        noteSuccessfulSignIn();
+        endSignedOut();
+      }
+      return { error: null, session: data.session ?? null };
     } catch (error) {
-      return { error: error as Error };
+      return { error: error as Error, session: null };
     }
   };
 
