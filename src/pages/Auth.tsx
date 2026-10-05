@@ -12,6 +12,7 @@ import { Zap, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCpf, isValidCpf } from "@/lib/cpf";
 import { submitIdentityCpf } from "@/lib/submitIdentity";
+import { authErrorMessage } from "@/lib/authErrors";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -81,6 +82,7 @@ const Auth = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
+  const [resendEmail, setResendEmail] = useState<string | null>(null);
   const { signIn, signUp, signInWithOAuth, user, signingOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -146,16 +148,52 @@ const Auth = () => {
     },
   });
 
+  const handleResendConfirmation = async () => {
+    const email = resendEmail || loginForm.getValues("email");
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Informe o e-mail",
+        description: "Digite o e-mail da conta para reenviar a confirmação.",
+      });
+      return;
+    }
+    setIsLoading(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth` },
+    });
+    setIsLoading(false);
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Não foi possível reenviar",
+        description: authErrorMessage(error.message, "resend"),
+      });
+      return;
+    }
+    toast({
+      title: "E-mail reenviado",
+      description: "Se a conta existir, confira a caixa de entrada e o spam.",
+    });
+  };
+
   const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true);
+    setResendEmail(null);
     const { error } = await signIn(data.email, data.password);
     setIsLoading(false);
 
     if (error) {
+      const description = authErrorMessage(error.message, "login");
+      if (/confirm/i.test(error.message)) {
+        setResendEmail(data.email);
+      }
       toast({
         variant: "destructive",
         title: "Erro ao entrar",
-        description: error.message,
+        description,
       });
     } else {
       toast({
@@ -183,7 +221,7 @@ const Auth = () => {
       return;
     }
 
-    const { error } = await signUp(data.email, data.password, data.name, data.username);
+    const { error, session } = await signUp(data.email, data.password, data.name, data.username);
     if (error) {
       setIsLoading(false);
       const taken = /já está em uso|duplicate|username/i.test(error.message);
@@ -193,9 +231,28 @@ const Auth = () => {
       toast({
         variant: "destructive",
         title: "Erro ao criar conta",
-        description: taken ? "Este username já está em uso." : error.message,
+        description: taken
+          ? "Este username já está em uso."
+          : authErrorMessage(error.message, "signup"),
       });
       return;
+    }
+
+    if (!session) {
+      const { error: signInError } = await signIn(data.email, data.password);
+      if (signInError) {
+        setIsLoading(false);
+        toast({
+          variant: "destructive",
+          title: "Conta criada, mas não entrou",
+          description: authErrorMessage(signInError.message, "login"),
+        });
+        if (/confirm/i.test(signInError.message)) {
+          setResendEmail(data.email);
+          setIsSignup(false);
+        }
+        return;
+      }
     }
 
     const { error: identityError } = await submitIdentityCpf(data.cpf);
@@ -468,6 +525,18 @@ const Auth = () => {
                 >
                   {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Entrar"}
                 </Button>
+
+                {resendEmail && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={isLoading}
+                    onClick={() => void handleResendConfirmation()}
+                  >
+                    Reenviar e-mail de confirmação
+                  </Button>
+                )}
 
                 <button
                   type="button"
