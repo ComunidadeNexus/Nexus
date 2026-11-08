@@ -1,10 +1,14 @@
+import { isIdentityProven } from "./identityPolicy";
+
 export function formatMaskedCpf(last4: string | null | undefined): string {
   if (!last4) return "Pendente";
   return `••••${last4}`;
 }
 
 export function formatIdentityStatus(status: string | null | undefined): string {
-  if (status === "bureau_verified" || status === "checksum_verified") return "verificado";
+  if (isIdentityProven(status)) return "identidade verificada";
+  if (status === "digits_checked" || status === "checksum_verified") return "dígitos conferidos";
+  if (status === "bureau_verified") return "sem prova de titularidade";
   return "pendente";
 }
 

@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Zap, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCpf, isValidCpf } from "@/lib/cpf";
+import { IDENTITY_MESSAGES } from "@/lib/identityPolicy";
 import { submitIdentityCpf } from "@/lib/submitIdentity";
 
 const loginSchema = z.object({
@@ -203,7 +204,7 @@ const Auth = () => {
     if (identityError) {
       toast({
         variant: "destructive",
-        title: "Conta criada, falta o CPF",
+        title: "Conta criada. O CPF não foi registrado.",
         description: identityError,
       });
       navigate("/verificar-identidade");
@@ -211,8 +212,8 @@ const Auth = () => {
     }
 
     toast({
-      title: "Conta criada!",
-      description: "Identidade verificada. Você já pode usar a plataforma.",
+      title: "Conta criada",
+      description: IDENTITY_MESSAGES.recorded,
     });
     navigate("/comunidade");
   };
@@ -546,6 +547,7 @@ const Auth = () => {
                     {signupForm.formState.errors.cpf.message}
                   </p>
                 )}
+                <p className="text-xs text-muted-foreground">{IDENTITY_MESSAGES.digitsHint}</p>
               </div>
 
               <div className="space-y-2">
@@ -606,7 +608,12 @@ const Auth = () => {
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
                     Eu concordo com as{" "}
-                    <a href="/regras" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                    <a
+                      href="/regras"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
                       Regras da Comunidade
                     </a>
                   </label>

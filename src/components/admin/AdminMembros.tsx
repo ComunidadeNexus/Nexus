@@ -117,7 +117,7 @@ const AdminMembros = () => {
       "Nome",
       "Username",
       "Role",
-      "CPF",
+      "Identidade CPF",
       "XP",
       "Coins",
       "Nivel",
@@ -236,7 +236,9 @@ const AdminMembros = () => {
                 </th>
                 <th className="text-left px-4 py-3 text-muted-foreground font-medium">Karma</th>
                 <th className="text-left px-4 py-3 text-muted-foreground font-medium">Coins</th>
-                <th className="text-left px-4 py-3 text-muted-foreground font-medium">CPF</th>
+                <th className="text-left px-4 py-3 text-muted-foreground font-medium">
+                  Identidade CPF
+                </th>
                 <th className="text-left px-4 py-3 text-muted-foreground font-medium">Status</th>
                 <th className="text-left px-4 py-3 text-muted-foreground font-medium">Criado em</th>
                 <th className="text-right px-4 py-3 text-muted-foreground font-medium">Ações</th>
@@ -434,9 +436,15 @@ const AdminMembros = () => {
                     </div>
                     <div className="flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-[11px] text-muted-foreground">CPF</p>
+                        <p className="text-[11px] text-muted-foreground">Identidade CPF</p>
                         <p className="text-sm text-foreground truncate">
-                          {formatIdentityLabel(selectedUser.cpf_last4, selectedUser.identity_status)}
+                          {formatIdentityLabel(
+                            selectedUser.cpf_last4,
+                            selectedUser.identity_status,
+                          )}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          Não altera o selo verificado do perfil.
                         </p>
                       </div>
                     </div>

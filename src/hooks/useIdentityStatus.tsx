@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { identityGateState } from "@/lib/identityPolicy";
 
 export type IdentityRecord = {
   cpf_last4: string;
@@ -12,10 +13,12 @@ export const useIdentityStatus = () => {
   const { user } = useAuth();
   const [identity, setIdentity] = useState<IdentityRecord | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const refetch = useCallback(async () => {
     if (!user) {
       setIdentity(null);
+      setLoadError(false);
       setLoading(false);
       return;
     }
@@ -28,10 +31,11 @@ export const useIdentityStatus = () => {
       .maybeSingle();
 
     if (error) {
-      console.error("Error fetching identity status:", error);
-      setIdentity(null);
+      console.error("Error fetching identity status");
+      setLoadError(true);
     } else {
       setIdentity(data);
+      setLoadError(false);
     }
     setLoading(false);
   }, [user]);
@@ -40,10 +44,15 @@ export const useIdentityStatus = () => {
     void refetch();
   }, [refetch]);
 
+  const gate = identityGateState({ status: identity?.status, loadError });
+
   return {
     identity,
-    verified: Boolean(identity?.status),
     loading,
+    loadError,
     refetch,
+    cpfOnFile: gate.cpfOnFile,
+    identityVerified: gate.identityVerified,
+    blockForReadError: gate.blockForReadError,
   };
 };
