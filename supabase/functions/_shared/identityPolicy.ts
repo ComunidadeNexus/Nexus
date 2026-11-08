@@ -17,6 +17,9 @@ export const OWNERSHIP_PROVIDER_TIMEOUT_MS = 8_000;
 export const IDENTITY_ATTEMPT_HOUR_LIMIT = 5;
 export const IDENTITY_ATTEMPT_DAY_LIMIT = 20;
 
+/** Operator opt-in after proving the dedicated secret matches stored hashes. */
+export const IDENTITY_HMAC_WRITE_CONFIRMATION = "historical-match-confirmed";
+
 export const DIGITS_CHECKED_STATUS = "digits_checked" as const;
 
 export const IDENTITY_MESSAGES = {
@@ -73,6 +76,22 @@ export function decideAttemptAllowance(hourCount: number, dayCount: number): "al
     return "limit";
   }
   return "allow";
+}
+
+/**
+ * New CPF hashes stay blocked unless an operator explicitly confirms that
+ * IDENTITY_HMAC_SECRET is the dedicated key that already produced stored
+ * hashes. The service-role key is never that confirmation.
+ */
+export function identityHashWritesEnabled(env: {
+  IDENTITY_HMAC_WRITE_MODE?: string | null;
+  IDENTITY_HMAC_SECRET?: string | null;
+  SUPABASE_SERVICE_ROLE_KEY?: string | null;
+}): boolean {
+  void env.SUPABASE_SERVICE_ROLE_KEY;
+  const mode = env.IDENTITY_HMAC_WRITE_MODE?.trim() ?? "";
+  const secret = env.IDENTITY_HMAC_SECRET?.trim() ?? "";
+  return mode === IDENTITY_HMAC_WRITE_CONFIRMATION && secret.length > 0;
 }
 
 export function readIdentityHmacSecrets(env: {

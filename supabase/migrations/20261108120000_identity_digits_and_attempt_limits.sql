@@ -15,12 +15,18 @@
 -- contract exists. A registry lookup is not that contract.
 --
 -- Deployment:
--- Apply this migration before deploying verify-identity. The function calls
--- begin_identity_attempt and finish_identity_attempt.
--- Set IDENTITY_HMAC_SECRET to the dedicated secret that already matches
--- stored cpf_hash values. If older hashes used a different dedicated secret,
--- also set IDENTITY_HMAC_SECRET_PREVIOUS to that exact secret. Do not point
--- either variable at the service-role key. Do not rotate the secret here.
+-- Do not set IDENTITY_HMAC_WRITE_MODE in this release. verify-identity
+-- computes and stores a CPF hash only when that variable is exactly
+-- historical-match-confirmed AND IDENTITY_HMAC_SECRET is the dedicated
+-- secret that already produced the stored hashes. Leave the mode unset.
+-- Do not copy the service-role key into IDENTITY_HMAC_SECRET or
+-- IDENTITY_HMAC_SECRET_PREVIOUS, and do not rotate either secret here.
+-- The currently deployed function falls back to the service-role key when
+-- the dedicated secret is absent, so a new secret would split uniqueness.
+-- This migration does not rehash or update identity rows.
+-- With hash writes left off, the function does not call
+-- begin_identity_attempt. Apply this migration before any later decision
+-- to enable writes.
 -- Deploy the function and the frontend together. Frontend-only leaves the
 -- old enumerating function in place. Function-only leaves the old UI copy
 -- that calls checksum success "identidade verificada".

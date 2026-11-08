@@ -9,8 +9,10 @@ import {
   OWNERSHIP_PROVIDER_TIMEOUT_MS,
   cpfFromRequestBody,
   decideAttemptAllowance,
+  IDENTITY_HMAC_WRITE_CONFIRMATION,
   hmacSha256Hex,
   identityGateState,
+  identityHashWritesEnabled,
   interpretProviderOutcome,
   ownershipProviderEnabled,
   planCpfBind,
@@ -116,6 +118,34 @@ const keys = readIdentityHmacSecrets({
   IDENTITY_HMAC_SECRET_PREVIOUS: "old-dedicated-secret",
   SUPABASE_SERVICE_ROLE_KEY: "service-role-must-not-be-hmac",
 });
+assert(
+  identityHashWritesEnabled({
+    IDENTITY_HMAC_SECRET: "dedicated-secret",
+    SUPABASE_SERVICE_ROLE_KEY: "service-role-must-not-be-hmac",
+  }) === false,
+  "a dedicated secret alone does not enable hash writes",
+);
+assert(
+  identityHashWritesEnabled({
+    IDENTITY_HMAC_WRITE_MODE: IDENTITY_HMAC_WRITE_CONFIRMATION,
+    SUPABASE_SERVICE_ROLE_KEY: "service-role-must-not-be-hmac",
+  }) === false,
+  "the service role does not confirm historical hashes",
+);
+assert(
+  identityHashWritesEnabled({
+    IDENTITY_HMAC_WRITE_MODE: ` ${IDENTITY_HMAC_WRITE_CONFIRMATION} `,
+    IDENTITY_HMAC_SECRET: " dedicated-secret ",
+  }) === true,
+  "writes require the exact confirmation and a dedicated secret",
+);
+assert(
+  identityHashWritesEnabled({
+    IDENTITY_HMAC_WRITE_MODE: `${IDENTITY_HMAC_WRITE_CONFIRMATION}-later`,
+    IDENTITY_HMAC_SECRET: "dedicated-secret",
+  }) === false,
+  "confirmation must match exactly",
+);
 assert(keys.primary === "dedicated-secret", "primary secret is trimmed");
 assert(keys.previous === "old-dedicated-secret", "previous dedicated secret is kept");
 assert(
@@ -213,6 +243,8 @@ assert(
   "migration does not use the service role as a secret",
 );
 assert(migration.includes("Do not update, delete, reassign, or rehash"), "legacy rows are frozen");
+assert(migration.includes("Do not set IDENTITY_HMAC_WRITE_MODE"), "hash writes stay off");
+assert(migration.includes(IDENTITY_HMAC_WRITE_CONFIRMATION), "confirmation token is documented");
 
 const verifyFn = read("supabase/functions/verify-identity/index.ts");
 assert(!verifyFn.includes("fetch("), "function does not call a provider");
@@ -230,6 +262,14 @@ assert(
 assert(
   verifyFn.indexOf("begin_identity_attempt") < verifyFn.indexOf("req.json"),
   "limiter runs before the CPF is read",
+);
+assert(
+  verifyFn.indexOf("identityHashWritesEnabled") < verifyFn.indexOf("req.json"),
+  "hash writes are refused before the CPF is read",
+);
+assert(
+  verifyFn.indexOf("identityHashWritesEnabled") < verifyFn.indexOf("await hmacSha256Hex"),
+  "hash writes are refused before an HMAC is computed",
 );
 assert(!verifyFn.includes("já está vinculado"), "old enumeration copy is gone");
 assert(!verifyFn.includes("outra conta"), "old enumeration copy is gone");

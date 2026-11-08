@@ -7,6 +7,7 @@ import {
   OWNERSHIP_PROVIDER_TIMEOUT_MS,
   cpfFromRequestBody,
   hmacSha256Hex,
+  identityHashWritesEnabled,
   interpretProviderOutcome,
   ownershipProviderEnabled,
   planCpfBind,
@@ -95,6 +96,14 @@ serve(async (req) => {
     const { data: userData, error: userError } = await admin.auth.getUser(token);
     const userId = userData.user?.id;
     if (userError || !userId) return json({ error: "Não autorizado" }, 401);
+
+    const writesEnabled = identityHashWritesEnabled({
+      IDENTITY_HMAC_WRITE_MODE: Deno.env.get("IDENTITY_HMAC_WRITE_MODE"),
+      IDENTITY_HMAC_SECRET: Deno.env.get("IDENTITY_HMAC_SECRET"),
+    });
+    if (!writesEnabled) {
+      return json({ error: IDENTITY_MESSAGES.unavailable }, 503);
+    }
 
     const secrets = readIdentityHmacSecrets({
       IDENTITY_HMAC_SECRET: Deno.env.get("IDENTITY_HMAC_SECRET"),
