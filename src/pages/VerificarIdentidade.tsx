@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, ShieldCheck, Zap } from "lucide-react";
 import { formatCpf, isValidCpf } from "@/lib/cpf";
+import { IDENTITY_MESSAGES } from "@/lib/identityPolicy";
 import { submitIdentityCpf } from "@/lib/submitIdentity";
 import { useIdentityStatus } from "@/hooks/useIdentityStatus";
 import { useToast } from "@/hooks/use-toast";
@@ -20,7 +21,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const VerificarIdentidade = () => {
-  const { verified, loading, refetch } = useIdentityStatus();
+  const { cpfOnFile, loading, loadError, refetch } = useIdentityStatus();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const form = useForm<FormData>({
@@ -36,8 +37,23 @@ const VerificarIdentidade = () => {
     );
   }
 
-  if (verified) {
+  if (cpfOnFile) {
     return <Navigate to="/comunidade" replace />;
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <div className="max-w-md text-center space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Não foi possível carregar o CPF desta conta. Nada foi alterado.
+          </p>
+          <Button type="button" variant="outline" onClick={() => void refetch()}>
+            Tentar de novo
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const onSubmit = async (data: FormData) => {
@@ -45,10 +61,14 @@ const VerificarIdentidade = () => {
     const { error } = await submitIdentityCpf(data.cpf);
     setIsSaving(false);
     if (error) {
-      toast({ variant: "destructive", title: "Não foi possível verificar", description: error });
+      toast({
+        variant: "destructive",
+        title: "Não foi possível registrar o CPF",
+        description: error,
+      });
       return;
     }
-    toast({ title: "Identidade verificada", description: "Agora você já pode usar a comunidade." });
+    toast({ title: "CPF registrado", description: IDENTITY_MESSAGES.recorded });
     await refetch();
   };
 
@@ -76,11 +96,8 @@ const VerificarIdentidade = () => {
             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
               <ShieldCheck className="w-6 h-6 text-primary" />
             </div>
-            <h1 className="text-xl font-semibold">Verificar identidade</h1>
-            <p className="text-sm text-muted-foreground mt-2">
-              Informe um CPF válido. Ele fica único na Nexus: guardamos só um código e os 4 últimos
-              dígitos, nunca o número completo.
-            </p>
+            <h1 className="text-xl font-semibold">Registrar CPF</h1>
+            <p className="text-sm text-muted-foreground mt-2">{IDENTITY_MESSAGES.explanation}</p>
           </div>
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -101,8 +118,14 @@ const VerificarIdentidade = () => {
               )}
             </div>
 
-            <Button type="submit" variant="gradient" className="w-full" size="lg" disabled={isSaving}>
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar CPF"}
+            <Button
+              type="submit"
+              variant="gradient"
+              className="w-full"
+              size="lg"
+              disabled={isSaving}
+            >
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Registrar CPF"}
             </Button>
           </form>
 

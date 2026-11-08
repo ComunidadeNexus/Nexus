@@ -1,18 +1,41 @@
 import { formatIdentityLabel, formatIdentityStatus, formatMaskedCpf } from "./identity";
+import { isIdentityProven } from "./identityPolicy";
 
 function assert(condition: unknown, message: string) {
   if (!condition) throw new Error(message);
 }
 
-assert(formatMaskedCpf("4725") === "••••4725", "mask last4");
-assert(formatIdentityStatus("checksum_verified") === "verificado", "checksum is verified");
-assert(formatIdentityStatus("bureau_verified") === "verificado", "bureau is verified");
+assert(formatMaskedCpf("9012") === "••••9012", "mask last4");
+assert(
+  formatIdentityStatus("checksum_verified") === "dígitos conferidos",
+  "checksum is not identity",
+);
+assert(formatIdentityStatus("digits_checked") === "dígitos conferidos", "digits stay digits");
+assert(
+  formatIdentityStatus("bureau_verified") === "sem prova de titularidade",
+  "registry hit is not ownership",
+);
 assert(formatIdentityStatus(null) === "pendente", "missing is pending");
 assert(
-  formatIdentityLabel("4725", "checksum_verified") === "CPF ••••4725 / verificado",
-  "admin label never shows full CPF",
+  formatIdentityStatus("ownership_verified") === "pendente",
+  "unapproved status stays pending",
+);
+assert(isIdentityProven("checksum_verified") === false, "checksum is not proved");
+assert(isIdentityProven("bureau_verified") === false, "bureau is not proved");
+assert(isIdentityProven("digits_checked") === false, "digits are not proved");
+assert(
+  formatIdentityLabel("9012", "checksum_verified") === "CPF ••••9012 / dígitos conferidos",
+  "admin label shows digits, not verification",
+);
+assert(
+  formatIdentityLabel("9012", "bureau_verified") === "CPF ••••9012 / sem prova de titularidade",
+  "admin label does not call a lookup verified",
 );
 assert(formatIdentityLabel(null, null) === "CPF pendente", "pending label");
-assert(!formatIdentityLabel("4725", "checksum_verified").includes("529"), "no extra digits");
+assert(
+  !formatIdentityLabel("9012", "checksum_verified").includes("verificado"),
+  "no verified word",
+);
+assert(!formatIdentityLabel("9012", "checksum_verified").includes("1234"), "no extra digits");
 
 console.log("identity tests passed");
